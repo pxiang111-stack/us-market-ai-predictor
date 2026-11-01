@@ -1,0 +1,6 @@
+pandas>=2.1
+numpy>=1.26
+yfinance>=0.2.40
+scikit-learn>=1.4
+lxml>=5.0
+html5lib>=1.1
