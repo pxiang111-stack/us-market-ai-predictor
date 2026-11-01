@@ -1,17 +1,18 @@
+
 name: Daily US Market AI Scan
 
 on:
-  schedule:
-    - cron: '30 22 * * 1-5'
   workflow_dispatch:
+  schedule:
+    - cron: "30 22 * * 1-5"
 
 permissions:
   contents: read
 
 jobs:
-  daily-scan:
+  scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -20,18 +21,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run AI stock prediction
-        run: python us_market_ai_v2.py
-      - name: Upload prediction results
+      - name: Run V3.1 news-enabled model
+        run: |
+          python us_market_ai_v3.py
+
+      - name: Upload prediction reports
         uses: actions/upload-artifact@v4
         with:
           name: daily-market-predictions
           path: output/
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 30
