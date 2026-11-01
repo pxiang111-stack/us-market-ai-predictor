@@ -29,3 +29,9 @@ jobs:
 
       - name: Run AI stock prediction
         run: python us_market_ai_v2.py
+      - name: Upload prediction results
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-market-predictions
+          path: output/
+          if-no-files-found: warn
