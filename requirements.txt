@@ -1,6 +1,8 @@
-pandas>=2.1
 numpy>=1.26
-yfinance>=0.2.40
+pandas>=2.1
+yfinance>=0.2.50
 scikit-learn>=1.4
+requests>=2.31
 lxml>=5.0
 html5lib>=1.1
+vaderSentiment>=3.3.2

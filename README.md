@@ -1,58 +1,27 @@
-# US Market AI Opportunity Scanner — V2
+# US Market AI Opportunity Scanner V3
 
-## Purpose
-Daily research scanner for liquid US equities. Its primary output ranks stocks by a six-month (126 trading-day) opportunity score. It also produces 1-month and 3-month estimates for context.
+Research prototype for ranking a broad universe of US equities for 1-, 3- and 6-month horizons.
 
-## Universe
-Current V2 starts with S&P 500, Nasdaq-100, Dow 30 constituents and selected market/sector ETFs. The six-month stock leaderboard excludes the ETF list. This is a practical liquid-stock universe, **not every US-listed security**. The constituent lists are current lists, so historical tests can contain survivorship bias.
+## Outputs
+- `output/top_25_6m.csv`: top 25 six-month stock candidates
+- `output/top_6m_opportunities.csv`: full six-month stock ranking
+- `output/all_predictions.csv`: predictions for all horizons
+- `output/validation_report.csv`: time-based validation metrics
+- `output/run_summary.csv`: coverage and run metadata
+- `output/news_sentiment_report.csv`: recent headline sentiment and article counts
 
-## Install and run
+## Limitations
+This is not investment advice and has no guaranteed predictive edge. The universe is not literally every US-listed security; screeners, Yahoo Finance coverage, rate limits and missing data can reduce coverage. Survivorship bias remains because historical constituents and delisted securities are not reconstructed. The V3.1 news overlay fetches recent headlines from the free GDELT DOC API (no API key) and scores headline tone with VADER. It checks the broad market plus up to 120 leading six-month candidates. Coverage and ticker ambiguity vary; headline polarity is not a substitute for reading the articles. This news overlay is recent-only and is not included in the historical backtest, so its contribution is not yet historically validated. Scores are sorting heuristics, not calibrated probabilities of profit or expected returns. Treat AUC near 0.50 as weak/no demonstrated predictive edge.
+
+## Run locally
 Python 3.10+:
 ```bash
-python -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
-python us_market_ai_v2.py
-```
-Windows activation:
-```powershell
-.venv\Scripts\Activate.ps1
+python us_market_ai_v3.py --period 10y --max-symbols 1200
 ```
 
-Outputs:
-- `output/top_6m_opportunities.csv`: primary six-month stock leaderboard.
-- `output/all_predictions.csv`: predictions for all tickers and horizons.
-- `output/validation_report.csv`: chronological 80/20 holdout metrics.
+## GitHub Actions
+The workflow installs VADER sentiment dependencies and runs weekdays at 22:30 UTC (about 06:30 next day in China, UTC+8). GitHub may delay scheduled jobs. You can run manually from Actions → Daily US Market AI Scan → Run workflow. Download `daily-market-predictions` from the completed run's Artifacts section.
 
-## Ranking logic
-- Direction: blend of Logistic Regression and Random Forest probability estimates.
-- Return: HistGradientBoosting regression estimate.
-- Score: combines probability and estimated return, then penalizes high realized volatility and deep drawdown.
-- The score is a ranking heuristic, not a calibrated probability or a promised return. Compare candidates with validation metrics and fundamentals before acting.
-
-## News sentiment input
-V2 supports optional `news_sentiment.csv`:
-```csv
-date,ticker,sentiment
-2026-10-30,NVDA,0.55
-2026-10-30,MARKET,-0.10
-```
-Sentiment values must be in [-1,1] and must reflect information publicly available at the timestamp. V2 shifts sentiment one trading day to reduce look-ahead risk. The code does not itself fetch, verify, or classify live news. If no file exists, sentiment defaults to neutral zero. Do not mistake this for a fully connected news feed.
-
-## Daily scheduling
-The included GitHub Actions workflow runs on weekdays after the US close and stores the CSV outputs as downloadable workflow artifacts. To activate:
-1. Create a private GitHub repository.
-2. Upload this project, including `.github/workflows/daily_scan.yml`.
-3. In GitHub repository Settings > Actions > General, allow Actions if disabled.
-4. The workflow runs on its schedule; you can also use Actions > Daily US Stock Scan > Run workflow.
-GitHub cron uses UTC and may run later than scheduled. The workflow is not guaranteed to run on market holidays only; it skips weekends but may run on holidays.
-
-For a local daily run, use Windows Task Scheduler or macOS/Linux cron to run `python us_market_ai_v2.py` after the US market close.
-
-## Critical limitations before real-money use
-- Free Yahoo Finance data may be incomplete, delayed, revised, throttled or unavailable.
-- Current index constituents create survivorship bias in historical validation; use point-in-time constituents and delisted names for institutional-quality testing.
-- The simple 80/20 holdout is preliminary. Add rolling-origin folds, purging/embargo for overlapping forward-return labels, calibration, benchmark comparisons, transaction costs and paper trading.
-- News data is only an optional manual CSV. Live timestamped news ingestion and finance-specific NLP are a separate integration.
-- No fundamental financial statement features yet; add point-in-time earnings, revenue growth, margins, valuation and balance-sheet measures before using the leaderboard as an investment shortlist.
-- Do not buy solely because of a high rank or probability. This is a research tool, not personalized financial advice.
+## Replace files in your repository
+Upload `us_market_ai_v3.py` and `requirements.txt` to the repository root. Replace `.github/workflows/daily_scan.yml` with the included workflow. The workflow now runs V3. You may keep the old V2 file as an archive.
