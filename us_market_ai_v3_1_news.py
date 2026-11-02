@@ -3,6 +3,7 @@ US Market AI Opportunity Scanner — V3
 Research prototype only. Not investment advice; no guaranteed predictive edge.
 """
 from pathlib import Path
+from io import StringIO
 import argparse, warnings, time
 import numpy as np
 import pandas as pd
@@ -58,7 +59,9 @@ def universe(max_symbols=1200):
                     "https://en.wikipedia.org/wiki/Nasdaq-100",
                     "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average"]:
             try:
-                for table in pd.read_html(requests.get(url,headers=headers,timeout=20).text):
+                response = requests.get(url,headers=headers,timeout=20)
+                response.raise_for_status()
+                for table in pd.read_html(StringIO(response.text)):
                     for col in table.columns:
                         if str(col).strip().lower() in {"symbol","ticker"}:
                             symbols.update(filter(None,(clean_ticker(x) for x in table[col])))
@@ -323,7 +326,8 @@ def predict(data):
         yc,rc=f"target_up_{horizon}",f"target_ret_{horizon}"
         tr=data.dropna(subset=[yc,rc]); current=latest.copy()
         if len(tr)<1000 or tr[yc].nunique()<2 or current.empty:
-            print(f"[WARN] Skipping {horizon}: insufficient training/current data"); continue
+            print(f"[WARN] Skipping {horizon}: train_rows={len(tr)}, train_classes={tr[yc].nunique()}, current_rows={len(current)}")
+            continue
         a,b=classifier(),classifier(True)
         reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
             ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
