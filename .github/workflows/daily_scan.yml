@@ -2,6 +2,13 @@
 name: Daily US Market AI Scan
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'us_market_ai_v3.py'
+      - 'us_market_ai_v3_1_news.py'
+      - 'requirements.txt'
+      - '.github/workflows/daily_scan.yml'
   workflow_dispatch:
   schedule:
     - cron: "30 22 * * 1-5"
