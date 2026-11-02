@@ -61,10 +61,13 @@ def universe(max_symbols=1200):
                 continue
             ticker = clean_ticker(row.get("symbol", ""))
             if ticker and str(row.get("is_etf", row.get("etf", "false"))).lower() not in {"true", "1", "yes"}:
-                raw_cap = str(row.get("marketCap", row.get("market_cap", "0"))).replace(",", "").replace("$", "").strip()
+                raw_cap = str(row.get("marketCap", row.get("market_cap", "0"))).replace(",", "").replace("$", "").strip().upper()
                 try:
-                    market_cap = float(raw_cap)
-                except (TypeError, ValueError):
+                    scale = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
+                    multiplier = scale.get(raw_cap[-1:], 1.0)
+                    numeric_cap = raw_cap[:-1] if multiplier != 1.0 else raw_cap
+                    market_cap = float(numeric_cap) * multiplier
+                except (TypeError, ValueError, IndexError):
                     market_cap = 0.0
                 from_api[ticker] = market_cap
         if len(from_api) < 100:
