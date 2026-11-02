@@ -38,7 +38,9 @@ def clean_ticker(v):
     return t if len(t) <= 8 and all(c.isalnum() or c in "-^" for c in t) else None
 
 def universe(max_symbols=1200):
+    """Build a broad US-listed equity universe with official directory fallback."""
     symbols = set(ETFS)
+    source = None
     try:
         url = "https://api.nasdaq.com/api/screener/stocks"
         params = {"tableonly":"true","limit":"6000","offset":"0","exchange":"nasdaq,nyse,amex"}
@@ -46,33 +48,75 @@ def universe(max_symbols=1200):
                    "Origin":"https://www.nasdaq.com","Referer":"https://www.nasdaq.com/"}
         r = requests.get(url, params=params, headers=headers, timeout=25)
         r.raise_for_status()
-        rows = r.json().get("data",{}).get("table",{}).get("rows",[])
-        from_api = {clean_ticker(row.get("symbol","")) for row in rows}
-        from_api.discard(None)
-        if len(from_api) < 100: raise RuntimeError(f"Only {len(from_api)} symbols returned")
+        payload = r.json()
+        table = (payload.get("data") or {}).get("table") or {}
+        rows = table.get("rows") or []
+        if not isinstance(rows, list) or len(rows) < 100:
+            raise RuntimeError(f"Nasdaq screener returned {len(rows) if isinstance(rows, list) else 'invalid'} rows")
+        from_api = set()
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            ticker = clean_ticker(row.get("symbol", ""))
+            if ticker and str(row.get("is_etf", row.get("etf", "false"))).lower() not in {"true", "1", "yes"}:
+                from_api.add(ticker)
+        if len(from_api) < 100:
+            raise RuntimeError(f"Only {len(from_api)} usable equity symbols")
         symbols.update(from_api)
         source = "Nasdaq public screener"
     except Exception as e:
-        print(f"[WARN] Screener unavailable: {e}; trying public constituent lists and fallback")
+        print(f"[WARN] Nasdaq screener unavailable: {e}; trying Nasdaq Trader directories")
         headers = {"User-Agent":"Mozilla/5.0"}
-        for url in ["https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
-                    "https://en.wikipedia.org/wiki/Nasdaq-100",
-                    "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average"]:
+        directory_symbols = set()
+        directory_errors = []
+        directories = [
+            ("https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt", "nasdaq"),
+            ("https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt", "other"),
+        ]
+        for url, kind in directories:
             try:
-                response = requests.get(url,headers=headers,timeout=20)
+                response = requests.get(url, headers=headers, timeout=25)
                 response.raise_for_status()
-                for table in pd.read_html(StringIO(response.text)):
-                    for col in table.columns:
-                        if str(col).strip().lower() in {"symbol","ticker"}:
-                            symbols.update(filter(None,(clean_ticker(x) for x in table[col])))
-                            break
-            except Exception as e2: print(f"[WARN] Constituent list unavailable: {e2}")
-        symbols.update(FALLBACK)
-        source = "constituent lists + fallback"
+                lines = response.text.splitlines()
+                if not lines or ("Symbol" not in lines[0] and "ACT Symbol" not in lines[0]):
+                    raise RuntimeError("Unexpected symbol-directory format")
+                header = lines[0].split("|")
+                for line in lines[1:]:
+                    if not line or line.startswith("File Creation Time"):
+                        continue
+                    row = dict(zip(header, line.split("|")))
+                    symbol = row.get("Symbol") if kind == "nasdaq" else row.get("ACT Symbol")
+                    if row.get("Test Issue", "N") != "N" or row.get("ETF", "N") == "Y":
+                        continue
+                    ticker = clean_ticker(symbol or "")
+                    if ticker:
+                        directory_symbols.add(ticker)
+            except Exception as exc:
+                directory_errors.append(f"{kind}: {exc}")
+        if len(directory_symbols) >= 500:
+            symbols.update(directory_symbols)
+            source = "Nasdaq Trader official symbol directories"
+        else:
+            print(f"[WARN] Nasdaq Trader yielded {len(directory_symbols)} symbols; {directory_errors}")
+            print("[WARN] Falling back to index constituents and curated liquid-stock list")
+            headers = {"User-Agent":"Mozilla/5.0"}
+            for url in ["https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+                        "https://en.wikipedia.org/wiki/Nasdaq-100"]:
+                try:
+                    response = requests.get(url, headers=headers, timeout=20)
+                    response.raise_for_status()
+                    for table in pd.read_html(StringIO(response.text)):
+                        for col in table.columns:
+                            if str(col).strip().lower() in {"symbol", "ticker"}:
+                                symbols.update(filter(None, (clean_ticker(x) for x in table[col])))
+                                break
+                except Exception as exc:
+                    print(f"[WARN] Constituent list unavailable: {exc}")
+            symbols.update(FALLBACK)
+            source = "index constituents + curated fallback (limited universe)"
     result = sorted(symbols)
     if len(result) > max_symbols:
-        result = sorted(ETFS) + [x for x in result if x not in ETFS]
-        result = list(dict.fromkeys(result))[:max_symbols]
+        result = (sorted(ETFS) + [x for x in result if x not in ETFS])[:max_symbols]
     print(f"Universe source: {source}; symbols: {len(result)}")
     return result
 
@@ -365,6 +409,14 @@ def main():
     rows=[features_for(t,d,prices["SPY"].Close,args.news) for t,d in prices.items() if len(d)>=300]
     if not rows: raise RuntimeError("No sufficiently long price histories")
     data=pd.concat(rows).sort_index().replace([np.inf,-np.inf],np.nan)
+    modeled = sorted(data["ticker"].dropna().unique())
+    print(f"Model data: rows={len(data)}, symbols={len(modeled)}, "
+          f"date_range={data.index.min().date()}..{data.index.max().date()}")
+    for horizon in HORIZONS:
+        yc, rc = f"target_up_{horizon}", f"target_ret_{horizon}"
+        eligible = data.dropna(subset=[yc, rc])
+        print(f"Training sample {horizon}: rows={len(eligible)}, "
+              f"dates={eligible.index.nunique()}, classes={eligible[yc].nunique()}")
     report=pd.DataFrame([validate(data,h) for h in HORIZONS])
     report.to_csv(OUT/"validation_report.csv",index=False)
     pred=predict(data)
