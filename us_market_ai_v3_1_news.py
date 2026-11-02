@@ -296,12 +296,12 @@ def predict(data):
         reg.fit(tr[FEATURES],tr[rc])
         p=(a.predict_proba(current[FEATURES])[:,1]+b.predict_proba(current[FEATURES])[:,1])/2
         exp=reg.predict(current[FEATURES])
-        for i,(_,row) in enumerate(current.iterrows()):
+        for i,(as_of,row) in enumerate(current.iterrows()):
             vol=float(row.get("vol_126",np.nan)); dd=float(row.get("drawdown_126",np.nan))
             vp=.15*max(vol-.35,0) if np.isfinite(vol) else 0
             dp=.08*abs(min(dd,0)) if np.isfinite(dd) else 0
             score=100*(.6*p[i]+.4/(1+np.exp(-np.clip(exp[i]*4,-20,20))))-100*(vp+dp)
-            results.append({"as_of":str(pd.Timestamp(row["date"]).date()),"ticker":row.ticker,
+            results.append({"as_of":str(pd.Timestamp(as_of).date()),"ticker":row.ticker,
                 "horizon":horizon,"prob_up":float(p[i]),"expected_return_model_estimate":float(exp[i]),
                 "volatility_6m_annualized":vol,"drawdown_6m":dd,"opportunity_score":float(score)})
     out=pd.DataFrame(results)
