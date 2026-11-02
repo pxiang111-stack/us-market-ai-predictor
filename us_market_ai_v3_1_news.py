@@ -260,12 +260,20 @@ def classifier(forest=False):
         if forest else LogisticRegression(max_iter=1500,class_weight="balanced")))
     return Pipeline(steps)
 
+def model_features(data):
+    """Exclude optional historical news when no usable observations exist."""
+    if "news_sentiment" not in data or not data["news_sentiment"].notna().any():
+        return [feature for feature in FEATURES if feature != "news_sentiment"]
+    return FEATURES
+
+
 def validate(data,horizon):
     """
     One chronological holdout with a horizon-sized embargo.
     Top-decile metrics are evaluated only on the untouched test period.
     """
     ycol,rcol=f"target_up_{horizon}",f"target_ret_{horizon}"
+    features=model_features(data)
     z=data.dropna(subset=[ycol,rcol]).sort_index()
     dates=np.array(sorted(z.index.unique()))
     if len(dates)<500:
@@ -279,9 +287,9 @@ def validate(data,horizon):
         return {"horizon":horizon,"status":"insufficient_or_single_class",
                 "n_train":len(tr),"n_test":len(te)}
     a,b=classifier(),classifier(True)
-    a.fit(tr[FEATURES],tr[ycol].astype(int))
-    b.fit(tr[FEATURES],tr[ycol].astype(int))
-    p=(a.predict_proba(te[FEATURES])[:,1]+b.predict_proba(te[FEATURES])[:,1])/2
+    a.fit(tr[features],tr[ycol].astype(int))
+    b.fit(tr[features],tr[ycol].astype(int))
+    p=(a.predict_proba(te[features])[:,1]+b.predict_proba(te[features])[:,1])/2
     y=te[ycol].astype(int)
     te=te.assign(_probability=p)
     cutoff=max(1,int(np.ceil(len(te)*0.10)))
@@ -307,22 +315,23 @@ def validate(data,horizon):
     }
 
 def predict(data):
+    features=model_features(data)
     latest=(data.reset_index(names="date").sort_values("date").groupby("ticker",as_index=False)
             .tail(1).set_index("date"))
     results=[]
     for horizon in HORIZONS:
         yc,rc=f"target_up_{horizon}",f"target_ret_{horizon}"
-        tr=data.dropna(subset=[yc,rc]); current=latest.dropna(subset=FEATURES)
+        tr=data.dropna(subset=[yc,rc]); current=latest.dropna(subset=features)
         if len(tr)<1000 or tr[yc].nunique()<2 or current.empty:
             print(f"[WARN] Skipping {horizon}: insufficient training/current data"); continue
         a,b=classifier(),classifier(True)
         reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
             ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
                                                     l2_regularization=2,random_state=17))])
-        a.fit(tr[FEATURES],tr[yc].astype(int)); b.fit(tr[FEATURES],tr[yc].astype(int))
-        reg.fit(tr[FEATURES],tr[rc])
-        p=(a.predict_proba(current[FEATURES])[:,1]+b.predict_proba(current[FEATURES])[:,1])/2
-        exp=reg.predict(current[FEATURES])
+        a.fit(tr[features],tr[yc].astype(int)); b.fit(tr[features],tr[yc].astype(int))
+        reg.fit(tr[features],tr[rc])
+        p=(a.predict_proba(current[features])[:,1]+b.predict_proba(current[features])[:,1])/2
+        exp=reg.predict(current[features])
         for i,(as_of,row) in enumerate(current.iterrows()):
             vol=float(row.get("vol_126",np.nan)); dd=float(row.get("drawdown_126",np.nan))
             vp=.15*max(vol-.35,0) if np.isfinite(vol) else 0
