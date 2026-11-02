@@ -13,6 +13,10 @@ on:
   schedule:
     - cron: "30 22 * * 1-5"
 
+concurrency:
+  group: daily-us-market-scan-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
