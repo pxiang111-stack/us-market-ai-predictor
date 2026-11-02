@@ -29,7 +29,7 @@ SNOW DDOG NET ZS MDB TEAM SQ PYPL TGT NKE SBUX TSLA INTC SMCI ARM DE BA ETN SCHW
 CVS BMY GILD REGN BSX SYK ADP PAYX FI ICE CME CBOE MCO MMC AON PGR CB TRV""".split())
 FEATURES = ["ret_1d"] + [f"{k}_{n}" for k in ("mom","vol","ma_gap") for n in (5,21,63,126,252)] + [
     "rsi_14","macd_norm","macd_signal_gap","volume_z_21","range_21","drawdown_126",
-    "relative_mom_21","spy_mom_21","spy_vol_21"]
+    "relative_mom_21","spy_mom_21","spy_vol_21","news_sentiment"]
 
 def clean_ticker(v):
     t = str(v).strip().upper().replace(".", "-")
@@ -261,23 +261,50 @@ def classifier(forest=False):
     return Pipeline(steps)
 
 def validate(data,horizon):
+    """
+    One chronological holdout with a horizon-sized embargo.
+    Top-decile metrics are evaluated only on the untouched test period.
+    """
     ycol,rcol=f"target_up_{horizon}",f"target_ret_{horizon}"
     z=data.dropna(subset=[ycol,rcol]).sort_index()
     dates=np.array(sorted(z.index.unique()))
-    if len(dates)<500: return {"horizon":horizon,"status":"insufficient_history"}
-    split=int(len(dates)*.8); test_start=dates[split]
+    if len(dates)<500:
+        return {"horizon":horizon,"status":"insufficient_history","n_dates":len(dates)}
+    split=int(len(dates)*0.8)
+    test_start=dates[split]
     train_end=dates[max(0,split-HORIZONS[horizon])]
-    tr=z[z.index<train_end]; te=z[z.index>=test_start]
+    tr=z[z.index<train_end]
+    te=z[z.index>=test_start].copy()
     if len(tr)<1000 or tr[ycol].nunique()<2 or te[ycol].nunique()<2:
-        return {"horizon":horizon,"status":"insufficient_or_single_class","n_train":len(tr),"n_test":len(te)}
+        return {"horizon":horizon,"status":"insufficient_or_single_class",
+                "n_train":len(tr),"n_test":len(te)}
     a,b=classifier(),classifier(True)
-    a.fit(tr[FEATURES],tr[ycol].astype(int)); b.fit(tr[FEATURES],tr[ycol].astype(int))
+    a.fit(tr[FEATURES],tr[ycol].astype(int))
+    b.fit(tr[FEATURES],tr[ycol].astype(int))
     p=(a.predict_proba(te[FEATURES])[:,1]+b.predict_proba(te[FEATURES])[:,1])/2
     y=te[ycol].astype(int)
-    return {"horizon":horizon,"status":"ok","train_end":str(pd.Timestamp(tr.index.max()).date()),
-        "test_start":str(pd.Timestamp(te.index.min()).date()),"test_end":str(pd.Timestamp(te.index.max()).date()),
-        "n_train":len(tr),"n_test":len(te),"auc":float(roc_auc_score(y,p)),
-        "brier":float(brier_score_loss(y,p)),"actual_up_rate":float(y.mean())}
+    te=te.assign(_probability=p)
+    cutoff=max(1,int(np.ceil(len(te)*0.10)))
+    top=te.nlargest(cutoff,"_probability")
+    spy=te.loc[te["ticker"].eq("SPY"),rcol]
+    return {
+        "horizon":horizon,"status":"ok",
+        "train_end":str(pd.Timestamp(tr.index.max()).date()),
+        "test_start":str(pd.Timestamp(te.index.min()).date()),
+        "test_end":str(pd.Timestamp(te.index.max()).date()),
+        "n_train":len(tr),"n_test":len(te),
+        "auc":float(roc_auc_score(y,p)),
+        "brier":float(brier_score_loss(y,p)),
+        "actual_up_rate":float(y.mean()),
+        "top_decile_n":int(len(top)),
+        "top_decile_up_rate":float(top[ycol].mean()),
+        "top_decile_mean_return":float(top[rcol].mean()),
+        "test_universe_mean_return":float(te[rcol].mean()),
+        "top_decile_return_lift":float(top[rcol].mean()-te[rcol].mean()),
+        "spy_test_mean_return":float(spy.mean()) if len(spy) else np.nan,
+        "news_feature_nonmissing_test_pct":float(te["news_sentiment"].notna().mean()*100)
+            if "news_sentiment" in te else 0.0
+    }
 
 def predict(data):
     latest=(data.reset_index(names="date").sort_values("date").groupby("ticker",as_index=False)
