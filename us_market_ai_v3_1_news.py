@@ -55,17 +55,22 @@ def universe(max_symbols=1200):
         rows = table.get("rows") or []
         if not isinstance(rows, list) or len(rows) < 100:
             raise RuntimeError(f"Nasdaq screener returned {len(rows) if isinstance(rows, list) else 'invalid'} rows")
-        from_api = set()
+        from_api = {}
         for row in rows:
             if not isinstance(row, dict):
                 continue
             ticker = clean_ticker(row.get("symbol", ""))
             if ticker and str(row.get("is_etf", row.get("etf", "false"))).lower() not in {"true", "1", "yes"}:
-                from_api.add(ticker)
+                raw_cap = str(row.get("marketCap", row.get("market_cap", "0"))).replace(",", "").replace("$", "").strip()
+                try:
+                    market_cap = float(raw_cap)
+                except (TypeError, ValueError):
+                    market_cap = 0.0
+                from_api[ticker] = market_cap
         if len(from_api) < 100:
             raise RuntimeError(f"Only {len(from_api)} usable equity symbols")
         symbols.update(from_api)
-        source = "Nasdaq public screener"
+        source = "Nasdaq public screener (market-cap ranked universe)"
     except Exception as e:
         print(f"[WARN] Nasdaq screener unavailable: {e}; trying Nasdaq Trader directories")
         headers = {"User-Agent":"Mozilla/5.0"}
@@ -116,9 +121,14 @@ def universe(max_symbols=1200):
                     print(f"[WARN] Constituent list unavailable: {exc}")
             symbols.update(FALLBACK)
             source = "index constituents + curated fallback (limited universe)"
-    result = sorted(symbols)
-    if len(result) > max_symbols:
-        result = (sorted(ETFS) + [x for x in result if x not in ETFS])[:max_symbols]
+    if source and "market-cap ranked" in source:
+        equities = sorted((x for x in symbols if x not in ETFS),
+                          key=lambda x: from_api.get(x, 0.0), reverse=True)
+    else:
+        # Keep curated liquid names near the front when no market-cap data exists.
+        equities = sorted((x for x in symbols if x not in ETFS),
+                          key=lambda x: (x not in FALLBACK, x))
+    result = sorted(ETFS) + equities[:max(0, max_symbols - len(ETFS))]
     print(f"Universe source: {source}; symbols: {len(result)}", flush=True)
     return result
 
