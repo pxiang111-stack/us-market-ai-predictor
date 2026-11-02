@@ -41,6 +41,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Compile and test research modules
+        run: |
+          python -m compileall -q us_market_ai_v3_1_news.py quant_research.py tests
+          python -m unittest discover -s tests -v
+
       - name: Run V4 factor and ML research model
         run: |
           python us_market_ai_v3_1_news.py
