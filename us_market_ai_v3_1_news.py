@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 HORIZONS = {"1m": 21, "3m": 63, "6m": 126}
+TRAIN_SAMPLE_LIMIT = 100000
 ETFS = set("""SPY QQQ IWM DIA VTI RSP XLF XLK XLI XLY XLP XLE XLV XLB XLU SMH SOXX
 TLT IEF HYG LQD GLD UUP ARKK IBIT VNQ EEM EFA""".split())
 FALLBACK = set("""AAPL MSFT NVDA AMZN GOOGL GOOG META AVGO BRK-B LLY JPM WMT XOM V MA COST
@@ -117,12 +118,13 @@ def universe(max_symbols=1200):
     result = sorted(symbols)
     if len(result) > max_symbols:
         result = (sorted(ETFS) + [x for x in result if x not in ETFS])[:max_symbols]
-    print(f"Universe source: {source}; symbols: {len(result)}")
+    print(f"Universe source: {source}; symbols: {len(result)}", flush=True)
     return result
 
 def download(tickers, period, batch_size=40):
     out = {}
     for start in range(0,len(tickers),batch_size):
+        print(f"[INFO] Download batch {start//batch_size+1}/{(len(tickers)+batch_size-1)//batch_size}", flush=True)
         batch = tickers[start:start+batch_size]
         try:
             raw = yf.download(batch,period=period,auto_adjust=True,group_by="ticker",
@@ -232,7 +234,7 @@ def score_headlines(articles):
     # Clip extremes and use a modest recency-agnostic mean over the last 7 days.
     return float(np.mean(scores)), len(scores)
 
-def add_news_overlay(predictions, max_tickers=120):
+def add_news_overlay(predictions, max_tickers=40):
     """
     News overlay for the highest-ranked 6m candidates.
     GDELT headlines are current/recent only, so this is deliberately not used
@@ -299,10 +301,19 @@ def add_news_overlay(predictions, max_tickers=120):
     predictions.loc[mask, "opportunity_score"] = predictions.loc[mask, "news_adjusted_score"]
     return predictions, news
 
+def training_sample(frame, target, limit=TRAIN_SAMPLE_LIMIT):
+    """Bound fit cost while retaining a deterministic, broad sample."""
+    if len(frame) <= limit:
+        return frame
+    sampled = frame.sample(n=limit, random_state=17)
+    print(f"[INFO] Training sample capped: {len(frame)} -> {len(sampled)} rows", flush=True)
+    return sampled
+
+
 def classifier(forest=False):
     steps=[("imputer",SimpleImputer(strategy="median",add_indicator=True))]
     if not forest: steps.append(("scale",StandardScaler()))
-    steps.append(("model",RandomForestClassifier(n_estimators=220,min_samples_leaf=20,
+    steps.append(("model",RandomForestClassifier(n_estimators=100,min_samples_leaf=30,
         max_features="sqrt",class_weight="balanced_subsample",n_jobs=-1,random_state=17)
         if forest else LogisticRegression(max_iter=1500,class_weight="balanced")))
     return Pipeline(steps)
@@ -333,9 +344,10 @@ def validate(data,horizon):
     if len(tr)<1000 or tr[ycol].nunique()<2 or te[ycol].nunique()<2:
         return {"horizon":horizon,"status":"insufficient_or_single_class",
                 "n_train":len(tr),"n_test":len(te)}
+    fit_tr=training_sample(tr,ycol)
     a,b=classifier(),classifier(True)
-    a.fit(tr[features],tr[ycol].astype(int))
-    b.fit(tr[features],tr[ycol].astype(int))
+    a.fit(fit_tr[features],fit_tr[ycol].astype(int))
+    b.fit(fit_tr[features],fit_tr[ycol].astype(int))
     p=(a.predict_proba(te[features])[:,1]+b.predict_proba(te[features])[:,1])/2
     y=te[ycol].astype(int)
     te=te.assign(_probability=p)
@@ -372,12 +384,13 @@ def predict(data):
         if len(tr)<1000 or tr[yc].nunique()<2 or current.empty:
             print(f"[WARN] Skipping {horizon}: train_rows={len(tr)}, train_classes={tr[yc].nunique()}, current_rows={len(current)}")
             continue
+        fit_tr=training_sample(tr,yc)
         a,b=classifier(),classifier(True)
         reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
             ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
                                                     l2_regularization=2,random_state=17))])
-        a.fit(tr[features],tr[yc].astype(int)); b.fit(tr[features],tr[yc].astype(int))
-        reg.fit(tr[features],tr[rc])
+        a.fit(fit_tr[features],fit_tr[yc].astype(int)); b.fit(fit_tr[features],fit_tr[yc].astype(int))
+        reg.fit(fit_tr[features],fit_tr[rc])
         p=(a.predict_proba(current[features])[:,1]+b.predict_proba(current[features])[:,1])/2
         exp=reg.predict(current[features])
         for i,(as_of,row) in enumerate(current.iterrows()):
@@ -404,7 +417,7 @@ def main():
     args=ap.parse_args()
     tickers=universe(args.max_symbols)
     prices=download(tickers,args.period)
-    print(f"Price histories downloaded: {len(prices)}")
+    print(f"Price histories downloaded: {len(prices)}", flush=True)
     if "SPY" not in prices: raise RuntimeError("SPY data unavailable")
     rows=[features_for(t,d,prices["SPY"].Close,args.news) for t,d in prices.items() if len(d)>=300]
     if not rows: raise RuntimeError("No sufficiently long price histories")
@@ -422,7 +435,7 @@ def main():
     pred=predict(data)
     if pred.empty: raise RuntimeError("No predictions generated; check data download/training sample")
     print("Fetching recent news sentiment for leading six-month candidates...")
-    pred, news_report = add_news_overlay(pred, max_tickers=120)
+    pred, news_report = add_news_overlay(pred, max_tickers=40)
     pred.to_csv(OUT/"all_predictions.csv",index=False)
     news_report.to_csv(OUT/"news_sentiment_report.csv",index=False)
     six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].sort_values(
