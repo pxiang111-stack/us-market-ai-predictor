@@ -321,7 +321,7 @@ def predict(data):
     results=[]
     for horizon in HORIZONS:
         yc,rc=f"target_up_{horizon}",f"target_ret_{horizon}"
-        tr=data.dropna(subset=[yc,rc]); current=latest.dropna(subset=features)
+        tr=data.dropna(subset=[yc,rc]); current=latest.copy()
         if len(tr)<1000 or tr[yc].nunique()<2 or current.empty:
             print(f"[WARN] Skipping {horizon}: insufficient training/current data"); continue
         a,b=classifier(),classifier(True)
