@@ -15,6 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, brier_score_loss
+from quant_research import add_factor_scores, evaluate_factor_portfolio, factor_information_coefficient
 
 warnings.filterwarnings("ignore")
 OUT = Path("output")
@@ -31,7 +32,7 @@ SNOW DDOG NET ZS MDB TEAM SQ PYPL TGT NKE SBUX TSLA INTC SMCI ARM DE BA ETN SCHW
 CVS BMY GILD REGN BSX SYK ADP PAYX FI ICE CME CBOE MCO MMC AON PGR CB TRV""".split())
 FEATURES = ["ret_1d"] + [f"{k}_{n}" for k in ("mom","vol","ma_gap") for n in (5,21,63,126,252)] + [
     "rsi_14","macd_norm","macd_signal_gap","volume_z_21","range_21","drawdown_126",
-    "relative_mom_21","spy_mom_21","spy_vol_21","news_sentiment"]
+    "relative_mom_21","spy_mom_21","spy_vol_21","news_sentiment","factor_score"]
 
 def clean_ticker(v):
     t = str(v).strip().upper().replace(".", "-")
@@ -422,6 +423,7 @@ def main():
     rows=[features_for(t,d,prices["SPY"].Close,args.news) for t,d in prices.items() if len(d)>=300]
     if not rows: raise RuntimeError("No sufficiently long price histories")
     data=pd.concat(rows).sort_index().replace([np.inf,-np.inf],np.nan)
+    data=add_factor_scores(data)
     modeled = sorted(data["ticker"].dropna().unique())
     print(f"Model data: rows={len(data)}, symbols={len(modeled)}, "
           f"date_range={data.index.min().date()}..{data.index.max().date()}")
@@ -432,6 +434,20 @@ def main():
               f"dates={eligible.index.nunique()}, classes={eligible[yc].nunique()}")
     report=pd.DataFrame([validate(data,h) for h in HORIZONS])
     report.to_csv(OUT/"validation_report.csv",index=False)
+    factor_rows=[]
+    factor_details=[]
+    for h in HORIZONS:
+        summary, detail=evaluate_factor_portfolio(data,h,etfs=ETFS)
+        summary.update(factor_information_coefficient(data,h,etfs=ETFS))
+        factor_rows.append(summary)
+        if not detail.empty:
+            factor_details.append(detail)
+    pd.DataFrame(factor_rows).to_csv(OUT/"factor_validation_report.csv",index=False)
+    if factor_details:
+        pd.concat(factor_details,ignore_index=True).to_csv(OUT/"factor_backtest_detail.csv",index=False)
+    data.reset_index(names="date")[["date","ticker","factor_score","factor_momentum",
+        "factor_relative_strength","factor_trend","factor_low_volatility",
+        "factor_drawdown_control"]].to_csv(OUT/"factor_scores.csv",index=False)
     pred=predict(data)
     if pred.empty: raise RuntimeError("No predictions generated; check data download/training sample")
     print("Fetching recent news sentiment for leading six-month candidates...")
@@ -446,6 +462,7 @@ def main():
         "universe_symbols":len(tickers),"downloaded_symbols":len(prices),
         "modeled_symbols":len({r["ticker"] for r in rows}),
         "six_month_stock_candidates":len(six),"news_csv_present":Path(args.news).exists(),
+        "factor_engine":"cross-sectional momentum/relative strength/trend/low-volatility/drawdown/RSI composite",
         "note":"Research prototype; scores are not guaranteed predictions or investment advice."}]
     ).to_csv(OUT/"run_summary.csv",index=False)
     print("\\nTop 25 six-month candidates:")
