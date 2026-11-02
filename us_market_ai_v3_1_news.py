@@ -209,7 +209,7 @@ def fetch_gdelt_articles(query, max_records=30):
     }
     headers = {"User-Agent": "Mozilla/5.0 (compatible; MarketSentimentResearch/1.0)"}
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=20)
+        response = requests.get(url, params=params, headers=headers, timeout=8)
         response.raise_for_status()
         payload = response.json()
         return payload.get("articles", []) or []
@@ -235,7 +235,7 @@ def score_headlines(articles):
     # Clip extremes and use a modest recency-agnostic mean over the last 7 days.
     return float(np.mean(scores)), len(scores)
 
-def add_news_overlay(predictions, max_tickers=40):
+def add_news_overlay(predictions, max_tickers=15):
     """
     News overlay for the highest-ranked 6m candidates.
     GDELT headlines are current/recent only, so this is deliberately not used
@@ -256,7 +256,9 @@ def add_news_overlay(predictions, max_tickers=40):
     if not np.isfinite(market_score):
         market_score = 0.0
     records = []
-    for ticker in candidates["ticker"].dropna().unique():
+    ticker_list = candidates["ticker"].dropna().unique()
+    for ticker_no, ticker in enumerate(ticker_list, start=1):
+        print(f"[NEWS] Candidate {ticker_no}/{len(ticker_list)}: {ticker}", flush=True)
         # Quoted ticker and $ticker reduce (but do not eliminate) symbol ambiguity.
         articles = fetch_gdelt_articles(f'"{ticker}" OR "${ticker}"', max_records=30)
         stock_score, count = score_headlines(articles)
@@ -451,7 +453,7 @@ def main():
     pred=predict(data)
     if pred.empty: raise RuntimeError("No predictions generated; check data download/training sample")
     print("Fetching recent news sentiment for leading six-month candidates...")
-    pred, news_report = add_news_overlay(pred, max_tickers=40)
+    pred, news_report = add_news_overlay(pred, max_tickers=15)
     pred.to_csv(OUT/"all_predictions.csv",index=False)
     news_report.to_csv(OUT/"news_sentiment_report.csv",index=False)
     six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].sort_values(
@@ -460,7 +462,7 @@ def main():
     six.head(25).to_csv(OUT/"top_25_6m.csv",index=False)
     pd.DataFrame([{"run_time_utc":pd.Timestamp.now(tz="UTC").isoformat(),
         "universe_symbols":len(tickers),"downloaded_symbols":len(prices),
-        "modeled_symbols":len({r["ticker"] for r in rows}),
+        "modeled_symbols":len(modeled),
         "six_month_stock_candidates":len(six),"news_csv_present":Path(args.news).exists(),
         "factor_engine":"cross-sectional momentum/relative strength/trend/low-volatility/drawdown/RSI composite",
         "note":"Research prototype; scores are not guaranteed predictions or investment advice."}]
