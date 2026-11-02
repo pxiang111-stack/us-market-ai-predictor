@@ -7,6 +7,7 @@ on:
     paths:
       - 'us_market_ai_v3.py'
       - 'us_market_ai_v3_1_news.py'
+      - 'quant_research.py'
       - 'requirements.txt'
       - '.github/workflows/daily_scan.yml'
   workflow_dispatch:
@@ -40,7 +41,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run V3.1 news-enabled model
+      - name: Run V4 factor and ML research model
         run: |
           python us_market_ai_v3_1_news.py
 
