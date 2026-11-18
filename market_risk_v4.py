@@ -147,6 +147,43 @@ def fundamentals(ticker):
     except Exception as e: r["error"]=str(e)
     return r
 
+def ai_infrastructure_risk(company_rows):
+    """Transparent company-level capex/financing stress screen; missing fields stay missing."""
+    df=pd.DataFrame(company_rows)
+    if df.empty:
+        return [],{"score":None,"covered_dimensions":0,"companies":0}
+    revenue=pd.to_numeric(df["revenue_latest"],errors="coerce")
+    capex=pd.to_numeric(df["capex_latest"],errors="coerce")
+    interest=pd.to_numeric(df["interest_expense_latest"],errors="coerce")
+    ocf=pd.to_numeric(df["operating_cash_flow_latest"],errors="coerce")
+    debt=pd.to_numeric(df["total_debt_latest"],errors="coerce")
+    cash=pd.to_numeric(df["cash_latest"],errors="coerce")
+    df["capex_to_revenue"]=capex/revenue.where(revenue>0)
+    df["interest_to_revenue"]=interest/revenue.where(revenue>0)
+    df["ocf_after_capex"]=ocf-capex
+    df["debt_to_cash"]=debt/cash.where(cash>0)
+    rules=[
+      ("capex_to_revenue",lambda x:x>0.50,25,"Capex exceeds 50% of quarterly revenue"),
+      ("interest_to_revenue",lambda x:x>0.05,25,"Interest expense exceeds 5% of quarterly revenue"),
+      ("ocf_after_capex",lambda x:x<0,25,"Operating cash flow does not cover capex"),
+      ("debt_to_cash",lambda x:x>2.0,25,"Debt exceeds twice reported cash")
+    ]
+    details=[]; points=0.0; covered=0
+    for col,condition,weight,description in rules:
+        values=pd.to_numeric(df[col],errors="coerce").dropna()
+        if len(values):
+            covered+=1; triggered=int(condition(values).sum())
+            contribution=weight*triggered/len(values); points+=contribution
+            details.append({"metric":col,"companies_with_data":len(values),
+              "companies_triggered":triggered,"risk_points":round(contribution,1),
+              "rule":description})
+        else:
+            details.append({"metric":col,"companies_with_data":0,"companies_triggered":None,
+              "risk_points":None,"rule":"Insufficient data; excluded"})
+    return details,{"score":round(points,1) if covered else None,
+      "covered_dimensions":covered,"companies":len(df),
+      "method":"Equal-weight rule-based screen across selected issuers; not a default probability or calibrated index."}
+
 def headlines():
     try:
         u="https://api.gdeltproject.org/api/v2/doc/doc"
@@ -179,16 +216,21 @@ def main():
             except Exception as e: diagnostics.append({"asset":asset,"horizon":h,"status":"error","error":str(e)})
     stress,stress_summary=market_stress(prices)
     company_data=[fundamentals(t) for t in COMPANIES]
+    ai_risk_details,ai_risk_summary=ai_infrastructure_risk(company_data)
     news=headlines(); now=pd.Timestamp.now(tz="UTC").isoformat()
     pd.DataFrame(forecasts).to_csv(OUT/"market_forecasts_v4.csv",index=False)
     pd.DataFrame(diagnostics).to_csv(OUT/"walkforward_validation_v4.csv",index=False)
     pd.DataFrame(stress).to_csv(OUT/"market_stress_proxies_v4.csv",index=False)
     pd.DataFrame([stress_summary]).to_csv(OUT/"market_stress_summary_v4.csv",index=False)
     pd.DataFrame(company_data).to_csv(OUT/"ai_company_fundamentals_v4.csv",index=False)
+    pd.DataFrame(ai_risk_details).to_csv(OUT/"ai_infrastructure_risk_details_v4.csv",index=False)
+    pd.DataFrame([ai_risk_summary]).to_csv(OUT/"ai_infrastructure_risk_summary_v4.csv",index=False)
     pd.DataFrame(news).to_csv(OUT/"ai_news_v4.csv",index=False)
     summary={"run_time_utc":now,"downloaded_price_series":len(prices),"forecast_rows":len(forecasts),
       "news_articles":len(news),"fundamental_companies":len(company_data),
       "market_stress_proxy_score":stress_summary["risk_score"],"stress_metrics":stress_summary["coverage_items"],
+      "ai_infrastructure_risk_score":ai_risk_summary["score"],
+      "ai_risk_covered_dimensions":ai_risk_summary["covered_dimensions"],
       "options_chain_data":"not_connected"}
     (OUT/"run_summary_v4.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     lines=["# Market Forecast & AI Risk V4","",f"- Run time UTC: {now}",
@@ -201,6 +243,10 @@ def main():
     lines += ["","## Walk-forward holdout diagnostics","",pd.DataFrame(diagnostics).to_markdown(index=False) if diagnostics else "No diagnostics.",
       "","## Market stress proxy","",f"- Score: {stress_summary['risk_score']}/100 (rule-based, not probability).",
       pd.DataFrame(stress).to_markdown(index=False) if stress else "No market stress metrics.",
+      "","## AI infrastructure financing-risk screen","",
+      f"- Score: {ai_risk_summary['score']}/100; covered dimensions: {ai_risk_summary['covered_dimensions']}/4.",
+      f"- Method: {ai_risk_summary['method']}",
+      pd.DataFrame(ai_risk_details).to_markdown(index=False),
       "","## AI company fundamentals","",pd.DataFrame(company_data).to_markdown(index=False),
       "","## Recent AI headlines",""]
     lines += [f"- {a.get('date')}: {a.get('title')} ({a.get('domain')})" for a in news[:30]] or ["No headlines retrieved."]
