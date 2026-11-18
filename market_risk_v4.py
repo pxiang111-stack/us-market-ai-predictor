@@ -17,8 +17,8 @@ from sklearn.metrics import roc_auc_score, brier_score_loss
 warnings.filterwarnings("ignore")
 OUT=Path("output"); OUT.mkdir(exist_ok=True)
 HORIZONS={"5d":5,"10d":10,"20d":20}
-TARGETS={"NQ_proxy_NDX":"^NDX","SOXL":"SOXL"}
-SYMBOLS=sorted(set(["^NDX","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
+TARGETS={"NQ_futures":"NQ=F","SOXL":"SOXL"}
+SYMBOLS=sorted(set(["NQ=F","^NDX","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
  "MSFT","AMZN","GOOGL","META","CRWV","^VIX","HYG","LQD","TLT","IEF","UUP"]))
 COMPANIES=["NVDA","MSFT","AMZN","GOOGL","META","ORCL","CRWV"]
 
@@ -139,7 +139,7 @@ def fundamentals(ticker):
         r.update({"revenue_latest":statement_value(inc,["total revenue","operating revenue"]),
           "interest_expense_latest":statement_value(inc,["interest expense"]),
           "operating_cash_flow_latest":statement_value(cf,["operating cash flow"]),
-          "capex_latest":statement_value(cf,["capital expenditure"]),
+          "capex_latest":abs(statement_value(cf,["capital expenditure"])) if statement_value(cf,["capital expenditure"]) is not None else None,
           "cash_latest":statement_value(bs,["cash and cash equivalents"]),
           "total_debt_latest":statement_value(bs,["total debt"])})
         if r["revenue_latest"] is not None: r["status"]="partial"
@@ -160,9 +160,15 @@ def headlines():
 def main():
     print("[INFO] Downloading 10y market data...",flush=True)
     prices=download_prices(SYMBOLS)
-    if "^NDX" not in prices: raise RuntimeError("Nasdaq-100 (^NDX) price history unavailable")
+    if "NQ=F" not in prices and "^NDX" in prices:
+        target_map={"NQ_proxy_NDX":"^NDX","SOXL":"SOXL"}
+        print("[WARN] NQ futures feed unavailable; using ^NDX cash-index proxy.",flush=True)
+    else:
+        target_map=TARGETS
+    if "NQ=F" not in prices and "^NDX" not in prices:
+        raise RuntimeError("Neither NQ futures nor Nasdaq-100 cash-index data is available")
     forecasts=[]; diagnostics=[]
-    for asset,ticker in TARGETS.items():
+    for asset,ticker in target_map.items():
         if ticker not in prices:
             diagnostics.append({"asset":asset,"status":"price_data_missing"}); continue
         x=make_features(prices,ticker)
