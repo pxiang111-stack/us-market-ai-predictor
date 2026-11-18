@@ -72,8 +72,14 @@ def evaluate_factor_portfolio(
     """
     days = {"1m": 21, "3m": 63, "6m": 126}[horizon]
     ret_col = f"target_ret_{horizon}"
-    z = data.dropna(subset=["factor_score", ret_col]).copy()
+    required_liquidity = {"close_price", "avg_dollar_volume_21"}
+    if not required_liquidity.issubset(data.columns):
+        return {"horizon": horizon, "status": "missing_liquidity_fields",
+                "required_fields": ",".join(sorted(required_liquidity))}, pd.DataFrame()
+    z = data.dropna(subset=["factor_score", ret_col, "close_price", "avg_dollar_volume_21"]).copy()
     z = z[~z["ticker"].isin(etfs or set())]
+    # Match the actionable shortlist's point-in-time tradability screen.
+    z = z[(z["close_price"] >= 5.0) & (z["avg_dollar_volume_21"] >= 5_000_000)]
     dates = np.array(sorted(z.index.unique()))
     if len(dates) < 300:
         return {"horizon": horizon, "status": "insufficient_history",
@@ -124,7 +130,7 @@ def evaluate_factor_portfolio(
         "max_drawdown_proxy": _max_drawdown(net),
         "avg_turnover_proxy": float(detail.turnover_proxy.mean()),
         "transaction_cost_bps_per_turnover": float(transaction_cost_bps),
-        "note": "Periodic non-overlapping horizon baskets; final 30% dates; estimated costs; research proxy, not live performance."
+        "note": "Periodic non-overlapping horizon baskets; final 30% dates; point-in-time price >= $5 and 21d average dollar volume >= $5m; estimated costs; current-listed universe still has survivorship bias; research proxy, not live performance."
     }
     return summary, detail
 
