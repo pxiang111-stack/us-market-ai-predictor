@@ -24,6 +24,13 @@ class NewsOverlayTests(unittest.TestCase):
         self.assertEqual(result.loc[result["horizon"].eq("6m"), "news_confidence"].iloc[0], 0.0)
         self.assertEqual(len(news), 1)
 
+    def test_regression_target_bounds_limit_extreme_outliers(self):
+        values = pd.Series([-50.0] + [0.01 * i for i in range(200)] + [100.0])
+        lower, upper = scanner.regression_target_bounds(values)
+        self.assertGreater(lower, -50.0)
+        self.assertLess(upper, 100.0)
+        self.assertLess(lower, upper)
+
 
 if __name__ == "__main__":
     unittest.main()
