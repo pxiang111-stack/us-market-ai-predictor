@@ -185,6 +185,9 @@ def sentiment_for(ticker, idx, news_path):
 def features_for(t,d,spy,news_path):
     c,h,l,v=d.Close,d.High,d.Low,d.Volume
     r=c.pct_change(); x=pd.DataFrame(index=d.index); x["ret_1d"]=r
+    # Point-in-time price/liquidity fields for tradability screens.
+    x["close_price"]=c
+    x["avg_dollar_volume_21"]=(c*v).rolling(21,min_periods=15).mean()
     for n in (5,21,63,126,252):
         x[f"mom_{n}"]=c.pct_change(n)
         x[f"vol_{n}"]=r.rolling(n).std()*np.sqrt(252)
@@ -469,7 +472,14 @@ def main():
     pred, news_report = add_news_overlay(pred, max_tickers=15)
     pred.to_csv(OUT/"all_predictions.csv",index=False)
     news_report.to_csv(OUT/"news_sentiment_report.csv",index=False)
-    six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].sort_values(
+    latest_liquidity=(data.reset_index(names="date").sort_values("date")
+        .groupby("ticker",as_index=False).tail(1)
+        .set_index("ticker")[["close_price","avg_dollar_volume_21"]])
+    six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].copy()
+    six=six.join(latest_liquidity,on="ticker")
+    # Exclude penny/illiquid names from actionable shortlist; keep raw universe for audit.
+    six=six[(six.close_price>=5.0)&(six.avg_dollar_volume_21>=5_000_000)]
+    six=six.sort_values(
         ["opportunity_score","prob_up","expected_return_model_estimate"],ascending=False)
     six.to_csv(OUT/"top_6m_opportunities.csv",index=False)
     six.head(25).to_csv(OUT/"top_25_6m.csv",index=False)
