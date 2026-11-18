@@ -357,6 +357,17 @@ def model_features(data):
     return FEATURES
 
 
+def regression_target_bounds(values):
+    """Robust per-horizon bounds; extreme historical returns must not dominate fitting."""
+    clean=pd.to_numeric(pd.Series(values),errors="coerce").replace([np.inf,-np.inf],np.nan).dropna()
+    if len(clean)<100:
+        return -0.50, 1.00
+    lower,upper=clean.quantile([0.01,0.99]).astype(float)
+    if not np.isfinite(lower) or not np.isfinite(upper) or lower>=upper:
+        return -0.50, 1.00
+    return float(lower),float(upper)
+
+
 def validate(data,horizon):
     """
     One chronological holdout with a horizon-sized embargo.
@@ -381,6 +392,18 @@ def validate(data,horizon):
     a.fit(fit_tr[features],fit_tr[ycol].astype(int))
     b.fit(fit_tr[features],fit_tr[ycol].astype(int))
     p=(a.predict_proba(te[features])[:,1]+b.predict_proba(te[features])[:,1])/2
+    # Validate the return regressor independently against a simple training-median baseline.
+    ret_low,ret_high=regression_target_bounds(tr[rcol])
+    reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
+        ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
+            l2_regularization=2,min_samples_leaf=50,max_leaf_nodes=15,random_state=17))])
+    reg.fit(fit_tr[features],fit_tr[rcol].clip(ret_low,ret_high))
+    ret_pred=np.clip(reg.predict(te[features]),ret_low,ret_high)
+    ret_actual=te[rcol].to_numpy(dtype=float)
+    baseline=np.full(len(te),float(fit_tr[rcol].median()))
+    ret_mae=float(np.mean(np.abs(ret_actual-ret_pred)))
+    baseline_mae=float(np.mean(np.abs(ret_actual-baseline)))
+    ret_rank_ic=float(pd.Series(ret_pred).corr(pd.Series(ret_actual),method="spearman"))
     y=te[ycol].astype(int)
     te=te.assign(_probability=p)
     cutoff=max(1,int(np.ceil(len(te)*0.10)))
@@ -394,6 +417,14 @@ def validate(data,horizon):
         "n_train":len(tr),"n_test":len(te),
         "auc":float(roc_auc_score(y,p)),
         "brier":float(brier_score_loss(y,p)),
+        "return_mae":ret_mae,
+        "return_median_baseline_mae":baseline_mae,
+        "return_skill_vs_median":float(1-ret_mae/baseline_mae) if baseline_mae>0 else np.nan,
+        "return_rank_ic":ret_rank_ic,
+        "return_prediction_std":float(np.std(ret_pred)),
+        "return_target_std":float(np.std(ret_actual)),
+        "return_clip_lower":ret_low,
+        "return_clip_upper":ret_high,
         "actual_up_rate":float(y.mean()),
         "top_decile_n":int(len(top)),
         "top_decile_up_rate":float(top[ycol].mean()),
@@ -418,20 +449,25 @@ def predict(data):
             continue
         fit_tr=training_sample(tr,yc)
         a,b=classifier(),classifier(True)
+        ret_low,ret_high=regression_target_bounds(tr[rc])
         reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
             ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
-                                                    l2_regularization=2,random_state=17))])
+                l2_regularization=2,min_samples_leaf=50,max_leaf_nodes=15,random_state=17))])
         a.fit(fit_tr[features],fit_tr[yc].astype(int)); b.fit(fit_tr[features],fit_tr[yc].astype(int))
-        reg.fit(fit_tr[features],fit_tr[rc])
+        reg.fit(fit_tr[features],fit_tr[rc].clip(ret_low,ret_high))
         p=(a.predict_proba(current[features])[:,1]+b.predict_proba(current[features])[:,1])/2
-        exp=reg.predict(current[features])
+        exp_raw=reg.predict(current[features])
+        exp=np.clip(exp_raw,ret_low,ret_high)
         for i,(as_of,row) in enumerate(current.iterrows()):
             vol=float(row.get("vol_126",np.nan)); dd=float(row.get("drawdown_126",np.nan))
             vp=.15*max(vol-.35,0) if np.isfinite(vol) else 0
             dp=.08*abs(min(dd,0)) if np.isfinite(dd) else 0
             score=100*(.6*p[i]+.4/(1+np.exp(-np.clip(exp[i]*4,-20,20))))-100*(vp+dp)
             results.append({"as_of":str(pd.Timestamp(as_of).date()),"ticker":row.ticker,
-                "horizon":horizon,"prob_up":float(p[i]),"expected_return_model_estimate":float(exp[i]),
+                "horizon":horizon,"prob_up":float(p[i]),
+                "expected_return_model_estimate_raw":float(exp_raw[i]),
+                "expected_return_model_estimate":float(exp[i]),
+                "return_estimate_clipped":bool(not np.isclose(exp_raw[i],exp[i])),
                 "volatility_6m_annualized":vol,"drawdown_6m":dd,"opportunity_score":float(score)})
     out=pd.DataFrame(results)
     if not out.empty:
