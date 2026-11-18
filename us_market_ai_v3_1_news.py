@@ -501,7 +501,7 @@ def main():
         "modeled_symbols":len(modeled),
         "six_month_stock_candidates":len(six),"news_csv_present":Path(args.news).exists(),
         "factor_engine":"cross-sectional momentum/relative strength/trend/low-volatility/drawdown/RSI composite",
-        "note":"Research prototype; scores are not guaranteed predictions or investment advice."}]
+        "note":"Research prototype; current-listed universe only, so historical results retain survivorship bias; scores are not guaranteed predictions or investment advice."}]
     ).to_csv(OUT/"run_summary.csv",index=False)
     print("\\nTop 25 six-month candidates:")
     print(six.head(25).to_string(index=False) if not six.empty else "No stock candidates.")
