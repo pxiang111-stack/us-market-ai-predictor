@@ -254,8 +254,8 @@ def score_headlines(articles):
 def add_news_overlay(predictions, max_tickers=15):
     """
     News overlay for the highest-ranked 6m candidates.
-    GDELT headlines are current/recent only, so this is deliberately not used
-    in historical model training or presented as a historical backtest feature.
+    Missing news is unavailable evidence, never a neutral score that changes ranks.
+    Current headlines are not used in historical model training/backtests.
     """
     if predictions.empty:
         return predictions, pd.DataFrame()
@@ -269,55 +269,68 @@ def add_news_overlay(predictions, max_tickers=15):
         max_records=50
     )
     market_score, market_count = score_headlines(market_articles)
-    if not np.isfinite(market_score):
-        market_score = 0.0
+    market_available = bool(market_count > 0 and np.isfinite(market_score))
     records = []
     ticker_list = candidates["ticker"].dropna().unique()
     for ticker_no, ticker in enumerate(ticker_list, start=1):
         print(f"[NEWS] Candidate {ticker_no}/{len(ticker_list)}: {ticker}", flush=True)
-        # Quoted ticker and $ticker reduce (but do not eliminate) symbol ambiguity.
         articles = fetch_gdelt_articles(f'"{ticker}" OR "${ticker}"', max_records=30)
         stock_score, count = score_headlines(articles)
-        if not np.isfinite(stock_score):
-            stock_score = 0.0
-        # Blend company headlines (70%) with broad market tone (30%).
-        combined = 0.70 * stock_score + 0.30 * market_score
-        # Confidence guard: with fewer than 3 headlines, shrink toward neutral.
-        confidence = min(count / 5.0, 1.0)
-        adjusted = combined * confidence
+        stock_available = bool(count > 0 and np.isfinite(stock_score))
+
+        if stock_available and market_available:
+            combined = 0.70 * float(stock_score) + 0.30 * float(market_score)
+            confidence = min(count / 5.0, 1.0)
+        elif stock_available:
+            combined = float(stock_score)
+            confidence = min(count / 5.0, 1.0)
+        elif market_available:
+            combined = float(market_score)
+            confidence = 0.25 * min(market_count / 10.0, 1.0)
+        else:
+            combined = np.nan
+            confidence = 0.0
+
         records.append({
             "ticker": ticker,
-            "news_score": float(stock_score),
+            "news_score": float(stock_score) if stock_available else np.nan,
             "news_count_7d": int(count),
-            "market_news_score": float(market_score),
+            "market_news_score": float(market_score) if market_available else np.nan,
             "market_news_count_7d": int(market_count),
-            "combined_news_score": float(adjusted),
+            "combined_news_score": float(combined) if np.isfinite(combined) else np.nan,
             "news_confidence": float(confidence)
         })
         time.sleep(0.15)
+
     news = pd.DataFrame(records)
     if news.empty:
         predictions["news_score"] = np.nan
         predictions["news_count_7d"] = 0
+        predictions["market_news_score"] = np.nan
+        predictions["market_news_count_7d"] = int(market_count)
         predictions["combined_news_score"] = np.nan
+        predictions["news_confidence"] = 0.0
         predictions["news_adjusted_score"] = predictions["opportunity_score"]
         return predictions, news
+
     predictions = predictions.merge(
         news[["ticker","news_score","news_count_7d","market_news_score",
               "market_news_count_7d","combined_news_score","news_confidence"]],
         on="ticker", how="left"
     )
-    # Only six-month rows get the news adjustment. Missing headlines are neutral,
-    # explicitly marked as missing/zero-count rather than treated as positive.
-    mask = predictions["horizon"].eq("6m")
-    sentiment = predictions["combined_news_score"].fillna(0.0)
-    news_component = 50.0 + 50.0 * sentiment.clip(-1, 1)
     predictions["news_adjusted_score"] = predictions["opportunity_score"]
-    predictions.loc[mask, "news_adjusted_score"] = (
-        0.80 * predictions.loc[mask, "opportunity_score"] +
-        0.20 * news_component.loc[mask]
-    )
-    predictions.loc[mask, "opportunity_score"] = predictions.loc[mask, "news_adjusted_score"]
+    mask = predictions["horizon"].eq("6m")
+    usable = mask & predictions["combined_news_score"].notna() & (predictions["news_confidence"] > 0)
+    if usable.any():
+        sentiment = predictions.loc[usable, "combined_news_score"].clip(-1, 1)
+        confidence = predictions.loc[usable, "news_confidence"].clip(0, 1)
+        news_component = 50.0 + 50.0 * sentiment
+        blend_weight = 0.20 * confidence
+        predictions.loc[usable, "news_adjusted_score"] = (
+            (1.0 - blend_weight) * predictions.loc[usable, "opportunity_score"] +
+            blend_weight * news_component
+        )
+        predictions.loc[usable, "opportunity_score"] = predictions.loc[usable, "news_adjusted_score"]
     return predictions, news
 
 def training_sample(frame, target, limit=TRAIN_SAMPLE_LIMIT):
