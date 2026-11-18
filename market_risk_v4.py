@@ -185,14 +185,57 @@ def ai_infrastructure_risk(company_rows):
       "method":"Equal-weight rule-based screen across selected issuers; not a default probability or calibrated index."}
 
 def headlines():
+    """Fetch current AI/semiconductor headlines; fall back to public RSS if GDELT is throttled.
+    This is a current-news report only, not a historical sentiment feature or backtest input.
+    """
+    articles=[]; seen=set()
     try:
         u="https://api.gdeltproject.org/api/v2/doc/doc"
         p={"query":"(artificial intelligence OR data center OR GPU OR semiconductor OR cloud capex OR CoreWeave OR NVIDIA)",
            "mode":"ArtList","format":"json","maxrecords":"60","timespan":"7d","sort":"HybridRel"}
-        r=requests.get(u,params=p,headers={"User-Agent":"Mozilla/5.0"},timeout=20); r.raise_for_status()
-        return [{"date":a.get("seendate"),"title":a.get("title"),"domain":a.get("domain"),"url":a.get("url")} for a in r.json().get("articles",[])]
+        r=requests.get(u,params=p,headers={"User-Agent":"Mozilla/5.0 market-research/1.0"},timeout=20)
+        r.raise_for_status()
+        for a in r.json().get("articles",[]):
+            url=a.get("url")
+            key=url or a.get("title")
+            if key and key not in seen:
+                seen.add(key)
+                articles.append({"date":a.get("seendate"),"title":a.get("title"),
+                    "domain":a.get("domain"),"url":url,"source":"GDELT","query":"AI/semiconductor"})
     except Exception as e:
-        print(f"[WARN] GDELT unavailable: {e}"); return []
+        print(f"[WARN] GDELT unavailable; trying RSS fallback: {e}",flush=True)
+
+    if not articles:
+        import xml.etree.ElementTree as ET
+        rss_queries=[
+            "AI data center capex hyperscaler",
+            "NVIDIA semiconductor GPU supply",
+            "Microsoft Amazon Google cloud earnings capex",
+            "CoreWeave financing debt data center",
+            "AI infrastructure spending revenue"
+        ]
+        for q in rss_queries:
+            try:
+                r=requests.get("https://news.google.com/rss/search",
+                    params={"q":q,"hl":"en-US","gl":"US","ceid":"US:en"},
+                    headers={"User-Agent":"Mozilla/5.0 market-research/1.0"},timeout=15)
+                r.raise_for_status()
+                root=ET.fromstring(r.content)
+                for item in root.findall(".//item"):
+                    title=item.findtext("title")
+                    url=item.findtext("link")
+                    date=item.findtext("pubDate")
+                    source_node=item.find("source")
+                    domain=(source_node.text if source_node is not None else None)
+                    key=url or title
+                    if title and key not in seen:
+                        seen.add(key)
+                        articles.append({"date":date,"title":title,"domain":domain,
+                            "url":url,"source":"Google News RSS","query":q})
+            except Exception as e:
+                print(f"[WARN] RSS query failed ({q}): {e}",flush=True)
+            time.sleep(1.0)
+    return articles
 
 def main():
     print("[INFO] Downloading 10y market data...",flush=True)
@@ -234,7 +277,7 @@ def main():
       "options_chain_data":"not_connected"}
     (OUT/"run_summary_v4.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     lines=["# Market Forecast & AI Risk V4","",f"- Run time UTC: {now}",
-      "- Sources: Yahoo Finance market prices/company statements; GDELT recent headlines.",
+      "- Sources: Yahoo Finance market prices/company statements; GDELT headlines with Google News RSS fallback.",
       "- Forecasts are research estimates, not investment advice or guaranteed outcomes.",
       "- GEX, Call Wall, Put Wall and dealer positioning are not connected; no synthetic values are shown.","",
       "## NQ / SOXL forecasts",""]
@@ -255,7 +298,7 @@ def main():
       "- Historical q10/q50/q90 are empirical forward-return quantiles, not confidence intervals.",
       "- Financial statement line items vary; missing values are not interpreted as zero.",
       "- Credit ETF ratios are market proxies, not CCC spreads or CDS.",
-      "- Current headlines are not inserted into historical training, avoiding false historical news backtests.",
+      "- Current headlines are report-only; they are not inserted into historical training, avoiding false historical news backtests.",
       "- Universe is limited to the explicitly listed index, ETF, cloud and semiconductor symbols; not a whole-market scan.",""]
     (OUT/"market_dashboard_v4.md").write_text("\n".join(lines),encoding="utf-8")
     print(json.dumps(summary,indent=2),flush=True)
