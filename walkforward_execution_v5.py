@@ -62,9 +62,16 @@ def simulate_trades(
         if not all(np.isfinite(v) for v in (entry, stop, target1, target2)) or entry <= 0:
             continue
         direction = 1 if side == "LONG" else -1
+        # The signal's stop is an absolute invalidation price from close t, but
+        # the fill occurs at open t+1. Re-anchor 1R/2R to the actual fill so
+        # target distances remain consistent with the risk actually sized.
         risk_per_unit = abs(entry - stop)
+        if risk_per_unit <= 0:
+            continue
+        target1 = entry + direction * risk_per_unit
+        target2 = entry + direction * 2.0 * risk_per_unit
         valid = (stop < entry < target1 < target2) if direction == 1 else (target2 < target1 < entry < stop)
-        if risk_per_unit <= 0 or not valid:
+        if not valid:
             continue
 
         risk_cash = equity * risk_budget_pct
@@ -128,6 +135,8 @@ def simulate_trades(
         ledger.append({
             "signal_date": signal_date, "entry_date": dates[entry_i], "exit_date": dates[exit_i],
             "side": side, "entry_price": entry, "exit_price": exit_price,
+            "risk_per_unit_at_fill": risk_per_unit, "target_1r_at_fill": target1,
+            "target_2r_at_fill": target2,
             "exit_reason": exit_reason, "units": units,
             "partial_exit_date": partial_date, "partial_exit_price": partial_price,
             "partial_units": partial_units, "partial_estimated_costs": partial_cost,
