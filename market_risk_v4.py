@@ -102,7 +102,7 @@ def merge_market_structure_features(x, bars, ticker):
 
 
 def download_market_structure_bars(ticker, period="10y"):
-    raw = yf.download(ticker, period=period, interval="1d", auto_adjust=False,
+    raw = yf.download(ticker, period=period, interval="1d", auto_adjust=True,
                        progress=False, threads=False, timeout=25)
     if raw is None or raw.empty:
         raise ValueError(f"No OHLCV data returned for {ticker}")
