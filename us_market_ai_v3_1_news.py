@@ -185,6 +185,9 @@ def sentiment_for(ticker, idx, news_path):
 def features_for(t,d,spy,news_path):
     c,h,l,v=d.Close,d.High,d.Low,d.Volume
     r=c.pct_change(); x=pd.DataFrame(index=d.index); x["ret_1d"]=r
+    # Point-in-time price/liquidity fields for tradability screens.
+    x["close_price"]=c
+    x["avg_dollar_volume_21"]=(c*v).rolling(21,min_periods=15).mean()
     for n in (5,21,63,126,252):
         x[f"mom_{n}"]=c.pct_change(n)
         x[f"vol_{n}"]=r.rolling(n).std()*np.sqrt(252)
@@ -251,8 +254,8 @@ def score_headlines(articles):
 def add_news_overlay(predictions, max_tickers=15):
     """
     News overlay for the highest-ranked 6m candidates.
-    GDELT headlines are current/recent only, so this is deliberately not used
-    in historical model training or presented as a historical backtest feature.
+    Missing news is unavailable evidence, never a neutral score that changes ranks.
+    Current headlines are not used in historical model training/backtests.
     """
     if predictions.empty:
         return predictions, pd.DataFrame()
@@ -266,55 +269,68 @@ def add_news_overlay(predictions, max_tickers=15):
         max_records=50
     )
     market_score, market_count = score_headlines(market_articles)
-    if not np.isfinite(market_score):
-        market_score = 0.0
+    market_available = bool(market_count > 0 and np.isfinite(market_score))
     records = []
     ticker_list = candidates["ticker"].dropna().unique()
     for ticker_no, ticker in enumerate(ticker_list, start=1):
         print(f"[NEWS] Candidate {ticker_no}/{len(ticker_list)}: {ticker}", flush=True)
-        # Quoted ticker and $ticker reduce (but do not eliminate) symbol ambiguity.
         articles = fetch_gdelt_articles(f'"{ticker}" OR "${ticker}"', max_records=30)
         stock_score, count = score_headlines(articles)
-        if not np.isfinite(stock_score):
-            stock_score = 0.0
-        # Blend company headlines (70%) with broad market tone (30%).
-        combined = 0.70 * stock_score + 0.30 * market_score
-        # Confidence guard: with fewer than 3 headlines, shrink toward neutral.
-        confidence = min(count / 5.0, 1.0)
-        adjusted = combined * confidence
+        stock_available = bool(count > 0 and np.isfinite(stock_score))
+
+        if stock_available and market_available:
+            combined = 0.70 * float(stock_score) + 0.30 * float(market_score)
+            confidence = min(count / 5.0, 1.0)
+        elif stock_available:
+            combined = float(stock_score)
+            confidence = min(count / 5.0, 1.0)
+        elif market_available:
+            combined = float(market_score)
+            confidence = 0.25 * min(market_count / 10.0, 1.0)
+        else:
+            combined = np.nan
+            confidence = 0.0
+
         records.append({
             "ticker": ticker,
-            "news_score": float(stock_score),
+            "news_score": float(stock_score) if stock_available else np.nan,
             "news_count_7d": int(count),
-            "market_news_score": float(market_score),
+            "market_news_score": float(market_score) if market_available else np.nan,
             "market_news_count_7d": int(market_count),
-            "combined_news_score": float(adjusted),
+            "combined_news_score": float(combined) if np.isfinite(combined) else np.nan,
             "news_confidence": float(confidence)
         })
         time.sleep(0.15)
+
     news = pd.DataFrame(records)
     if news.empty:
         predictions["news_score"] = np.nan
         predictions["news_count_7d"] = 0
+        predictions["market_news_score"] = np.nan
+        predictions["market_news_count_7d"] = int(market_count)
         predictions["combined_news_score"] = np.nan
+        predictions["news_confidence"] = 0.0
         predictions["news_adjusted_score"] = predictions["opportunity_score"]
         return predictions, news
+
     predictions = predictions.merge(
         news[["ticker","news_score","news_count_7d","market_news_score",
               "market_news_count_7d","combined_news_score","news_confidence"]],
         on="ticker", how="left"
     )
-    # Only six-month rows get the news adjustment. Missing headlines are neutral,
-    # explicitly marked as missing/zero-count rather than treated as positive.
-    mask = predictions["horizon"].eq("6m")
-    sentiment = predictions["combined_news_score"].fillna(0.0)
-    news_component = 50.0 + 50.0 * sentiment.clip(-1, 1)
     predictions["news_adjusted_score"] = predictions["opportunity_score"]
-    predictions.loc[mask, "news_adjusted_score"] = (
-        0.80 * predictions.loc[mask, "opportunity_score"] +
-        0.20 * news_component.loc[mask]
-    )
-    predictions.loc[mask, "opportunity_score"] = predictions.loc[mask, "news_adjusted_score"]
+    mask = predictions["horizon"].eq("6m")
+    usable = mask & predictions["combined_news_score"].notna() & (predictions["news_confidence"] > 0)
+    if usable.any():
+        sentiment = predictions.loc[usable, "combined_news_score"].clip(-1, 1)
+        confidence = predictions.loc[usable, "news_confidence"].clip(0, 1)
+        news_component = 50.0 + 50.0 * sentiment
+        blend_weight = 0.20 * confidence
+        predictions.loc[usable, "news_adjusted_score"] = (
+            (1.0 - blend_weight) * predictions.loc[usable, "opportunity_score"] +
+            blend_weight * news_component
+        )
+        predictions.loc[usable, "opportunity_score"] = predictions.loc[usable, "news_adjusted_score"]
     return predictions, news
 
 def training_sample(frame, target, limit=TRAIN_SAMPLE_LIMIT):
@@ -341,6 +357,17 @@ def model_features(data):
     return FEATURES
 
 
+def regression_target_bounds(values):
+    """Robust per-horizon bounds; extreme historical returns must not dominate fitting."""
+    clean=pd.to_numeric(pd.Series(values),errors="coerce").replace([np.inf,-np.inf],np.nan).dropna()
+    if len(clean)<100:
+        return -0.50, 1.00
+    lower,upper=clean.quantile([0.01,0.99]).astype(float)
+    if not np.isfinite(lower) or not np.isfinite(upper) or lower>=upper:
+        return -0.50, 1.00
+    return float(lower),float(upper)
+
+
 def validate(data,horizon):
     """
     One chronological holdout with a horizon-sized embargo.
@@ -365,6 +392,18 @@ def validate(data,horizon):
     a.fit(fit_tr[features],fit_tr[ycol].astype(int))
     b.fit(fit_tr[features],fit_tr[ycol].astype(int))
     p=(a.predict_proba(te[features])[:,1]+b.predict_proba(te[features])[:,1])/2
+    # Validate the return regressor independently against a simple training-median baseline.
+    ret_low,ret_high=regression_target_bounds(tr[rcol])
+    reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
+        ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
+            l2_regularization=2,min_samples_leaf=50,max_leaf_nodes=15,random_state=17))])
+    reg.fit(fit_tr[features],fit_tr[rcol].clip(ret_low,ret_high))
+    ret_pred=np.clip(reg.predict(te[features]),ret_low,ret_high)
+    ret_actual=te[rcol].to_numpy(dtype=float)
+    baseline=np.full(len(te),float(fit_tr[rcol].median()))
+    ret_mae=float(np.mean(np.abs(ret_actual-ret_pred)))
+    baseline_mae=float(np.mean(np.abs(ret_actual-baseline)))
+    ret_rank_ic=float(pd.Series(ret_pred).corr(pd.Series(ret_actual),method="spearman"))
     y=te[ycol].astype(int)
     te=te.assign(_probability=p)
     cutoff=max(1,int(np.ceil(len(te)*0.10)))
@@ -378,6 +417,14 @@ def validate(data,horizon):
         "n_train":len(tr),"n_test":len(te),
         "auc":float(roc_auc_score(y,p)),
         "brier":float(brier_score_loss(y,p)),
+        "return_mae":ret_mae,
+        "return_median_baseline_mae":baseline_mae,
+        "return_skill_vs_median":float(1-ret_mae/baseline_mae) if baseline_mae>0 else np.nan,
+        "return_rank_ic":ret_rank_ic,
+        "return_prediction_std":float(np.std(ret_pred)),
+        "return_target_std":float(np.std(ret_actual)),
+        "return_clip_lower":ret_low,
+        "return_clip_upper":ret_high,
         "actual_up_rate":float(y.mean()),
         "top_decile_n":int(len(top)),
         "top_decile_up_rate":float(top[ycol].mean()),
@@ -402,20 +449,25 @@ def predict(data):
             continue
         fit_tr=training_sample(tr,yc)
         a,b=classifier(),classifier(True)
+        ret_low,ret_high=regression_target_bounds(tr[rc])
         reg=Pipeline([("imputer",SimpleImputer(strategy="median",add_indicator=True)),
             ("model",HistGradientBoostingRegressor(max_iter=150,learning_rate=.05,
-                                                    l2_regularization=2,random_state=17))])
+                l2_regularization=2,min_samples_leaf=50,max_leaf_nodes=15,random_state=17))])
         a.fit(fit_tr[features],fit_tr[yc].astype(int)); b.fit(fit_tr[features],fit_tr[yc].astype(int))
-        reg.fit(fit_tr[features],fit_tr[rc])
+        reg.fit(fit_tr[features],fit_tr[rc].clip(ret_low,ret_high))
         p=(a.predict_proba(current[features])[:,1]+b.predict_proba(current[features])[:,1])/2
-        exp=reg.predict(current[features])
+        exp_raw=reg.predict(current[features])
+        exp=np.clip(exp_raw,ret_low,ret_high)
         for i,(as_of,row) in enumerate(current.iterrows()):
             vol=float(row.get("vol_126",np.nan)); dd=float(row.get("drawdown_126",np.nan))
             vp=.15*max(vol-.35,0) if np.isfinite(vol) else 0
             dp=.08*abs(min(dd,0)) if np.isfinite(dd) else 0
             score=100*(.6*p[i]+.4/(1+np.exp(-np.clip(exp[i]*4,-20,20))))-100*(vp+dp)
             results.append({"as_of":str(pd.Timestamp(as_of).date()),"ticker":row.ticker,
-                "horizon":horizon,"prob_up":float(p[i]),"expected_return_model_estimate":float(exp[i]),
+                "horizon":horizon,"prob_up":float(p[i]),
+                "expected_return_model_estimate_raw":float(exp_raw[i]),
+                "expected_return_model_estimate":float(exp[i]),
+                "return_estimate_clipped":bool(not np.isclose(exp_raw[i],exp[i])),
                 "volatility_6m_annualized":vol,"drawdown_6m":dd,"opportunity_score":float(score)})
     out=pd.DataFrame(results)
     if not out.empty:
@@ -469,7 +521,14 @@ def main():
     pred, news_report = add_news_overlay(pred, max_tickers=15)
     pred.to_csv(OUT/"all_predictions.csv",index=False)
     news_report.to_csv(OUT/"news_sentiment_report.csv",index=False)
-    six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].sort_values(
+    latest_liquidity=(data.reset_index(names="date").sort_values("date")
+        .groupby("ticker",as_index=False).tail(1)
+        .set_index("ticker")[["close_price","avg_dollar_volume_21"]])
+    six=pred[(pred.horizon=="6m")&(~pred.ticker.isin(ETFS))].copy()
+    six=six.join(latest_liquidity,on="ticker")
+    # Exclude penny/illiquid names from actionable shortlist; keep raw universe for audit.
+    six=six[(six.close_price>=5.0)&(six.avg_dollar_volume_21>=5_000_000)]
+    six=six.sort_values(
         ["opportunity_score","prob_up","expected_return_model_estimate"],ascending=False)
     six.to_csv(OUT/"top_6m_opportunities.csv",index=False)
     six.head(25).to_csv(OUT/"top_25_6m.csv",index=False)
@@ -478,7 +537,7 @@ def main():
         "modeled_symbols":len(modeled),
         "six_month_stock_candidates":len(six),"news_csv_present":Path(args.news).exists(),
         "factor_engine":"cross-sectional momentum/relative strength/trend/low-volatility/drawdown/RSI composite",
-        "note":"Research prototype; scores are not guaranteed predictions or investment advice."}]
+        "note":"Research prototype; current-listed universe only, so historical results retain survivorship bias; scores are not guaranteed predictions or investment advice."}]
     ).to_csv(OUT/"run_summary.csv",index=False)
     print("\\nTop 25 six-month candidates:")
     print(six.head(25).to_string(index=False) if not six.empty else "No stock candidates.")

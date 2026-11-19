@@ -23,6 +23,8 @@ class FactorResearchTests(unittest.TestCase):
                 future = .025 * latent[i] + rng.normal(scale=.04)
                 rows.append({
                     "date": dt, "ticker": ticker,
+                    "close_price": float(rng.uniform(10, 250)),
+                    "avg_dollar_volume_21": float(rng.uniform(6_000_000, 500_000_000)),
                     "mom_21": mom21, "mom_63": latent[i] + rng.normal(scale=.2),
                     "mom_126": latent[i] + rng.normal(scale=.2),
                     "mom_252": latent[i] + rng.normal(scale=.2),
