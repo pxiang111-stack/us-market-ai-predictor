@@ -1,1 +1,1 @@
-Rerun after fixing heterogeneous per-symbol/horizon DataFrame aggregation; includes adjusted OHLC alignment and two-stage exits.
+Rerun after aligning signal eligibility with worst-case round-trip commissions and two-sided slippage; includes schema-safe aggregation.
