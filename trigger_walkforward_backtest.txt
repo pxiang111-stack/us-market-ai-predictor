@@ -1,1 +1,1 @@
-Rerun after aligning signal eligibility with worst-case round-trip commissions and two-sided slippage; includes schema-safe aggregation.
+Rerun after adding matched-period SPY and QQQ benchmarks to the V5 walk-forward evaluation.
