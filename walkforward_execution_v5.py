@@ -148,7 +148,7 @@ def simulate_trades(
                 realized += trade["net_pnl"]
                 continue
             if trade["entry_date"] <= d <= trade["exit_date"]:
-                mark = float(b.loc[d, "Close"])
+                mark = trade["exit_price"] if d == trade["exit_date"] else float(b.loc[d, "Close"])
                 direction = 1 if trade["side"] == "LONG" else -1
                 if pd.notna(trade["partial_exit_date"]) and trade["partial_exit_date"] <= d:
                     partial_pnl = trade["partial_units"] * direction * (
