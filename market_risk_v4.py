@@ -81,7 +81,10 @@ def merge_market_structure_features(x, bars, ticker):
             "signed_volume_proxy_ratio", "trend_above_sma20", "sma20_above_sma50",
             "sma50_above_sma200", "range_position_20", "breakout_up_20",
             "breakout_down_20", "failed_breakout_up_20", "failed_breakout_down_20",
-            "breakout_up_volume_confirmed", "breakout_down_volume_confirmed"]
+            "breakout_up_volume_confirmed", "breakout_down_volume_confirmed",
+            "close_location_volume_pressure", "effort_result_absorption_proxy",
+            "volume_weighted_close_location_20", "range_compression_14_50",
+            "spring_reclaim_20", "upthrust_reject_20"]
     ms = ms[cols].rename(columns={c: "ms_" + c for c in cols})
     out = x.copy()
     xidx = pd.to_datetime(out.index)
