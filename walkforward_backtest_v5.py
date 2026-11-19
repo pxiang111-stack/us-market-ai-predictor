@@ -26,7 +26,7 @@ COST_CASES_BPS = (10.0, 20.0, 30.0)
 
 
 def fetch_bars(ticker: str) -> pd.DataFrame:
-    raw = yf.download(ticker, period="10y", interval="1d", auto_adjust=False,
+    raw = yf.download(ticker, period="10y", interval="1d", auto_adjust=True,
                       progress=False, threads=False, timeout=30)
     if raw is None or raw.empty:
         raise RuntimeError(f"No OHLCV data for {ticker}")
