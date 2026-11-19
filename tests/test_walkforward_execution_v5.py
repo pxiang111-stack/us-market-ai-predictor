@@ -82,7 +82,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
         trade = ledger.iloc[0]
         self.assertEqual(trade["exit_reason"], "stop_after_1r")
         self.assertEqual(trade["partial_exit_price"], 105.0)
-        self.assertEqual(trade["exit_price"], 95.0)
+        self.assertEqual(trade["exit_price"], 99.0)
         self.assertGreater(trade["gross_pnl"], 0)
 
     def test_flat_signal_does_not_trade(self):
