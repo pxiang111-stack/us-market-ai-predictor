@@ -50,16 +50,17 @@ def build_market_structure(
     sma20 = close.rolling(20, min_periods=20).mean()
     sma50 = close.rolling(50, min_periods=50).mean()
     sma200 = close.rolling(200, min_periods=200).mean()
-    out["trend_above_sma20"] = (close > sma20).astype(float)
-    out["sma20_above_sma50"] = (sma20 > sma50).astype(float)
-    out["sma50_above_sma200"] = (sma50 > sma200).astype(float)
+    out["trend_above_sma20"] = (close > sma20).astype(float).where(sma20.notna())
+    out["sma20_above_sma50"] = (sma20 > sma50).astype(float).where(sma20.notna() & sma50.notna())
+    out["sma50_above_sma200"] = (sma50 > sma200).astype(float).where(sma50.notna() & sma200.notna())
     prior_high20 = d["High"].shift(1).rolling(20, min_periods=20).max()
     prior_low20 = d["Low"].shift(1).rolling(20, min_periods=20).min()
     out["range_position_20"] = ((close - prior_low20) / (prior_high20 - prior_low20).replace(0, np.nan)).clip(0, 1)
-    out["breakout_up_20"] = (close > prior_high20).astype(float)
-    out["breakout_down_20"] = (close < prior_low20).astype(float)
-    out["failed_breakout_up_20"] = ((d["High"] > prior_high20) & (close <= prior_high20)).astype(float)
-    out["failed_breakout_down_20"] = ((d["Low"] < prior_low20) & (close >= prior_low20)).astype(float)
+    valid_range = prior_high20.notna() & prior_low20.notna()
+    out["breakout_up_20"] = (close > prior_high20).astype(float).where(valid_range)
+    out["breakout_down_20"] = (close < prior_low20).astype(float).where(valid_range)
+    out["failed_breakout_up_20"] = ((d["High"] > prior_high20) & (close <= prior_high20)).astype(float).where(valid_range)
+    out["failed_breakout_down_20"] = ((d["Low"] < prior_low20) & (close >= prior_low20)).astype(float).where(valid_range)
 
     # Use only bars strictly before the current completed bar as the baseline.
     prior_volume = d["Volume"].shift(1)
@@ -76,8 +77,8 @@ def build_market_structure(
         out["signed_volume_proxy_ratio"] = (
             out["signed_volume_proxy"] / d["Volume"].replace(0, np.nan)
         )
-        out["breakout_up_volume_confirmed"] = ((out["breakout_up_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float)
-        out["breakout_down_volume_confirmed"] = ((out["breakout_down_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float)
+        out["breakout_up_volume_confirmed"] = ((out["breakout_up_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_up_20"].notna())
+        out["breakout_down_volume_confirmed"] = ((out["breakout_down_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_down_20"].notna())
         out["volume_data_status"] = "vendor_volume_available_proxy_only"
     else:
         for col in (
