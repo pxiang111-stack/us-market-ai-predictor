@@ -21,8 +21,9 @@ class WalkForwardExecutionTests(unittest.TestCase):
         ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
         self.assertEqual(len(ledger), 1)
         self.assertEqual(ledger.iloc[0]["entry_date"], self.dates[1])
-        self.assertEqual(ledger.iloc[0]["exit_reason"], "target_1r")
-        self.assertEqual(ledger.iloc[0]["exit_price"], 105.0)
+        self.assertEqual(ledger.iloc[0]["exit_reason"], "time_exit_after_1r")
+        self.assertEqual(ledger.iloc[0]["partial_exit_price"], 105.0)
+        self.assertEqual(ledger.iloc[0]["partial_units"], ledger.iloc[0]["units"] * 0.5)
         self.assertEqual(len(_), len(bars))
         stats = performance_summary(ledger, _)
         self.assertEqual(stats["trade_count"], 1)
@@ -49,6 +50,36 @@ class WalkForwardExecutionTests(unittest.TestCase):
         ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
         self.assertEqual(ledger.iloc[0]["exit_reason"], "gap_stop")
         self.assertEqual(ledger.iloc[0]["exit_price"], 90.0)
+
+
+    def test_two_stage_targets_take_half_at_1r_and_half_at_2r(self):
+        bars = pd.DataFrame({
+            "Open": [100, 101, 103, 106, 106],
+            "High": [101, 111, 104, 107, 107],
+            "Low": [99, 100, 102, 105, 105],
+            "Close": [100, 109, 103, 106, 106],
+        }, index=self.dates)
+        ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
+        trade = ledger.iloc[0]
+        self.assertEqual(trade["exit_reason"], "target_2r")
+        self.assertEqual(trade["partial_exit_price"], 105.0)
+        self.assertEqual(trade["exit_price"], 110.0)
+        expected = trade["units"] * 0.5 * (105.0 - 101.0) + trade["units"] * 0.5 * (110.0 - 101.0)
+        self.assertAlmostEqual(trade["gross_pnl"], expected)
+
+    def test_stop_after_first_target_keeps_partial_profit(self):
+        bars = pd.DataFrame({
+            "Open": [100, 101, 100, 100, 100],
+            "High": [101, 106, 101, 101, 101],
+            "Low": [99, 100, 94, 99, 99],
+            "Close": [100, 104, 95, 100, 100],
+        }, index=self.dates)
+        ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
+        trade = ledger.iloc[0]
+        self.assertEqual(trade["exit_reason"], "stop_after_1r")
+        self.assertEqual(trade["partial_exit_price"], 105.0)
+        self.assertEqual(trade["exit_price"], 95.0)
+        self.assertGreater(trade["gross_pnl"], 0)
 
     def test_flat_signal_does_not_trade(self):
         bars = pd.DataFrame({"Open":[100]*5,"High":[101]*5,"Low":[99]*5,"Close":[100]*5},index=self.dates)
