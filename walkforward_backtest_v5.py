@@ -178,6 +178,7 @@ def main():
         "cost_cases_round_trip_bps": list(COST_CASES_BPS),
         "risk_budget_pct": 0.5,
         "max_gross_exposure": 1.0,
+        "position_units_are_not_exchange_contracts": True,
         "shorts_enabled_only_for": ["NQ=F"],
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
@@ -190,6 +191,7 @@ def main():
             "Model probabilities are not calibrated; a probability threshold is not a measured win probability.",
             "Transaction costs and slippage are sensitivity assumptions, not verified broker fills.",
             "NQ=F continuous futures series may have roll and vendor adjustment limitations.",
+            "Position sizing uses normalized price units; NQ=F units are not integer CME contracts and do not model contract multipliers or futures margin.",
         ],
     }
     (OUT / "backtest_summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
