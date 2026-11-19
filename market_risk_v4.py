@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 OUT=Path("output"); OUT.mkdir(exist_ok=True)
 HORIZONS={"5d":5,"10d":10,"20d":20}
 TARGETS={"NQ_futures":"NQ=F","SOXL":"SOXL"}
-SYMBOLS=sorted(set(["NQ=F","^NDX","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
+SYMBOLS=sorted(set(["NQ=F","ES=F","^NDX","^GSPC","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
  "MSFT","AMZN","GOOGL","META","CRWV","^VIX","HYG","LQD","TLT","IEF","UUP"]))
 COMPANIES=["NVDA","MSFT","AMZN","GOOGL","META","ORCL","CRWV"]
 
@@ -325,7 +325,9 @@ def main():
                         "ms_sma20_above_sma50", "ms_sma50_above_sma200", "ms_range_position_20",
                         "ms_breakout_up_20", "ms_breakout_down_20", "ms_failed_breakout_up_20",
                         "ms_failed_breakout_down_20", "ms_breakout_up_volume_confirmed",
-                        "ms_breakout_down_volume_confirmed"):
+                        "ms_breakout_down_volume_confirmed", "ms_close_location_volume_pressure",
+                        "ms_effort_result_absorption_proxy", "ms_volume_weighted_close_location_20",
+                        "ms_range_compression_14_50", "ms_spring_reclaim_20", "ms_upthrust_reject_20"):
                 x[col] = np.nan
         structure_metadata.append(structure_meta)
         for h in HORIZONS:
