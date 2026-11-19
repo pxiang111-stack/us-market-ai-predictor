@@ -1,1 +1,1 @@
-One-shot trigger for the validated V5 purged walk-forward backtest.
+Validated rerun: adjusted OHLC aligned to adjusted close; two-stage exits and reconciled equity curve.
