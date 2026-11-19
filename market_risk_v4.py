@@ -13,6 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingRegressor
 from sklearn.metrics import roc_auc_score, brier_score_loss
+from market_structure_v5 import build_market_structure
 
 warnings.filterwarnings("ignore")
 OUT=Path("output"); OUT.mkdir(exist_ok=True)
@@ -61,6 +62,58 @@ def make_features(prices,ticker):
         cr=prices["HYG"].reindex(x.index).ffill()/prices["LQD"].reindex(x.index).ffill()
         x["credit_ratio"]=cr; x["credit_mom20"]=cr.pct_change(20)
     return x.replace([np.inf,-np.inf],np.nan)
+
+
+def merge_market_structure_features(x, bars, ticker):
+    """Join causal daily OHLCV structure features to model inputs."""
+    if bars is None or bars.empty:
+        raise ValueError(f"No OHLCV bars supplied for {ticker}")
+    d = bars.copy()
+    idx = pd.to_datetime(d.index)
+    if getattr(idx, "tz", None) is not None:
+        idx = idx.tz_localize(None)
+    d.index = idx.normalize()
+    d = d[~d.index.duplicated(keep="last")].sort_index()
+    volume_valid = ticker not in {"^NDX", "^GSPC", "^SOX"}
+    ms = build_market_structure(d, open_interest=None, volume_is_valid=volume_valid)
+    cols = ["relative_volume", "volume_zscore", "close_location", "body_fraction",
+            "signed_volume_proxy_ratio"]
+    ms = ms[cols].rename(columns={c: "ms_" + c for c in cols})
+    out = x.copy()
+    xidx = pd.to_datetime(out.index)
+    if getattr(xidx, "tz", None) is not None:
+        xidx = xidx.tz_localize(None)
+    out.index = xidx.normalize()
+    out = out.join(ms, how="left")
+    metadata = {
+        "ticker": ticker,
+        "volume_valid": volume_valid,
+        "bars": int(len(d)),
+        "feature_rows_covered": int(ms.notna().any(axis=1).sum()),
+        "rvol_latest": None if pd.isna(ms["ms_relative_volume"].iloc[-1]) else float(ms["ms_relative_volume"].iloc[-1]),
+        "oi_status": "unavailable",
+        "session_split": False,
+    }
+    return out, metadata
+
+
+def download_market_structure_bars(ticker, period="10y"):
+    raw = yf.download(ticker, period=period, interval="1d", auto_adjust=False,
+                       progress=False, threads=False, timeout=25)
+    if raw is None or raw.empty:
+        raise ValueError(f"No OHLCV data returned for {ticker}")
+    if isinstance(raw.columns, pd.MultiIndex):
+        if ticker in raw.columns.get_level_values(-1):
+            raw = raw.xs(ticker, axis=1, level=-1)
+        elif ticker in raw.columns.get_level_values(0):
+            raw = raw.xs(ticker, axis=1, level=0)
+        else:
+            raw.columns = raw.columns.get_level_values(0)
+    required = ["Open", "High", "Low", "Close", "Volume"]
+    missing = [c for c in required if c not in raw.columns]
+    if missing:
+        raise ValueError(f"{ticker} OHLCV missing: {missing}")
+    return raw[required].dropna(subset=["Close"]).sort_index()
 
 def labeled(x,close,horizon):
     n=HORIZONS[horizon]; y=x.copy()
@@ -247,11 +300,22 @@ def main():
         target_map=TARGETS
     if "NQ=F" not in prices and "^NDX" not in prices:
         raise RuntimeError("Neither NQ futures nor Nasdaq-100 cash-index data is available")
-    forecasts=[]; diagnostics=[]
+    forecasts=[]; diagnostics=[]; structure_metadata=[]
     for asset,ticker in target_map.items():
         if ticker not in prices:
             diagnostics.append({"asset":asset,"status":"price_data_missing"}); continue
         x=make_features(prices,ticker)
+        try:
+            structure_bars = download_market_structure_bars(ticker)
+            x, structure_meta = merge_market_structure_features(x, structure_bars, ticker)
+            structure_meta["status"] = "connected"
+        except Exception as exc:
+            structure_meta = {"ticker": ticker, "status": "unavailable", "error": str(exc),
+                              "oi_status": "unavailable", "session_split": False}
+            for col in ("ms_relative_volume", "ms_volume_zscore", "ms_close_location",
+                        "ms_body_fraction", "ms_signed_volume_proxy_ratio"):
+                x[col] = np.nan
+        structure_metadata.append(structure_meta)
         for h in HORIZONS:
             try:
                 row,diag=run_forecast(asset,ticker,prices,x,h); diagnostics.append(diag)
@@ -263,6 +327,7 @@ def main():
     news=headlines(); now=pd.Timestamp.now(tz="UTC").isoformat()
     pd.DataFrame(forecasts).to_csv(OUT/"market_forecasts_v4.csv",index=False)
     pd.DataFrame(diagnostics).to_csv(OUT/"walkforward_validation_v4.csv",index=False)
+    pd.DataFrame(structure_metadata).to_csv(OUT/"market_structure_model_inputs_v5.csv",index=False)
     pd.DataFrame(stress).to_csv(OUT/"market_stress_proxies_v4.csv",index=False)
     pd.DataFrame([stress_summary]).to_csv(OUT/"market_stress_summary_v4.csv",index=False)
     pd.DataFrame(company_data).to_csv(OUT/"ai_company_fundamentals_v4.csv",index=False)
@@ -274,6 +339,8 @@ def main():
       "market_stress_proxy_score":stress_summary["risk_score"],"stress_metrics":stress_summary["coverage_items"],
       "ai_infrastructure_risk_score":ai_risk_summary["score"],
       "ai_risk_covered_dimensions":ai_risk_summary["covered_dimensions"],
+      "market_structure_targets_connected":sum(1 for m in structure_metadata if m.get("status")=="connected"),
+      "market_structure_targets_total":len(structure_metadata),
       "options_chain_data":"not_connected"}
     (OUT/"run_summary_v4.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     lines=["# Market Forecast & AI Risk V4","",f"- Run time UTC: {now}",
@@ -299,6 +366,7 @@ def main():
       "- Financial statement line items vary; missing values are not interpreted as zero.",
       "- Credit ETF ratios are market proxies, not CCC spreads or CDS.",
       "- Current headlines are report-only; they are not inserted into historical training, avoiding false historical news backtests.",
+      "- V5 daily OHLCV features are joined to NQ/SOXL model inputs when available; cash-index volume is excluded. OI and intraday session splits remain unavailable.",
       "- Universe is limited to the explicitly listed index, ETF, cloud and semiconductor symbols; not a whole-market scan.",""]
     (OUT/"market_dashboard_v4.md").write_text("\n".join(lines),encoding="utf-8")
     print(json.dumps(summary,indent=2),flush=True)
