@@ -1,5 +1,8 @@
 name: V5 Purged Walk-Forward Backtest
 on:
+  push:
+    paths:
+      - 'trigger_walkforward_backtest.txt'
   workflow_dispatch:
 permissions:
   contents: read
