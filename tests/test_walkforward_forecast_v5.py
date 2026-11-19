@@ -9,7 +9,7 @@ class WalkForwardForecastTests(unittest.TestCase):
         idx = pd.date_range("2020-01-01", periods=180, freq="B")
         close = pd.Series(100 * np.exp(np.cumsum(np.random.default_rng(7).normal(0, .01, len(idx)))), index=idx)
         x = pd.DataFrame({"ret": close.pct_change(), "mom": close.pct_change(5)}, index=idx)
-        out = generate_walkforward_forecasts(x, close, 5, min_train_rows=150, retrain_every=10)
+        out = generate_walkforward_forecasts(x, close, 5, min_train_rows=175, retrain_every=10)
         self.assertTrue(out.empty)
 
     def test_forecast_metadata_marks_probability_uncalibrated(self):
