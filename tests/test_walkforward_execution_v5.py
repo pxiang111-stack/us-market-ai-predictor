@@ -41,10 +41,10 @@ class WalkForwardExecutionTests(unittest.TestCase):
 
     def test_gap_stop_fills_at_adverse_open(self):
         bars = pd.DataFrame({
-            "Open": [100, 90, 91, 92, 93],
-            "High": [101, 92, 93, 94, 95],
-            "Low": [99, 89, 90, 91, 92],
-            "Close": [100, 91, 92, 93, 94],
+            "Open": [100, 100, 90, 91, 92],
+            "High": [101, 102, 92, 93, 94],
+            "Low": [99, 99, 89, 90, 91],
+            "Close": [100, 101, 91, 92, 93],
         }, index=self.dates)
         ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
         self.assertEqual(ledger.iloc[0]["exit_reason"], "gap_stop")
