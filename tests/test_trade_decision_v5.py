@@ -10,7 +10,8 @@ class TradeDecisionTests(unittest.TestCase):
             "ms_trend_above_sma20": 1, "ms_sma20_above_sma50": 1,
             "ms_sma50_above_sma200": 1, "ms_failed_breakout_up_20": 0,
             "ms_breakout_up_volume_confirmed": 1, "ms_relative_volume": 2.0,
-            "ms_close_location": 0.8,
+            "ms_close_location": 0.8, "ms_volume_weighted_close_location_20": 0.20,
+            "ms_spring_reclaim_20": 0, "ms_upthrust_reject_20": 0,
         }
 
     def test_long_signal_has_defined_risk_plan(self):
@@ -36,7 +37,8 @@ class TradeDecisionTests(unittest.TestCase):
         f = self.features()
         f.update({"ms_trend_above_sma20":0,"ms_sma20_above_sma50":0,
                   "ms_sma50_above_sma200":0,"ms_failed_breakout_down_20":0,
-                  "ms_breakout_down_volume_confirmed":1,"ms_close_location":.2})
+                  "ms_breakout_down_volume_confirmed":1,"ms_close_location":.2,
+                  "ms_volume_weighted_close_location_20":-.20})
         denied = build_trade_decision(close=100, atr=2, probability_up=.25,
             expected_return=-.05, features=f, allow_short=False)
         allowed = build_trade_decision(close=100, atr=2, probability_up=.25,
@@ -44,6 +46,22 @@ class TradeDecisionTests(unittest.TestCase):
         self.assertEqual(denied["decision"], "FLAT")
         self.assertEqual(allowed["decision"], "SHORT")
         self.assertEqual(allowed["stop_loss"], 104)
+
+    def test_long_blocked_by_upthrust_even_with_bullish_trend(self):
+        f = self.features(); f["ms_upthrust_reject_20"] = 1
+        d = build_trade_decision(close=100, atr=2, probability_up=.75,
+            expected_return=.04, features=f)
+        self.assertEqual(d["decision"], "FLAT")
+
+    def test_long_requires_positive_volume_weighted_effort_or_spring(self):
+        f = self.features(); f["ms_volume_weighted_close_location_20"] = -.10
+        d = build_trade_decision(close=100, atr=2, probability_up=.75,
+            expected_return=.04, features=f)
+        self.assertEqual(d["decision"], "FLAT")
+        f["ms_spring_reclaim_20"] = 1
+        d2 = build_trade_decision(close=100, atr=2, probability_up=.75,
+            expected_return=.04, features=f)
+        self.assertEqual(d2["decision"], "LONG")
 
     def test_atr(self):
         idx = pd.date_range("2026-01-01", periods=15)
