@@ -1,7 +1,7 @@
 """Daily OHLCV market-structure scan.
 
-Uses Yahoo Finance daily bars as a research feed. This does not provide true
-bid/ask delta, reliable futures open interest, or separate overnight sessions.
+Yahoo Finance daily bars are a research feed, not intraday tape, true bid/ask
+delta, or a dependable source of futures open interest.
 """
 from pathlib import Path
 import json
@@ -15,6 +15,7 @@ from market_structure_v5 import build_market_structure
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 SYMBOLS = ["NQ=F", "^NDX", "ES=F", "^GSPC", "QQQ", "SPY", "SOXL", "SMH", "NVDA"]
+CASH_INDICES = {"^NDX", "^GSPC"}
 
 
 def fetch_ohlcv(symbol: str, period: str = "2y") -> pd.DataFrame:
@@ -25,7 +26,6 @@ def fetch_ohlcv(symbol: str, period: str = "2y") -> pd.DataFrame:
     if raw is None or raw.empty:
         raise ValueError(f"No OHLCV data returned for {symbol}")
     if isinstance(raw.columns, pd.MultiIndex):
-        # yfinance may return (Price, Ticker) or (Ticker, Price).
         if symbol in raw.columns.get_level_values(-1):
             raw = raw.xs(symbol, axis=1, level=-1)
         elif symbol in raw.columns.get_level_values(0):
@@ -36,7 +36,10 @@ def fetch_ohlcv(symbol: str, period: str = "2y") -> pd.DataFrame:
     missing = [c for c in required if c not in raw.columns]
     if missing:
         raise ValueError(f"{symbol} missing columns: {missing}")
-    return raw[required].dropna(subset=["Close"]).sort_index()
+    bars = raw[required].dropna(subset=["Close"]).sort_index()
+    if symbol not in CASH_INDICES and (bars["Volume"].dropna() <= 0).all():
+        raise ValueError(f"{symbol} returned no positive volume observations")
+    return bars
 
 
 def main():
@@ -46,8 +49,10 @@ def main():
     for symbol in SYMBOLS:
         try:
             bars = fetch_ohlcv(symbol)
-            # Yahoo Finance does not provide a dependable futures OI series here.
-            features = build_market_structure(bars, open_interest=None)
+            volume_valid = symbol not in CASH_INDICES
+            features = build_market_structure(
+                bars, open_interest=None, volume_is_valid=volume_valid
+            )
             features.insert(0, "ticker", symbol)
             features.insert(1, "bar_date", features.index.astype(str))
             feature_frames.append(features.reset_index(drop=True))
@@ -60,6 +65,7 @@ def main():
                 "volume_zscore": None if pd.isna(last["volume_zscore"]) else float(last["volume_zscore"]),
                 "close_location": None if pd.isna(last["close_location"]) else float(last["close_location"]),
                 "signed_volume_proxy_ratio": None if pd.isna(last["signed_volume_proxy_ratio"]) else float(last["signed_volume_proxy_ratio"]),
+                "volume_status": str(last["volume_data_status"]),
                 "oi_status": "unavailable",
                 "feed": "Yahoo Finance daily OHLCV",
             })
@@ -71,17 +77,16 @@ def main():
         pd.concat(feature_frames, ignore_index=True).to_csv(
             OUT / "market_structure_features_v5.csv", index=False
         )
-    pd.DataFrame(latest_rows).to_csv(
-        OUT / "market_structure_latest_v5.csv", index=False
-    )
+    pd.DataFrame(latest_rows).to_csv(OUT / "market_structure_latest_v5.csv", index=False)
     (OUT / "market_structure_summary_v5.json").write_text(
         json.dumps({
             "symbols_requested": SYMBOLS,
             "symbols_succeeded": [r["ticker"] for r in latest_rows],
             "symbols_failed": failures,
+            "cash_index_volume_excluded": sorted(CASH_INDICES),
             "oi_connected": False,
             "intraday_session_segmentation": False,
-            "warning": "Daily OHLCV is not intraday tape. Candle-direction volume is not bid/ask delta. OI unavailable is explicit.",
+            "warning": "Daily OHLCV is not intraday tape. Candle-direction volume is not bid/ask delta. OI unavailable is explicit. Cash-index vendor volume is excluded.",
         }, indent=2),
         encoding="utf-8",
     )
