@@ -27,6 +27,9 @@ class V4Tests(unittest.TestCase):
         merged, meta = merge_market_structure_features(make_features(self.p, "SOXL"), bars, "SOXL")
         self.assertIn("ms_relative_volume", merged.columns)
         self.assertIn("ms_close_location", merged.columns)
+        self.assertIn("ms_trend_above_sma20", merged.columns)
+        self.assertIn("ms_breakout_up_20", merged.columns)
+        self.assertIn("ms_failed_breakout_up_20", merged.columns)
         self.assertTrue(merged["ms_relative_volume"].notna().any())
         self.assertTrue(meta["volume_valid"])
 
