@@ -17,6 +17,7 @@ from market_risk_v4 import download_prices, make_features, merge_market_structur
 from trade_decision_v5 import build_trade_decision
 from walkforward_forecast_v5 import generate_walkforward_forecasts
 from walkforward_execution_v5 import simulate_trades, performance_summary
+from sklearn.metrics import roc_auc_score, brier_score_loss
 
 OUT = Path("output/walkforward_v5")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -86,11 +87,43 @@ def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(nonempty, ignore_index=True, sort=False) if nonempty else pd.DataFrame()
 
 
+def forecast_quality_summary(forecasts: pd.DataFrame, close: pd.Series, horizon: int) -> dict:
+    """Evaluate OOS predictions against realized future returns; never feeds decisions."""
+    if forecasts is None or forecasts.empty:
+        return {"forecast_eval_n": 0, "forecast_auc": None, "forecast_brier": None}
+    idx = forecasts.index
+    realized = close.shift(-horizon).reindex(idx) / close.reindex(idx) - 1.0
+    p = pd.to_numeric(forecasts["probability_up"], errors="coerce")
+    expected = pd.to_numeric(forecasts["expected_return"], errors="coerce")
+    valid = pd.DataFrame({"realized": realized, "p": p, "expected": expected}).replace(
+        [np.inf, -np.inf], np.nan
+    ).dropna()
+    if valid.empty:
+        return {"forecast_eval_n": 0, "forecast_auc": None, "forecast_brier": None}
+    y = (valid["realized"] > 0).astype(int)
+    pred = (valid["p"] >= 0.5).astype(int)
+    auc = float(roc_auc_score(y, valid["p"])) if y.nunique() == 2 else None
+    return {
+        "forecast_eval_n": int(len(valid)),
+        "forecast_auc": auc,
+        "forecast_brier": float(brier_score_loss(y, valid["p"])),
+        "forecast_directional_accuracy_50_pct": float((pred == y).mean() * 100.0),
+        "forecast_base_rate_accuracy_pct": float(max(y.mean(), 1.0 - y.mean()) * 100.0),
+        "forecast_up_rate_pct": float(y.mean() * 100.0),
+        "predicted_return_mean_pct": float(valid["expected"].mean() * 100.0),
+        "realized_return_mean_pct": float(valid["realized"].mean() * 100.0),
+        "predicted_vs_realized_spearman_ic": (
+            float(valid["expected"].corr(valid["realized"], method="spearman"))
+            if valid["expected"].nunique() > 1 and valid["realized"].nunique() > 1 else None
+        ),
+    }
+
+
 def main():
     print("[INFO] Downloading cross-market close series...", flush=True)
     price_symbols = ["NQ=F", "ES=F", "SOXL", "QQQ", "SPY", "^NDX", "^GSPC", "^SOX", "^VIX", "HYG", "LQD", "SMH", "NVDA"]
     prices = download_prices(price_symbols, period="10y")
-    all_ledgers, all_curves, all_forecasts, summaries = [], [], [], []
+    all_ledgers, all_curves, all_forecasts, all_plans, summaries = [], [], [], [], []
 
     for ticker, asset in TARGETS.items():
         if ticker not in prices:
@@ -155,10 +188,28 @@ def main():
                 if plans.empty:
                     summaries.append({"ticker": ticker, "horizon": horizon, "status": "no_plans"})
                     continue
-                forecasts = forecasts.join(plans[["decision"]], how="left")
+                forecasts = forecasts.join(
+                    plans[["decision", "reason"]].rename(columns={"reason": "decision_reason"}),
+                    how="left",
+                )
                 forecasts["ticker"] = ticker
                 forecasts["horizon_sessions"] = horizon
+                # Realized labels are written only for post-hoc evaluation, never used by the signal.
+                forecasts["realized_forward_return_eval_only"] = (
+                    close.shift(-horizon).reindex(forecasts.index) / close.reindex(forecasts.index) - 1.0
+                )
+                forecasts["realized_up_eval_only"] = (
+                    forecasts["realized_forward_return_eval_only"] > 0
+                ).where(forecasts["realized_forward_return_eval_only"].notna())
                 all_forecasts.append(forecasts.reset_index())
+                all_plans.append(plans.reset_index())
+                quality = forecast_quality_summary(forecasts, close, horizon)
+                summaries.append({
+                    "strategy_id": f"{ticker}_{horizon}d_forecast_quality",
+                    "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
+                    "benchmark": "out_of_sample_forecast_diagnostics_only",
+                    **quality,
+                })
                 plans["decision"] = plans["decision"].fillna("FLAT")
 
                 for cost_bps in COST_CASES_BPS:
@@ -221,6 +272,7 @@ def main():
             time.sleep(0.2)
 
     concat_frames(all_forecasts).to_csv(OUT / "oos_forecasts.csv", index=False)
+    concat_frames(all_plans).to_csv(OUT / "trade_decisions.csv", index=False)
     concat_frames(all_ledgers).to_csv(OUT / "trade_ledger.csv", index=False)
     concat_frames(all_curves).to_csv(OUT / "daily_equity_curves.csv", index=False)
     summary_df = pd.DataFrame(summaries)
@@ -238,6 +290,7 @@ def main():
         "shorts_enabled_only_for": ["NQ=F"],
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
+        "outputs": ["oos_forecasts.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv"],
         "summary_rows": len(summary_df),
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
         "limitations": [
