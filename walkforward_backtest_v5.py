@@ -23,6 +23,9 @@ OUT.mkdir(parents=True, exist_ok=True)
 TARGETS = {"NQ=F": "NQ_futures", "SOXL": "SOXL", "QQQ": "QQQ", "SPY": "SPY"}
 HORIZONS = (5, 10, 20)
 COST_CASES_BPS = (10.0, 20.0, 30.0)
+SLIPPAGE_BPS_PER_SIDE = 5.0
+# Keep signal eligibility conservative across the full execution-cost sensitivity range.
+DECISION_COST_FLOOR = (max(COST_CASES_BPS) + 2 * SLIPPAGE_BPS_PER_SIDE) / 10000.0
 
 
 def fetch_bars(ticker: str) -> pd.DataFrame:
@@ -120,6 +123,7 @@ def main():
                         expected_return=float(pred["expected_return"]),
                         features=x.loc[date].to_dict(),
                         allow_short=(ticker == "NQ=F"),
+                        round_trip_cost=DECISION_COST_FLOOR,
                     )
                     row.update({"as_of": date, "ticker": ticker, "asset": asset,
                                 "horizon_sessions": horizon,
@@ -142,7 +146,7 @@ def main():
                         bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
                         initial_equity=100_000.0, risk_budget_pct=0.005,
                         max_gross_exposure=1.0, round_trip_cost_bps=cost_bps,
-                        slippage_bps_per_side=5.0, max_holding_sessions=horizon,
+                        slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE, max_holding_sessions=horizon,
                     )
                     stats = performance_summary(ledger, curve)
                     tag = f"{ticker}_{horizon}d_cost{int(cost_bps)}bps"
@@ -158,7 +162,8 @@ def main():
                         all_curves.append(curve)
                     summaries.append({
                         "strategy_id": tag, "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
-                        "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": 5.0,
+                        "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
+                        "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
                         "forecast_count": int(len(forecasts)),
                         "long_signals": int((plans["decision"] == "LONG").sum()),
                         "short_signals": int((plans["decision"] == "SHORT").sum()),
@@ -182,6 +187,8 @@ def main():
         "targets": list(TARGETS),
         "horizons": list(HORIZONS),
         "cost_cases_round_trip_bps": list(COST_CASES_BPS),
+        "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
+        "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
         "risk_budget_pct": 0.5,
         "max_gross_exposure": 1.0,
         "position_units_are_not_exchange_contracts": True,
