@@ -24,6 +24,21 @@ class MarketStructureTests(unittest.TestCase):
         self.assertAlmostEqual(out.relative_volume.iloc[5], expected)
         self.assertAlmostEqual(out.close_location.iloc[-1], 2 / 3)
 
+    def test_breakout_levels_use_prior_bars_only(self):
+        d = self.ohlcv.copy()
+        d.loc[d.index[-1], ["Open", "High", "Low", "Close"]] = [140, 150, 139, 149]
+        out = build_market_structure(d, volume_window=5)
+        self.assertEqual(out.breakout_up_20.iloc[-1], 1.0)
+        extended = pd.concat([d, d.iloc[[-1]].set_axis([d.index[-1] + pd.Timedelta(hours=1)])])
+        out2 = build_market_structure(extended, volume_window=5)
+        self.assertEqual(out2.breakout_up_20.iloc[-2], 1.0)
+
+    def test_failed_breakout_is_flagged(self):
+        d = self.ohlcv.copy()
+        d.loc[d.index[-1], ["Open", "High", "Low", "Close"]] = [131, 140, 129, 130]
+        out = build_market_structure(d, volume_window=5)
+        self.assertEqual(out.failed_breakout_up_20.iloc[-1], 1.0)
+
     def test_cash_index_volume_is_excluded(self):
         out = build_market_structure(self.ohlcv, volume_window=5, volume_is_valid=False)
         self.assertTrue(out.relative_volume.isna().all())
