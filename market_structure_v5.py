@@ -18,20 +18,13 @@ def build_market_structure(
     *,
     volume_window: int = 20,
     oi_change_window: int = 1,
+    volume_is_valid: bool = True,
 ) -> pd.DataFrame:
     """Return causal OHLCV/volume/OI features aligned to the input bar index.
 
-    Parameters
-    ----------
-    ohlcv:
-        DataFrame with Open, High, Low, Close, Volume columns.
-    open_interest:
-        Optional time-indexed OI series. Values are forward-filled only after
-        their timestamp; missing OI remains missing.
-    volume_window:
-        Rolling baseline window for relative volume.
-    oi_change_window:
-        Number of bars over which to calculate OI percentage change.
+    volume_is_valid must be False for cash-index symbols whose vendor Volume
+    field is not an executable consolidated trading-volume measure.
+    RVOL and z-score compare the current completed bar with prior bars only.
     """
     missing = _REQUIRED.difference(ohlcv.columns)
     if missing:
@@ -49,23 +42,33 @@ def build_market_structure(
     out = pd.DataFrame(index=d.index)
     close = d["Close"]
     candle_range = (d["High"] - d["Low"]).replace(0, np.nan)
-    volume_base = d["Volume"].rolling(volume_window, min_periods=volume_window).mean()
-
     out["return_1bar"] = close.pct_change()
-    out["relative_volume"] = d["Volume"] / volume_base.replace(0, np.nan)
     out["close_location"] = ((close - d["Low"]) / candle_range).clip(0, 1)
     out["body_fraction"] = ((d["Close"] - d["Open"]) / candle_range).clip(-1, 1)
-    out["dollar_volume"] = close * d["Volume"]
-    out["volume_zscore"] = (
-        (d["Volume"] - d["Volume"].rolling(volume_window, min_periods=volume_window).mean())
-        / d["Volume"].rolling(volume_window, min_periods=volume_window).std(ddof=0).replace(0, np.nan)
-    )
 
-    # Candle-direction volume is only a rough proxy. It is NOT true bid/ask delta.
-    out["signed_volume_proxy"] = np.sign(d["Close"] - d["Open"]) * d["Volume"]
-    out["signed_volume_proxy_ratio"] = (
-        out["signed_volume_proxy"] / d["Volume"].replace(0, np.nan)
-    )
+    # Use only bars strictly before the current completed bar as the baseline.
+    prior_volume = d["Volume"].shift(1)
+    volume_mean = prior_volume.rolling(volume_window, min_periods=volume_window).mean()
+    volume_std = prior_volume.rolling(volume_window, min_periods=volume_window).std(ddof=0)
+    if volume_is_valid:
+        out["relative_volume"] = d["Volume"] / volume_mean.replace(0, np.nan)
+        out["volume_zscore"] = (
+            (d["Volume"] - volume_mean) / volume_std.replace(0, np.nan)
+        )
+        out["dollar_volume"] = close * d["Volume"]
+        # Candle-direction volume is a coarse bar proxy, never bid/ask delta.
+        out["signed_volume_proxy"] = np.sign(d["Close"] - d["Open"]) * d["Volume"]
+        out["signed_volume_proxy_ratio"] = (
+            out["signed_volume_proxy"] / d["Volume"].replace(0, np.nan)
+        )
+        out["volume_data_status"] = "vendor_volume_available_proxy_only"
+    else:
+        for col in (
+            "relative_volume", "volume_zscore", "dollar_volume",
+            "signed_volume_proxy", "signed_volume_proxy_ratio",
+        ):
+            out[col] = np.nan
+        out["volume_data_status"] = "invalid_for_cash_index"
 
     if open_interest is None:
         out["open_interest"] = np.nan
@@ -78,7 +81,6 @@ def build_market_structure(
         out["oi_change"] = oi.pct_change(oi_change_window)
         price_change = out["return_1bar"]
         oi_change = out["oi_change"]
-
         conditions = [
             (price_change > 0) & (oi_change > 0),
             (price_change < 0) & (oi_change > 0),
@@ -91,9 +93,7 @@ def build_market_structure(
             "price_up_oi_down_short_cover_or_deleveraging",
             "price_down_oi_down_long_liquidation_or_deleveraging",
         ]
-        out["price_oi_regime"] = np.select(
-            conditions, labels, default="mixed_or_flat"
-        )
+        out["price_oi_regime"] = np.select(conditions, labels, default="mixed_or_flat")
         out.loc[oi.isna() | oi_change.isna(), "price_oi_regime"] = "oi_unavailable"
 
     return out.replace([np.inf, -np.inf], np.nan)
