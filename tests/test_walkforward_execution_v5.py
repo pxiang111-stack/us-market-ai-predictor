@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from walkforward_execution_v5 import simulate_trades
+from walkforward_execution_v5 import simulate_trades, performance_summary
 
 
 class WalkForwardExecutionTests(unittest.TestCase):
@@ -23,6 +23,10 @@ class WalkForwardExecutionTests(unittest.TestCase):
         self.assertEqual(ledger.iloc[0]["entry_date"], self.dates[1])
         self.assertEqual(ledger.iloc[0]["exit_reason"], "target_1r")
         self.assertEqual(ledger.iloc[0]["exit_price"], 105.0)
+        self.assertEqual(len(_), len(bars))
+        stats = performance_summary(ledger, _)
+        self.assertEqual(stats["trade_count"], 1)
+        self.assertIn("max_drawdown_pct", stats)
 
     def test_stop_first_when_stop_and_target_both_touch(self):
         bars = pd.DataFrame({
