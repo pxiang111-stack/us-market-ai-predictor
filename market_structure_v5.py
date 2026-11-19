@@ -79,12 +79,41 @@ def build_market_structure(
         )
         out["breakout_up_volume_confirmed"] = ((out["breakout_up_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_up_20"].notna())
         out["breakout_down_volume_confirmed"] = ((out["breakout_down_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_down_20"].notna())
+        # Wyckoff-inspired effort/result proxies; these do not prove institutional intent.
+        signed_clv = 2.0 * out["close_location"] - 1.0
+        out["close_location_volume_pressure"] = signed_clv * out["relative_volume"]
+        out["effort_result_absorption_proxy"] = (
+            out["relative_volume"] / (out["body_fraction"].abs() + 0.10)
+        ).replace([np.inf, -np.inf], np.nan)
+        out["volume_weighted_close_location_20"] = (
+            (signed_clv * d["Volume"]).rolling(20, min_periods=20).sum()
+            / d["Volume"].rolling(20, min_periods=20).sum().replace(0, np.nan)
+        )
+        true_range = pd.concat([
+            d["High"] - d["Low"],
+            (d["High"] - d["Close"].shift(1)).abs(),
+            (d["Low"] - d["Close"].shift(1)).abs(),
+        ], axis=1).max(axis=1)
+        atr14 = true_range.rolling(14, min_periods=14).mean()
+        atr50 = true_range.rolling(50, min_periods=50).mean()
+        out["range_compression_14_50"] = atr14 / atr50.replace(0, np.nan)
+        out["spring_reclaim_20"] = (
+            (d["Low"] < prior_low20) & (close > prior_low20)
+            & (out["close_location"] >= 0.65)
+        ).astype(float).where(valid_range)
+        out["upthrust_reject_20"] = (
+            (d["High"] > prior_high20) & (close < prior_high20)
+            & (out["close_location"] <= 0.35)
+        ).astype(float).where(valid_range)
         out["volume_data_status"] = "vendor_volume_available_proxy_only"
     else:
         for col in (
             "relative_volume", "volume_zscore", "dollar_volume",
             "signed_volume_proxy", "signed_volume_proxy_ratio",
             "breakout_up_volume_confirmed", "breakout_down_volume_confirmed",
+            "close_location_volume_pressure", "effort_result_absorption_proxy",
+            "volume_weighted_close_location_20", "range_compression_14_50",
+            "spring_reclaim_20", "upthrust_reject_20",
         ):
             out[col] = np.nan
         out["volume_data_status"] = "invalid_for_cash_index"
