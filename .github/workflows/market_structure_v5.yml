@@ -4,6 +4,7 @@ on:
     branches: [assistant-v5-market-structure]
     paths:
       - 'market_structure_v5.py'
+      - 'market_risk_v4.py'
       - 'run_market_structure_v5.py'
       - 'tests/test_market_structure_v5.py'
       - '.github/workflows/market_structure_v5.yml'
@@ -25,8 +26,9 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip pandas numpy yfinance
-      - run: python -m compileall -q market_structure_v5.py run_market_structure_v5.py tests
-      - run: python -m unittest discover -s tests -p 'test_market_structure_v5.py' -v
+      - run: python -m pip install scikit-learn requests tabulate
+      - run: python -m compileall -q market_structure_v5.py run_market_structure_v5.py market_risk_v4.py tests
+      - run: python -m unittest discover -s tests -v
       - name: Run live daily OHLCV scan
         if: github.event_name != 'pull_request'
         run: python run_market_structure_v5.py
