@@ -59,13 +59,15 @@ class WalkForwardExecutionTests(unittest.TestCase):
             "Low": [99, 100, 102, 105, 105],
             "Close": [100, 109, 103, 106, 106],
         }, index=self.dates)
-        ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
+        ledger, curve = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
         trade = ledger.iloc[0]
         self.assertEqual(trade["exit_reason"], "target_2r")
         self.assertEqual(trade["partial_exit_price"], 105.0)
         self.assertEqual(trade["exit_price"], 110.0)
         expected = trade["units"] * 0.5 * (105.0 - 101.0) + trade["units"] * 0.5 * (110.0 - 101.0)
         self.assertAlmostEqual(trade["gross_pnl"], expected)
+        exit_equity = curve.loc[curve["date"] == trade["exit_date"], "equity"].iloc[0]
+        self.assertAlmostEqual(exit_equity, trade["equity_after"])
 
     def test_stop_after_first_target_keeps_partial_profit(self):
         bars = pd.DataFrame({
