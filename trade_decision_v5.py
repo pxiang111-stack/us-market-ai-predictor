@@ -50,14 +50,29 @@ def build_trade_decision(
         and features.get("ms_sma20_above_sma50") == 0
         and features.get("ms_sma50_above_sma200") == 0
     )
+    # Sustained volume-weighted close location is a directional effort/result
+    # proxy. Spring/upthrust patterns can independently confirm a reclaim/rejection.
+    flow_pressure = features.get("ms_volume_weighted_close_location_20", np.nan)
+    bullish_effort = (
+        (np.isfinite(flow_pressure) and flow_pressure >= 0.05)
+        or features.get("ms_spring_reclaim_20") == 1
+    )
+    bearish_effort = (
+        (np.isfinite(flow_pressure) and flow_pressure <= -0.05)
+        or features.get("ms_upthrust_reject_20") == 1
+    )
     long_structure = (
         bull_trend and features.get("ms_failed_breakout_up_20") != 1
+        and features.get("ms_upthrust_reject_20") != 1
+        and bullish_effort
         and (features.get("ms_breakout_up_volume_confirmed") == 1
              or (features.get("ms_relative_volume", 0) >= 1.2
                  and features.get("ms_close_location", 0) >= 0.65))
     )
     short_structure = (
         bear_trend and features.get("ms_failed_breakout_down_20") != 1
+        and features.get("ms_spring_reclaim_20") != 1
+        and bearish_effort
         and (features.get("ms_breakout_down_volume_confirmed") == 1
              or (features.get("ms_relative_volume", 0) >= 1.2
                  and features.get("ms_close_location", 1) <= 0.35))
