@@ -88,7 +88,7 @@ def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
 
 def main():
     print("[INFO] Downloading cross-market close series...", flush=True)
-    price_symbols = ["NQ=F", "SOXL", "QQQ", "SPY", "^VIX", "HYG", "LQD", "SMH", "NVDA"]
+    price_symbols = ["NQ=F", "ES=F", "SOXL", "QQQ", "SPY", "^NDX", "^GSPC", "^SOX", "^VIX", "HYG", "LQD", "SMH", "NVDA"]
     prices = download_prices(price_symbols, period="10y")
     all_ledgers, all_curves, all_forecasts, summaries = [], [], [], []
 
