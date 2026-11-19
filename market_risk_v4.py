@@ -14,6 +14,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingRegressor
 from sklearn.metrics import roc_auc_score, brier_score_loss
 from market_structure_v5 import build_market_structure
+from trade_decision_v5 import build_trade_decision, atr_value
 
 warnings.filterwarnings("ignore")
 OUT=Path("output"); OUT.mkdir(exist_ok=True)
@@ -303,11 +304,12 @@ def main():
         target_map=TARGETS
     if "NQ=F" not in prices and "^NDX" not in prices:
         raise RuntimeError("Neither NQ futures nor Nasdaq-100 cash-index data is available")
-    forecasts=[]; diagnostics=[]; structure_metadata=[]
+    forecasts=[]; diagnostics=[]; structure_metadata=[]; trade_decisions=[]
     for asset,ticker in target_map.items():
         if ticker not in prices:
             diagnostics.append({"asset":asset,"status":"price_data_missing"}); continue
         x=make_features(prices,ticker)
+        structure_bars = None
         try:
             structure_bars = download_market_structure_bars(ticker)
             x, structure_meta = merge_market_structure_features(x, structure_bars, ticker)
@@ -326,13 +328,34 @@ def main():
         for h in HORIZONS:
             try:
                 row,diag=run_forecast(asset,ticker,prices,x,h); diagnostics.append(diag)
-                if row: forecasts.append(row)
+                if row:
+                    forecasts.append(row)
+                    latest_features = x.iloc[-1].to_dict()
+                    decision = build_trade_decision(
+                        close=float(prices[ticker].iloc[-1]),
+                        atr=atr_value(structure_bars) if structure_bars is not None else float("nan"),
+                        probability_up=float(row["probability_up"]),
+                        expected_return=float(row["expected_return"]),
+                        features=latest_features,
+                        allow_short=(asset == "NQ_futures" and ticker == "NQ=F"),
+                    )
+                    decision.update({"as_of": row["as_of"], "asset": asset,
+                                     "ticker": ticker, "horizon": h})
+                    trade_decisions.append(decision)
+                    row["trade_decision"] = decision["decision"]
+                    row["entry_reference"] = decision["entry_reference"]
+                    row["stop_loss"] = decision["stop_loss"]
+                    row["take_profit_1r"] = decision["take_profit_1r"]
+                    row["take_profit_2r"] = decision["take_profit_2r"]
+                    row["max_position_fraction"] = decision["max_position_fraction"]
+                    row["decision_reason"] = decision["reason"]
             except Exception as e: diagnostics.append({"asset":asset,"horizon":h,"status":"error","error":str(e)})
     stress,stress_summary=market_stress(prices)
     company_data=[fundamentals(t) for t in COMPANIES]
     ai_risk_details,ai_risk_summary=ai_infrastructure_risk(company_data)
     news=headlines(); now=pd.Timestamp.now(tz="UTC").isoformat()
     pd.DataFrame(forecasts).to_csv(OUT/"market_forecasts_v4.csv",index=False)
+    pd.DataFrame(trade_decisions).to_csv(OUT/"trade_decisions_v5.csv",index=False)
     pd.DataFrame(diagnostics).to_csv(OUT/"walkforward_validation_v4.csv",index=False)
     pd.DataFrame(structure_metadata).to_csv(OUT/"market_structure_model_inputs_v5.csv",index=False)
     pd.DataFrame(stress).to_csv(OUT/"market_stress_proxies_v4.csv",index=False)
@@ -341,7 +364,10 @@ def main():
     pd.DataFrame(ai_risk_details).to_csv(OUT/"ai_infrastructure_risk_details_v4.csv",index=False)
     pd.DataFrame([ai_risk_summary]).to_csv(OUT/"ai_infrastructure_risk_summary_v4.csv",index=False)
     pd.DataFrame(news).to_csv(OUT/"ai_news_v4.csv",index=False)
-    summary={"run_time_utc":now,"downloaded_price_series":len(prices),"forecast_rows":len(forecasts),
+    summary={"run_time_utc":now,"downloaded_price_series":len(prices),"forecast_rows":len(forecasts),"trade_decision_rows":len(trade_decisions),
+      "actionable_long_count":sum(1 for d in trade_decisions if d.get("decision")=="LONG"),
+      "actionable_short_count":sum(1 for d in trade_decisions if d.get("decision")=="SHORT"),
+      "flat_count":sum(1 for d in trade_decisions if d.get("decision")=="FLAT"),
       "news_articles":len(news),"fundamental_companies":len(company_data),
       "market_stress_proxy_score":stress_summary["risk_score"],"stress_metrics":stress_summary["coverage_items"],
       "ai_infrastructure_risk_score":ai_risk_summary["score"],
@@ -357,7 +383,14 @@ def main():
       "## NQ / SOXL forecasts",""]
     if forecasts: lines.append(pd.DataFrame(forecasts).to_markdown(index=False))
     else: lines.append("No forecast rows generated.")
-    lines += ["","## Walk-forward holdout diagnostics","",pd.DataFrame(diagnostics).to_markdown(index=False) if diagnostics else "No diagnostics.",
+    lines += ["","## Rule-based trade plans (not orders)","",
+      pd.DataFrame(trade_decisions).to_markdown(index=False) if trade_decisions else "No trade plans generated.",
+      "- Entry reference is the latest close; stop is 2x ATR; targets are 1R and 2R.",
+      "- Position fraction targets 0.5% equity risk with a 1.0x gross exposure cap; it is not broker buying power.",
+      "- Direction requires probability/expected-return thresholds, trend alignment, price/volume confirmation and estimated edge above assumed round-trip cost.",
+      "- Short signals are enabled only for actual NQ futures, not SOXL or the NDX cash-index proxy.",
+      "- These are end-of-day research plans, not intraday triggers or routed orders; the assumed cost is a placeholder and needs instrument-specific validation.",
+      "","## Walk-forward holdout diagnostics","",pd.DataFrame(diagnostics).to_markdown(index=False) if diagnostics else "No diagnostics.",
       "","## Market stress proxy","",f"- Score: {stress_summary['risk_score']}/100 (rule-based, not probability).",
       pd.DataFrame(stress).to_markdown(index=False) if stress else "No market stress metrics.",
       "","## AI infrastructure financing-risk screen","",
