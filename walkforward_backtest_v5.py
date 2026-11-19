@@ -78,6 +78,21 @@ def main():
             summaries.append({"ticker": ticker, "status": "data_error", "error": str(exc)})
             continue
 
+        # Buy-and-hold benchmarks use the same close history and starting equity.
+        bh_close = close.dropna()
+        if len(bh_close) > 1:
+            bh_curve = pd.DataFrame({"date": bh_close.index,
+                                     "equity": 100000.0 * bh_close / float(bh_close.iloc[0])})
+            bh_stats = performance_summary(pd.DataFrame(), bh_curve)
+            summaries.append({"strategy_id": f"{ticker}_buy_and_hold",
+                              "ticker": ticker, "horizon_sessions": None,
+                              "round_trip_cost_bps": 0.0, "slippage_bps_per_side": 0.0,
+                              "forecast_count": 0, "long_signals": 0,
+                              "short_signals": 0, "flat_signals": 0,
+                              "benchmark": "buy_and_hold_close_to_close", **bh_stats})
+            bh_curve["ticker"], bh_curve["strategy_id"] = ticker, f"{ticker}_buy_and_hold"
+            all_curves.append(bh_curve)
+
         for horizon in HORIZONS:
             print(f"[INFO] {ticker} {horizon}d walk-forward forecasts...", flush=True)
             try:
