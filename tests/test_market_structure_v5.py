@@ -17,11 +17,18 @@ class MarketStructureTests(unittest.TestCase):
             "Volume": np.arange(1000, 1030, dtype=float),
         }, index=idx)
 
-    def test_relative_volume_and_close_location(self):
+    def test_relative_volume_uses_prior_bars_only(self):
         out = build_market_structure(self.ohlcv, volume_window=5)
-        self.assertTrue(np.isnan(out.relative_volume.iloc[3]))
+        self.assertTrue(np.isnan(out.relative_volume.iloc[4]))
+        expected = self.ohlcv["Volume"].iloc[5] / self.ohlcv["Volume"].iloc[:5].mean()
+        self.assertAlmostEqual(out.relative_volume.iloc[5], expected)
         self.assertAlmostEqual(out.close_location.iloc[-1], 2 / 3)
-        self.assertTrue(np.isfinite(out.relative_volume.iloc[-1]))
+
+    def test_cash_index_volume_is_excluded(self):
+        out = build_market_structure(self.ohlcv, volume_window=5, volume_is_valid=False)
+        self.assertTrue(out.relative_volume.isna().all())
+        self.assertTrue(out.signed_volume_proxy_ratio.isna().all())
+        self.assertTrue((out.volume_data_status == "invalid_for_cash_index").all())
 
     def test_price_up_oi_up_label(self):
         oi = pd.Series(np.arange(200, 230, dtype=float), index=self.ohlcv.index)
