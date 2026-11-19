@@ -57,6 +57,12 @@ def atr_series(bars: pd.DataFrame, period: int = 14) -> pd.Series:
     return tr.rolling(period, min_periods=period).mean()
 
 
+def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
+    """Safely combine per-symbol/horizon frames with non-identical columns."""
+    nonempty = [frame for frame in frames if isinstance(frame, pd.DataFrame) and not frame.empty]
+    return pd.concat(nonempty, ignore_index=True, sort=False) if nonempty else pd.DataFrame()
+
+
 def main():
     print("[INFO] Downloading cross-market close series...", flush=True)
     price_symbols = ["NQ=F", "SOXL", "QQQ", "SPY", "^VIX", "HYG", "LQD", "SMH", "NVDA"]
@@ -84,7 +90,7 @@ def main():
             bh_curve = pd.DataFrame({"date": bh_close.index,
                                      "equity": 100000.0 * bh_close / float(bh_close.iloc[0])})
             bh_stats = performance_summary(pd.DataFrame(), bh_curve)
-            summaries.append({"strategy_id": f"{ticker}_buy_and_hold",
+            summaries.append({"strategy_id": f"{ticker}_buy_and_hold", "status": "ok",
                               "ticker": ticker, "horizon_sessions": None,
                               "round_trip_cost_bps": 0.0, "slippage_bps_per_side": 0.0,
                               "forecast_count": 0, "long_signals": 0,
@@ -151,7 +157,7 @@ def main():
                         curve["strategy_id"] = tag
                         all_curves.append(curve)
                     summaries.append({
-                        "strategy_id": tag, "ticker": ticker, "horizon_sessions": horizon,
+                        "strategy_id": tag, "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
                         "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": 5.0,
                         "forecast_count": int(len(forecasts)),
                         "long_signals": int((plans["decision"] == "LONG").sum()),
@@ -166,9 +172,9 @@ def main():
                                   "status": "backtest_error", "error": str(exc)})
             time.sleep(0.2)
 
-    pd.DataFrame(all_forecasts).to_csv(OUT / "oos_forecasts.csv", index=False)
-    pd.DataFrame(all_ledgers).to_csv(OUT / "trade_ledger.csv", index=False)
-    pd.DataFrame(all_curves).to_csv(OUT / "daily_equity_curves.csv", index=False)
+    concat_frames(all_forecasts).to_csv(OUT / "oos_forecasts.csv", index=False)
+    concat_frames(all_ledgers).to_csv(OUT / "trade_ledger.csv", index=False)
+    concat_frames(all_curves).to_csv(OUT / "daily_equity_curves.csv", index=False)
     summary_df = pd.DataFrame(summaries)
     summary_df.to_csv(OUT / "performance_summary.csv", index=False)
     payload = {
