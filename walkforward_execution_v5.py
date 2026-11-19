@@ -36,7 +36,7 @@ def simulate_trades(
     if initial_equity <= 0 or max_holding_sessions < 1:
         raise ValueError("initial_equity must be positive and max_holding_sessions >= 1")
     b = bars.sort_index().copy()
-    s = signals.copy()
+    s = signals.sort_index().copy()
     b = b[~b.index.duplicated(keep="last")]
     s = s[~s.index.duplicated(keep="last")]
     dates = list(b.index)
@@ -112,9 +112,60 @@ def simulate_trades(
         })
         curve.append({"date": dates[exit_i], "equity": equity})
     ledger_df = pd.DataFrame(ledger)
-    curve_df = pd.DataFrame(curve)
+    # Build a complete daily mark-to-market curve, not merely a list of exit dates.
+    daily = []
+    for d in dates:
+        realized = initial_equity
+        active_value = 0.0
+        for trade in ledger:
+            if trade["exit_date"] < d:
+                realized += trade["net_pnl"]
+            elif trade["entry_date"] <= d <= trade["exit_date"]:
+                mark = trade["exit_price"] if d == trade["exit_date"] else float(b.loc[d, "Close"])
+                direction = 1 if trade["side"] == "LONG" else -1
+                gross = trade["units"] * direction * (mark - trade["entry_price"])
+                est_cost = trade["units"] * (trade["entry_price"] + mark) * (
+                    round_trip_cost_bps / 20000.0 + slippage_bps_per_side / 10000.0
+                )
+                active_value = gross - est_cost
+                break
+        daily.append({"date": d, "equity": realized + active_value})
+    curve_df = pd.DataFrame(daily)
     if not curve_df.empty:
-        curve_df = curve_df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+        curve_df["daily_return"] = curve_df["equity"].pct_change().fillna(0.0)
         curve_df["peak_equity"] = curve_df["equity"].cummax()
         curve_df["drawdown_pct"] = curve_df["equity"] / curve_df["peak_equity"] - 1.0
     return ledger_df, curve_df
+
+
+def performance_summary(ledger: pd.DataFrame, curve: pd.DataFrame) -> dict:
+    """Calculate basic portfolio and trade statistics from a daily equity curve."""
+    if curve is None or curve.empty or "equity" not in curve:
+        return {"status": "no_equity_curve", "trade_count": 0 if ledger is None else len(ledger)}
+    values = pd.to_numeric(curve["equity"], errors="coerce").dropna()
+    if len(values) < 2 or (values <= 0).any():
+        return {"status": "insufficient_or_nonpositive_equity", "trade_count": 0 if ledger is None else len(ledger)}
+    daily_ret = values.pct_change().dropna()
+    years = max((len(values) - 1) / 252.0, 1 / 252.0)
+    cagr = (values.iloc[-1] / values.iloc[0]) ** (1 / years) - 1
+    vol = daily_ret.std(ddof=1) if len(daily_ret) > 1 else np.nan
+    sharpe = (daily_ret.mean() / vol * np.sqrt(252)) if pd.notna(vol) and vol > 0 else np.nan
+    downside = daily_ret[daily_ret < 0].std(ddof=1)
+    sortino = (daily_ret.mean() / downside * np.sqrt(252)) if pd.notna(downside) and downside > 0 else np.nan
+    drawdown = values / values.cummax() - 1
+    trades = ledger if ledger is not None else pd.DataFrame()
+    pnl = pd.to_numeric(trades.get("net_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
+    wins, losses = pnl[pnl > 0], pnl[pnl < 0]
+    gross_profit, gross_loss = wins.sum(), abs(losses.sum())
+    return {
+        "status": "ok", "trade_count": int(len(pnl)),
+        "total_return_pct": float((values.iloc[-1] / values.iloc[0] - 1) * 100),
+        "cagr_pct": float(cagr * 100), "max_drawdown_pct": float(drawdown.min() * 100),
+        "sharpe_daily": float(sharpe) if pd.notna(sharpe) else None,
+        "sortino_daily": float(sortino) if pd.notna(sortino) else None,
+        "win_rate_pct": float((pnl > 0).mean() * 100) if len(pnl) else None,
+        "profit_factor": float(gross_profit / gross_loss) if gross_loss > 0 else (None if gross_profit == 0 else float("inf")),
+        "expectancy_per_trade": float(pnl.mean()) if len(pnl) else None,
+        "average_win": float(wins.mean()) if len(wins) else None,
+        "average_loss": float(losses.mean()) if len(losses) else None,
+    }
