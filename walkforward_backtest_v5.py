@@ -60,6 +60,26 @@ def atr_series(bars: pd.DataFrame, period: int = 14) -> pd.Series:
     return tr.rolling(period, min_periods=period).mean()
 
 
+def build_benchmark_curve(close: pd.Series, dates, initial_equity: float = 100000.0) -> pd.DataFrame:
+    """Build a close-to-close benchmark on the strategy's exact evaluation dates."""
+    if close is None or close.empty:
+        return pd.DataFrame(columns=["date", "equity"])
+    series = pd.to_numeric(close.copy(), errors="coerce")
+    idx = pd.to_datetime(series.index)
+    if getattr(idx, "tz", None) is not None:
+        idx = idx.tz_localize(None)
+    series.index = idx.normalize()
+    series = series[~series.index.duplicated(keep="last")].sort_index()
+    target_dates = pd.DatetimeIndex(pd.to_datetime(list(dates)))
+    if getattr(target_dates, "tz", None) is not None:
+        target_dates = target_dates.tz_localize(None)
+    target_dates = target_dates.normalize()
+    aligned = series.reindex(target_dates).ffill().dropna()
+    if len(aligned) < 2 or float(aligned.iloc[0]) <= 0:
+        return pd.DataFrame(columns=["date", "equity"])
+    return pd.DataFrame({"date": aligned.index, "equity": initial_equity * aligned / float(aligned.iloc[0])})
+
+
 def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     """Safely combine per-symbol/horizon frames with non-identical columns."""
     nonempty = [frame for frame in frames if isinstance(frame, pd.DataFrame) and not frame.empty]
@@ -172,6 +192,29 @@ def main():
                         "feed": "Yahoo Finance daily OHLCV",
                         **stats,
                     })
+                    if not curve.empty:
+                        for benchmark_symbol in ("SPY", "QQQ"):
+                            if benchmark_symbol not in prices:
+                                continue
+                            benchmark_curve = build_benchmark_curve(
+                                prices[benchmark_symbol], curve["date"], initial_equity=100000.0
+                            )
+                            if benchmark_curve.empty:
+                                continue
+                            benchmark_tag = f"{tag}_benchmark_{benchmark_symbol}"
+                            benchmark_curve["ticker"] = benchmark_symbol
+                            benchmark_curve["strategy_id"] = benchmark_tag
+                            benchmark_curve["benchmark_for"] = tag
+                            all_curves.append(benchmark_curve)
+                            benchmark_stats = performance_summary(pd.DataFrame(), benchmark_curve)
+                            summaries.append({
+                                "strategy_id": benchmark_tag, "status": "ok",
+                                "ticker": ticker, "benchmark_ticker": benchmark_symbol,
+                                "horizon_sessions": horizon,
+                                "round_trip_cost_bps": 0.0, "slippage_bps_per_side": 0.0,
+                                "benchmark": "buy_and_hold_close_to_close_same_dates",
+                                **benchmark_stats,
+                            })
             except Exception as exc:
                 summaries.append({"ticker": ticker, "horizon": horizon,
                                   "status": "backtest_error", "error": str(exc)})
