@@ -6,9 +6,11 @@ on:
       - 'market_structure_v5.py'
       - 'market_risk_v4.py'
       - 'trade_decision_v5.py'
-      - 'tests/test_trade_decision_v5.py'\n      - 'walkforward_execution_v5.py'\n      - 'tests/test_walkforward_execution_v5.py'
+      - 'walkforward_execution_v5.py'
       - 'run_market_structure_v5.py'
       - 'tests/test_market_structure_v5.py'
+      - 'tests/test_trade_decision_v5.py'
+      - 'tests/test_walkforward_execution_v5.py'
       - '.github/workflows/market_structure_v5.yml'
   pull_request:
     paths:
@@ -16,9 +18,9 @@ on:
       - 'run_market_structure_v5.py'
       - 'market_risk_v4.py'
       - 'trade_decision_v5.py'
+      - 'walkforward_execution_v5.py'
       - 'tests/test_market_structure_v5.py'
       - 'tests/test_trade_decision_v5.py'
-      - 'walkforward_execution_v5.py'
       - 'tests/test_walkforward_execution_v5.py'
       - '.github/workflows/market_structure_v5.yml'
   workflow_dispatch:
