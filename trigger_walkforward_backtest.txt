@@ -1,1 +1,1 @@
-Rerun V5 with Wyckoff effort-result filters, ES cross-market context, OOS forecast diagnostics and explicit trade plans.
+Rerun V5 after correcting next-session fill-based R-multiple targets; validate all execution tests and matched-period benchmarks.
