@@ -1,1 +1,1 @@
-Validated rerun: adjusted OHLC aligned to adjusted close; two-stage exits and reconciled equity curve.
+Rerun after fixing heterogeneous per-symbol/horizon DataFrame aggregation; includes adjusted OHLC alignment and two-stage exits.
