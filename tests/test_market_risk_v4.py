@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from market_risk_v4 import make_features, labeled, market_stress
+from market_risk_v4 import make_features, labeled, market_stress, merge_market_structure_features
 
 class V4Tests(unittest.TestCase):
     def setUp(self):
@@ -15,6 +15,34 @@ class V4Tests(unittest.TestCase):
         x=make_features(self.p,"^NDX")
         self.assertIn("vix_level",x); self.assertIn("credit_mom20",x)
         self.assertNotIn("up",x); self.assertNotIn("forward_return",x)
+    def test_market_structure_features_join_to_model_inputs(self):
+        idx = self.p["SOXL"].index
+        bars = pd.DataFrame({
+            "Open": self.p["SOXL"].values * 0.99,
+            "High": self.p["SOXL"].values * 1.02,
+            "Low": self.p["SOXL"].values * 0.98,
+            "Close": self.p["SOXL"].values,
+            "Volume": np.arange(1000, 1600, dtype=float),
+        }, index=idx)
+        merged, meta = merge_market_structure_features(make_features(self.p, "SOXL"), bars, "SOXL")
+        self.assertIn("ms_relative_volume", merged.columns)
+        self.assertIn("ms_close_location", merged.columns)
+        self.assertTrue(merged["ms_relative_volume"].notna().any())
+        self.assertTrue(meta["volume_valid"])
+
+    def test_cash_index_volume_not_used_as_model_feature(self):
+        idx = self.p["^NDX"].index
+        bars = pd.DataFrame({
+            "Open": self.p["^NDX"].values * 0.99,
+            "High": self.p["^NDX"].values * 1.02,
+            "Low": self.p["^NDX"].values * 0.98,
+            "Close": self.p["^NDX"].values,
+            "Volume": np.arange(1000, 1600, dtype=float),
+        }, index=idx)
+        merged, meta = merge_market_structure_features(make_features(self.p, "^NDX"), bars, "^NDX")
+        self.assertFalse(meta["volume_valid"])
+        self.assertTrue(merged["ms_relative_volume"].isna().all())
+
     def test_forward_labels_tail_nan(self):
         x=make_features(self.p,"SOXL"); y=labeled(x,self.p["SOXL"],"5d")
         self.assertTrue(y.up.tail(5).isna().all())
