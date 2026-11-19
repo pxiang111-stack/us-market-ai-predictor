@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - 'trigger_walkforward_backtest.txt'
+  pull_request:
+    paths:
+      - 'trigger_walkforward_backtest.txt'
   workflow_dispatch:
 permissions:
   contents: read
