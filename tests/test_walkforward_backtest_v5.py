@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from walkforward_backtest_v5 import concat_frames
+from walkforward_backtest_v5 import concat_frames, DECISION_COST_FLOOR
 
 
 class WalkForwardBacktestAggregationTests(unittest.TestCase):
@@ -15,6 +15,9 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
         self.assertIn("expected_return", combined.columns)
         self.assertEqual(combined.loc[0, "ticker"], "QQQ")
         self.assertEqual(combined.loc[1, "ticker"], "SPY")
+
+    def test_signal_filter_covers_worst_case_round_trip_cost_and_slippage(self):
+        self.assertAlmostEqual(DECISION_COST_FLOOR, 0.004)
 
     def test_concat_frames_empty_input(self):
         self.assertTrue(concat_frames([]).empty)
