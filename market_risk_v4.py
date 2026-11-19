@@ -77,7 +77,10 @@ def merge_market_structure_features(x, bars, ticker):
     volume_valid = ticker not in {"^NDX", "^GSPC", "^SOX"}
     ms = build_market_structure(d, open_interest=None, volume_is_valid=volume_valid)
     cols = ["relative_volume", "volume_zscore", "close_location", "body_fraction",
-            "signed_volume_proxy_ratio"]
+            "signed_volume_proxy_ratio", "trend_above_sma20", "sma20_above_sma50",
+            "sma50_above_sma200", "range_position_20", "breakout_up_20",
+            "breakout_down_20", "failed_breakout_up_20", "failed_breakout_down_20",
+            "breakout_up_volume_confirmed", "breakout_down_volume_confirmed"]
     ms = ms[cols].rename(columns={c: "ms_" + c for c in cols})
     out = x.copy()
     xidx = pd.to_datetime(out.index)
@@ -313,7 +316,11 @@ def main():
             structure_meta = {"ticker": ticker, "status": "unavailable", "error": str(exc),
                               "oi_status": "unavailable", "session_split": False}
             for col in ("ms_relative_volume", "ms_volume_zscore", "ms_close_location",
-                        "ms_body_fraction", "ms_signed_volume_proxy_ratio"):
+                        "ms_body_fraction", "ms_signed_volume_proxy_ratio", "ms_trend_above_sma20",
+                        "ms_sma20_above_sma50", "ms_sma50_above_sma200", "ms_range_position_20",
+                        "ms_breakout_up_20", "ms_breakout_down_20", "ms_failed_breakout_up_20",
+                        "ms_failed_breakout_down_20", "ms_breakout_up_volume_confirmed",
+                        "ms_breakout_down_volume_confirmed"):
                 x[col] = np.nan
         structure_metadata.append(structure_meta)
         for h in HORIZONS:
