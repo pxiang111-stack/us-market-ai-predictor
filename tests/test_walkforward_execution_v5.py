@@ -77,7 +77,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
             "Close": [100, 104, 95, 100, 100],
         }, index=self.dates)
         signals = self.signals.copy()
-        signals["stop_loss"] = 100.0
+        signals["stop_loss"] = 99.0
         ledger, _ = simulate_trades(bars, signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
         trade = ledger.iloc[0]
         self.assertEqual(trade["exit_reason"], "stop_after_1r")
