@@ -1,1 +1,1 @@
-Rerun V5 backtest on commit 80a4932db8123c9fb3d6a3264c2f726b712e19fa with forecast-quality diagnostics and explicit trade plans.
+Rerun V5 with Wyckoff effort-result filters, ES cross-market context, OOS forecast diagnostics and explicit trade plans.
