@@ -18,6 +18,7 @@ from trade_decision_v5 import build_trade_decision
 from walkforward_forecast_v5 import generate_walkforward_forecasts
 from walkforward_execution_v5 import simulate_trades, performance_summary
 from sklearn.metrics import roc_auc_score, brier_score_loss
+from qqq_drawdown_diagnostics_v1 import evaluate_drawdown_warnings
 
 OUT = Path("output/walkforward_v5")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -331,7 +332,21 @@ def main():
                                   "status": "backtest_error", "error": str(exc)})
             time.sleep(0.2)
 
-    concat_frames(all_forecasts).to_csv(OUT / "oos_forecasts.csv", index=False)
+    forecast_frame = concat_frames(all_forecasts)
+    forecast_frame.to_csv(OUT / "oos_forecasts.csv", index=False)
+    # QQQ-specific early-warning audit: score bearish forecasts before future
+    # 3/5/8% downside excursions, separately from confirmed SHORT trade entries.
+    qqq_forecasts = forecast_frame[forecast_frame.get("ticker", pd.Series(dtype=str)) == "QQQ"].copy()
+    if not qqq_forecasts.empty:
+        qqq_bars = fetch_bars("QQQ")
+        drawdown_detail, drawdown_summary = evaluate_drawdown_warnings(
+            qqq_forecasts, qqq_bars, thresholds=(0.03, 0.05, 0.08)
+        )
+        drawdown_detail.to_csv(OUT / "qqq_drawdown_warning_detail.csv", index=False)
+        drawdown_summary.to_csv(OUT / "qqq_drawdown_warning_summary.csv", index=False)
+    else:
+        pd.DataFrame().to_csv(OUT / "qqq_drawdown_warning_detail.csv", index=False)
+        pd.DataFrame().to_csv(OUT / "qqq_drawdown_warning_summary.csv", index=False)
     concat_frames(all_plans).to_csv(OUT / "trade_decisions.csv", index=False)
     concat_frames(all_ledgers).to_csv(OUT / "trade_ledger.csv", index=False)
     concat_frames(all_curves).to_csv(OUT / "daily_equity_curves.csv", index=False)
