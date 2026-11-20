@@ -24,6 +24,11 @@ def build_trade_decision(
     features: dict, allow_short: bool = False, round_trip_cost: float = 0.0015,
     risk_budget_pct: float = 0.005, max_gross_exposure: float = 1.0,
     strategy_mode: str = "confluence",
+    probability_threshold_long: float | None = None,
+    probability_threshold_short: float | None = None,
+    structure_relative_volume_min: float = 1.2,
+    structure_close_location_long: float = 0.65,
+    structure_close_location_short: float = 0.35,
 ) -> dict:
     """Convert forecast + structure into a conservative, explainable trade plan.
 
@@ -69,16 +74,16 @@ def build_trade_decision(
         and features.get("ms_upthrust_reject_20") != 1
         and bullish_effort
         and (features.get("ms_breakout_up_volume_confirmed") == 1
-             or (features.get("ms_relative_volume", 0) >= 1.2
-                 and features.get("ms_close_location", 0) >= 0.65))
+             or (features.get("ms_relative_volume", 0) >= structure_relative_volume_min
+                 and features.get("ms_close_location", 0) >= structure_close_location_long))
     )
     short_structure = (
         bear_trend and features.get("ms_failed_breakout_down_20") != 1
         and features.get("ms_spring_reclaim_20") != 1
         and bearish_effort
         and (features.get("ms_breakout_down_volume_confirmed") == 1
-             or (features.get("ms_relative_volume", 0) >= 1.2
-                 and features.get("ms_close_location", 1) <= 0.35))
+             or (features.get("ms_relative_volume", 0) >= structure_relative_volume_min
+                 and features.get("ms_close_location", 1) <= structure_close_location_short))
     )
 
     # Two deliberately distinct hypotheses. Breakout trades require a confirmed
@@ -95,13 +100,13 @@ def build_trade_decision(
             and features.get("ms_breakout_down_volume_confirmed") == 1
             and features.get("ms_close_location", 1) <= 0.35
         )
-        long_probability_gate, short_probability_gate = probability_up >= 0.62, probability_up <= 0.38
+        long_probability_gate, short_probability_gate = probability_up >= (probability_threshold_long if probability_threshold_long is not None else 0.62), probability_up <= (probability_threshold_short if probability_threshold_short is not None else 0.38)
     elif strategy_mode == "reversal_absorption":
         long_structure = features.get("ms_spring_reclaim_20") == 1
         short_structure = features.get("ms_upthrust_reject_20") == 1
-        long_probability_gate, short_probability_gate = probability_up >= 0.55, probability_up <= 0.45
+        long_probability_gate, short_probability_gate = probability_up >= (probability_threshold_long if probability_threshold_long is not None else 0.55), probability_up <= (probability_threshold_short if probability_threshold_short is not None else 0.45)
     else:
-        long_probability_gate, short_probability_gate = probability_up >= 0.62, probability_up <= 0.38
+        long_probability_gate, short_probability_gate = probability_up >= (probability_threshold_long if probability_threshold_long is not None else 0.62), probability_up <= (probability_threshold_short if probability_threshold_short is not None else 0.38)
 
     net_edge = abs(expected_return) - round_trip_cost
     # Persist each gate independently so a FLAT decision can be diagnosed rather
