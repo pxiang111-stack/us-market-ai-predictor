@@ -1,7 +1,7 @@
 name: V5 Daily Market Structure Scan
 on:
   push:
-    branches: [assistant-v5-market-structure]
+    branches: [assistant-v5-market-structure, assistant-v11-raw-price-dividends]
     paths:
       - 'market_structure_v5.py'
       - 'market_risk_v4.py'
