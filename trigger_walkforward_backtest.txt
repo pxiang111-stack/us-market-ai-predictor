@@ -11,3 +11,4 @@ Conservative same-bar breakeven rule validation: 2026-11-20T11:55:00+08:00
 Latest diagnostics and concurrency validation: 2026-11-20T12:10:00+08:00
 
 Single PR-triggered validation run: 2026-11-20T12:15:00+08:00
+Categorical regime feature exclusion validation after commit 97410bef424ffa29743abf7aff58310c44395cc3
