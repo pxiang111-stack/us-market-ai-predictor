@@ -15,3 +15,4 @@ Categorical regime feature exclusion validation after commit 97410bef424ffa29743
 
 
 Enable QQQ/SPY long-short decision validation after correcting short-side eligibility: 2026-11-20
+QQQ drawdown warning diagnostics v1: evaluate 3%, 5%, and 8% future downside excursions for 5/10/20-session OOS forecasts; compare bearish forecast warnings with actual SHORT trade entries; report precision, recall, false warnings, missed events, and lead sessions.
