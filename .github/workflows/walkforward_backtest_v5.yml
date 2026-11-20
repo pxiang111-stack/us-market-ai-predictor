@@ -2,7 +2,7 @@ name: V5 Purged Walk-Forward Backtest
 on:
   pull_request:
     paths:
-      - 'trigger_walkforward_backtest.txt'
+      - 'trigger_walkforward_backtest.txt'\n      - 'qqq_drawdown_risk_v1.py'\n      - 'tests/test_qqq_drawdown_risk_v1.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,18 +26,18 @@ jobs:
           python -m pip install pandas numpy yfinance scikit-learn requests tabulate
       - name: Compile and test
         run: |
-          python -m compileall -q market_risk_v4.py market_structure_v5.py trade_decision_v5.py walkforward_forecast_v5.py walkforward_execution_v5.py qqq_drawdown_diagnostics_v1.py walkforward_backtest_v5.py frequency_sweep_v1.py tests
+          python -m compileall -q market_risk_v4.py market_structure_v5.py trade_decision_v5.py walkforward_forecast_v5.py walkforward_execution_v5.py qqq_drawdown_diagnostics_v1.py walkforward_backtest_v5.py frequency_sweep_v1.py qqq_drawdown_risk_v1.py tests
           python -m unittest discover -s tests -v
       - name: Run purged walk-forward backtest
         run: python walkforward_backtest_v5.py
       - name: Run QQQ trade-frequency sensitivity experiment
         run: python frequency_sweep_v1.py
-      - name: Upload OOS forecasts, trades and equity curves
+      - name: Run dedicated QQQ downside-risk walk-forward model\n        run: python qqq_drawdown_risk_v1.py\n      - name: Upload OOS forecasts, trades and equity curves
         uses: actions/upload-artifact@v4
         with:
           name: v5-walkforward-backtest
           path: |
             output/walkforward_v5/
-            output/frequency_sweep_v1/
+            output/frequency_sweep_v1/\n            output/qqq_drawdown_risk_v1/
           if-no-files-found: error
           retention-days: 30
