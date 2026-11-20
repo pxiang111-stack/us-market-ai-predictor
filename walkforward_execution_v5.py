@@ -80,6 +80,7 @@ def simulate_trades(
             continue
         half_units = units * 0.5
         partial_date = partial_price = partial_cost = None
+        active_stop = stop
         exit_i = exit_price = exit_reason = None
         last_i = min(len(dates) - 1, entry_i + max_holding_sessions - 1)
 
@@ -87,20 +88,23 @@ def simulate_trades(
             bar = b.iloc[j]
             o, h, l = map(float, (bar["Open"], bar["High"], bar["Low"]))
             if direction == 1:
-                stop_gap, stop_hit = o <= stop, l <= stop
+                stop_gap, stop_hit = o <= active_stop, l <= active_stop
                 target1_hit, target2_hit = h >= target1, h >= target2
             else:
-                stop_gap, stop_hit = o >= stop, h >= stop
+                stop_gap, stop_hit = o >= active_stop, h >= active_stop
                 target1_hit, target2_hit = l <= target1, l <= target2
 
             # Stop-first convention resolves ambiguous OHLC ordering conservatively.
             if stop_gap or stop_hit:
-                exit_i, exit_price = j, (o if stop_gap else stop)
+                exit_i, exit_price = j, (o if stop_gap else active_stop)
                 exit_reason = "gap_stop" if stop_gap else ("stop_after_1r" if partial_date is not None else "stop")
                 break
 
             if partial_date is None and target1_hit:
                 partial_date, partial_price = dates[j], target1
+                # After banking the first half at +1R, protect the remainder
+                # at breakeven so a later reversal cannot erase the booked gain.
+                active_stop = entry
                 partial_cost = half_units * (entry + target1) * cost_rate
                 if target2_hit:
                     exit_i, exit_price, exit_reason = j, target2, "target_2r"
