@@ -40,6 +40,10 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
         self.assertAlmostEqual(stats["forecast_auc"], 1.0)
         self.assertAlmostEqual(stats["forecast_directional_accuracy_50_pct"], 100.0)
         self.assertAlmostEqual(stats["predicted_vs_realized_spearman_ic"], 1.0)
+        self.assertGreater(stats["forecast_brier_skill_vs_50"], 0.0)
+        self.assertGreaterEqual(stats["forecast_ece_10"], 0.0)
+        self.assertIn("predicted_return_mae_pct", stats)
+        self.assertIn("predicted_return_rmse_pct", stats)
 
     def test_concat_frames_empty_input(self):
         self.assertTrue(concat_frames([]).empty)
