@@ -159,14 +159,20 @@ def simulate_trades(
         })
 
     ledger_df = pd.DataFrame(ledger)
+    # Build the daily curve in one forward pass. The previous implementation
+    # rescanned the entire trade ledger for every bar (O(days * trades)), which
+    # made long walk-forward runs unnecessarily slow.
     daily = []
+    realized = float(initial_equity)
+    trade_idx = 0
     for d in dates:
-        realized = initial_equity
+        while trade_idx < len(ledger) and ledger[trade_idx]["exit_date"] < d:
+            realized += float(ledger[trade_idx]["net_pnl"])
+            trade_idx += 1
+
         active_value = 0.0
-        for trade in ledger:
-            if trade["exit_date"] < d:
-                realized += trade["net_pnl"]
-                continue
+        if trade_idx < len(ledger):
+            trade = ledger[trade_idx]
             if trade["entry_date"] <= d <= trade["exit_date"]:
                 mark = trade["exit_price"] if d == trade["exit_date"] else float(b.loc[d, "Close"])
                 direction = 1 if trade["side"] == "LONG" else -1
@@ -184,7 +190,6 @@ def simulate_trades(
                 else:
                     est_cost = trade["units"] * (trade["entry_price"] + mark) * cost_rate
                     active_value = trade["units"] * direction * (mark - trade["entry_price"]) - est_cost
-                break
         daily.append({"date": d, "equity": realized + active_value})
 
     curve_df = pd.DataFrame(daily)
