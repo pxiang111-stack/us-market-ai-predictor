@@ -131,5 +131,27 @@ class WalkForwardExecutionTests(unittest.TestCase):
         self.assertTrue(ledger.empty)
 
 
+    def test_execution_diagnostics_count_skipped_position_signal(self):
+        bars = pd.DataFrame({
+            "Open": [100, 100, 100, 100, 100],
+            "High": [101, 101, 101, 101, 101],
+            "Low": [99, 99, 99, 94, 99],
+            "Close": [100, 100, 100, 96, 100],
+        }, index=self.dates)
+        signals = pd.DataFrame([
+            {"decision": "LONG", "stop_loss": 95.0, "take_profit_1r": 105.0, "take_profit_2r": 110.0},
+            {"decision": "LONG", "stop_loss": 95.0, "take_profit_1r": 105.0, "take_profit_2r": 110.0},
+            {"decision": "LONG", "stop_loss": 95.0, "take_profit_1r": 105.0, "take_profit_2r": 110.0},
+        ], index=[self.dates[0], self.dates[1], self.dates[3]])
+        ledger, curve, diag = simulate_trades(
+            bars, signals, round_trip_cost_bps=0, slippage_bps_per_side=0,
+            return_diagnostics=True,
+        )
+        self.assertEqual(diag["signals_received"], 3)
+        self.assertEqual(diag["executed_trades"], 2)
+        self.assertEqual(diag["skipped_existing_position"], 1)
+        self.assertEqual(diag["skipped_total"], 1)
+        self.assertEqual(len(ledger), 2)
+
 if __name__ == "__main__":
     unittest.main()

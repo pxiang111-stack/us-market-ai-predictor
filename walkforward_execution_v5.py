@@ -20,7 +20,8 @@ def simulate_trades(
     round_trip_cost_bps: float = 15.0,
     slippage_bps_per_side: float = 5.0,
     max_holding_sessions: int = 10,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    return_diagnostics: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame] | tuple[pd.DataFrame, pd.DataFrame, dict]:
     """Simulate one position at a time; signals indexed by decision date."""
     required_bars = {"Open", "High", "Low", "Close"}
     required_signals = {"decision", "stop_loss", "take_profit_1r", "take_profit_2r"}
@@ -43,23 +44,36 @@ def simulate_trades(
     date_pos = {d: i for i, d in enumerate(dates)}
     equity = float(initial_equity)
     ledger = []
+    diagnostics = {
+        "signals_received": 0, "executed_trades": 0,
+        "skipped_signal_date_not_in_bars": 0, "skipped_no_next_session": 0,
+        "skipped_existing_position": 0, "skipped_invalid_entry_or_stop": 0,
+        "skipped_invalid_risk_geometry": 0, "skipped_zero_units": 0,
+    }
     occupied_until = -1
     cost_rate = round_trip_cost_bps / 20000.0 + slippage_bps_per_side / 10000.0
 
     for signal_date, sig in s.iterrows():
+        side = str(sig["decision"]).upper()
+        if side not in ("LONG", "SHORT"):
+            continue
+        diagnostics["signals_received"] += 1
         if signal_date not in date_pos:
+            diagnostics["skipped_signal_date_not_in_bars"] += 1
             continue
         i = date_pos[signal_date]
         entry_i = i + 1
-        if entry_i >= len(dates) or entry_i <= occupied_until:
+        if entry_i >= len(dates):
+            diagnostics["skipped_no_next_session"] += 1
             continue
-        side = str(sig["decision"]).upper()
-        if side not in ("LONG", "SHORT"):
+        if entry_i <= occupied_until:
+            diagnostics["skipped_existing_position"] += 1
             continue
         entry_bar = b.iloc[entry_i]
         entry = float(entry_bar["Open"])
         stop, target1, target2 = map(float, (sig["stop_loss"], sig["take_profit_1r"], sig["take_profit_2r"]))
         if not all(np.isfinite(v) for v in (entry, stop, target1, target2)) or entry <= 0:
+            diagnostics["skipped_invalid_entry_or_stop"] += 1
             continue
         direction = 1 if side == "LONG" else -1
         # The signal's stop is an absolute invalidation price from close t, but
@@ -67,16 +81,19 @@ def simulate_trades(
         # target distances remain consistent with the risk actually sized.
         risk_per_unit = abs(entry - stop)
         if risk_per_unit <= 0:
+            diagnostics["skipped_invalid_risk_geometry"] += 1
             continue
         target1 = entry + direction * risk_per_unit
         target2 = entry + direction * 2.0 * risk_per_unit
         valid = (stop < entry < target1 < target2) if direction == 1 else (target2 < target1 < entry < stop)
         if not valid:
+            diagnostics["skipped_invalid_risk_geometry"] += 1
             continue
 
         risk_cash = equity * risk_budget_pct
         units = min(risk_cash / risk_per_unit, equity * max_gross_exposure / entry)
         if units <= 0:
+            diagnostics["skipped_zero_units"] += 1
             continue
         half_units = units * 0.5
         partial_date = partial_price = partial_cost = None
@@ -157,6 +174,7 @@ def simulate_trades(
             "net_return_on_equity_pct": net_pnl / start_equity * 100,
             "equity_before": start_equity, "equity_after": equity,
         })
+        diagnostics["executed_trades"] += 1
 
     ledger_df = pd.DataFrame(ledger)
     # Build the daily curve in one forward pass. The previous implementation
@@ -197,6 +215,9 @@ def simulate_trades(
         curve_df["daily_return"] = curve_df["equity"].pct_change().fillna(0.0)
         curve_df["peak_equity"] = curve_df["equity"].cummax()
         curve_df["drawdown_pct"] = curve_df["equity"] / curve_df["peak_equity"] - 1.0
+    if return_diagnostics:
+        diagnostics["skipped_total"] = diagnostics["signals_received"] - diagnostics["executed_trades"]
+        return ledger_df, curve_df, diagnostics
     return ledger_df, curve_df
 
 
