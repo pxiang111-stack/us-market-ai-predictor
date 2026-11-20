@@ -5,3 +5,5 @@ rerun after execution stop management fix 2026-11-20
 validate adverse gap breakeven stop fill
 
 rerun after correcting stop-after-1r test bar path
+
+Conservative same-bar breakeven rule validation: 2026-11-20T11:55:00+08:00
