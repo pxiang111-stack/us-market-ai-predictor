@@ -18,3 +18,4 @@ Enable QQQ/SPY long-short decision validation after correcting short-side eligib
 QQQ drawdown warning diagnostics v1: evaluate 3%, 5%, and 8% future downside excursions for 5/10/20-session OOS forecasts; compare bearish forecast warnings with actual SHORT trade entries; report precision, recall, false warnings, missed events, and lead sessions.
 
 Re-run QQQ drawdown early-warning validation after fixing summary-row expectation.
+V5 report assembly fix and short coverage metadata regression check: 2026-11-20
