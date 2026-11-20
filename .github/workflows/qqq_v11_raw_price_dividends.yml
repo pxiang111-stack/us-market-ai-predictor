@@ -8,6 +8,7 @@ on:
       - 'qqq_v11_raw_price_dividends.py'
       - 'qqq_v8_trend_breakout.py'
       - 'qqq_v12_short_horizon.py'
+      - 'qqq_v13_robustness_audit.py'
       - '.github/workflows/qqq_v11_raw_price_dividends.yml'
 permissions:
   contents: read
@@ -23,17 +24,20 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip pandas numpy yfinance
       - name: Compile
-        run: python -m compileall -q qqq_v8_trend_breakout.py qqq_v11_raw_price_dividends.py qqq_v12_short_horizon.py
+        run: python -m compileall -q qqq_v8_trend_breakout.py qqq_v11_raw_price_dividends.py qqq_v12_short_horizon.py qqq_v13_robustness_audit.py
       - name: Run raw-price cash account backtest
         run: python qqq_v11_raw_price_dividends.py
       - name: Run V12 short-horizon cash-account experiments
         run: python qqq_v12_short_horizon.py
-      - name: Upload V11 and V12 reports
+      - name: Run V13 cost and regime robustness audit
+        run: python qqq_v13_robustness_audit.py
+      - name: Upload V11, V12 and V13 reports
         uses: actions/upload-artifact@v4
         with:
           name: qqq-v11-raw-price-dividends
           path: |
             output/qqq_v11_raw_price_dividends/
             output/qqq_v12_short_horizon/
+            output/qqq_v13_robustness/
           if-no-files-found: error
           retention-days: 30
