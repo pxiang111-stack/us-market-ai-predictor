@@ -46,7 +46,7 @@ def download_ohlcv() -> pd.DataFrame:
 def build_signals(bars: pd.DataFrame) -> pd.DataFrame:
     close, high, low = bars["Close"], bars["High"], bars["Low"]
     f = pd.DataFrame(index=bars.index)
-    f["ret_next"] = close.shift(-1) / close - 1.0
+    f["Close"] = close\n    f["ret_next"] = close.shift(-1) / close - 1.0
     f["sma50"] = close.rolling(50).mean()
     f["sma200"] = close.rolling(200).mean()
     f["prior_high_55"] = high.rolling(BREAKOUT_ENTRY).max().shift(1)
