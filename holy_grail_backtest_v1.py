@@ -17,6 +17,24 @@ SLIP_SIDE_BPS = 2.0
 MAX_HOLD = 10
 
 
+def wilder_rma(series, period=14):
+    """Wilder's RMA with an SMA seed (not an unseeded EWM approximation)."""
+    values = pd.to_numeric(series, errors="coerce").to_numpy(dtype=float)
+    out = np.full(len(values), np.nan, dtype=float)
+    valid = np.flatnonzero(np.isfinite(values))
+    if len(valid) < period:
+        return pd.Series(out, index=series.index)
+    start = int(valid[0])
+    seed_end = start + period - 1
+    if seed_end >= len(values) or not np.isfinite(values[start:seed_end + 1]).all():
+        return pd.Series(out, index=series.index)
+    out[seed_end] = float(values[start:seed_end + 1].mean())
+    for i in range(seed_end + 1, len(values)):
+        if np.isfinite(values[i]):
+            out[i] = (out[i - 1] * (period - 1) + values[i]) / period
+    return pd.Series(out, index=series.index)
+
+
 def indicators(bars):
     d = bars.copy().sort_index()
     need = {"Open", "High", "Low", "Close"}
@@ -27,11 +45,11 @@ def indicators(bars):
     pdm = pd.Series(np.where((up > down) & (up > 0), up, 0.0), index=d.index)
     mdm = pd.Series(np.where((down > up) & (down > 0), down, 0.0), index=d.index)
     tr = pd.concat([d.High-d.Low, (d.High-prev).abs(), (d.Low-prev).abs()], axis=1).max(axis=1)
-    atr = tr.ewm(alpha=1/14, adjust=False, min_periods=14).mean()
-    pdi = 100*pdm.ewm(alpha=1/14, adjust=False, min_periods=14).mean()/atr.replace(0,np.nan)
-    mdi = 100*mdm.ewm(alpha=1/14, adjust=False, min_periods=14).mean()/atr.replace(0,np.nan)
+    atr = wilder_rma(tr, 14)
+    pdi = 100*wilder_rma(pdm, 14)/atr.replace(0,np.nan)
+    mdi = 100*wilder_rma(mdm, 14)/atr.replace(0,np.nan)
     dx = 100*(pdi-mdi).abs()/(pdi+mdi).replace(0,np.nan)
-    d["ADX14"] = dx.ewm(alpha=1/14, adjust=False, min_periods=14).mean()
+    d["ADX14"] = wilder_rma(dx, 14)
     d["PDI"], d["MDI"] = pdi, mdi
     d["EMA20"] = d.Close.ewm(span=20, adjust=False, min_periods=20).mean()
     d["PRIOR_HIGH20"] = d.High.shift(1).rolling(20, min_periods=20).max()
