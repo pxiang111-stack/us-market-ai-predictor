@@ -1,3 +1,5 @@
 Rerun V5 after correcting next-session fill-based R-multiple targets; validate all execution tests and matched-period benchmarks.
 
 rerun after execution stop management fix 2026-11-20
+
+validate adverse gap breakeven stop fill
