@@ -49,6 +49,11 @@ class V4Tests(unittest.TestCase):
         self.assertEqual(diag["status"], "ok")
         self.assertIsNotNone(row)
         self.assertIn("probability_up", row)
+        self.assertLessEqual(row["expected_return"], row["historical_q90"])
+        self.assertGreaterEqual(row["expected_return"], row["historical_q10"])
+        self.assertEqual(row["validation_gate"], diag["auc"] >= 0.52)
+        if diag["auc"] < 0.52:
+            self.assertEqual(row["signal"], "low_validation_skill_flat")
 
     def test_cash_index_volume_not_used_as_model_feature(self):
         idx = self.p["^NDX"].index
