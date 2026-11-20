@@ -26,3 +26,4 @@ Frequency sweep experiment added: QQQ baseline/active/aggressive gates, fixed 40
 2026-11-20: rerun after linear-time equity curve optimization and matched QQQ buy-and-hold benchmark addition.
 
 2026-11-20: rerun with superseding concurrency to release the stalled historical backtest and validate the optimized code.
+Dedicated QQQ downside-risk model added; run purged labels, walk-forward alerts, and compare with directional warning baseline.
