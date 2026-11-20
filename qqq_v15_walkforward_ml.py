@@ -80,7 +80,7 @@ def build_features(b):
 
 def walk_forward_predictions(bars, features):
     close=bars["Close"]
-    labels=(close.shift(-HORIZON)/close-1>0).astype(float)
+    labels=(close.shift(-(HORIZON+1))/close.shift(-1)-1>0).astype(float)
     labels.iloc[-HORIZON:]=np.nan
     pred=pd.Series(np.nan,index=bars.index,dtype=float)
     fitted=0
@@ -88,7 +88,7 @@ def walk_forward_predictions(bars, features):
     for _, group in months.groupby(months).groups.items():
         pos=bars.index.get_indexer(group)
         first=int(pos[0])
-        cutoff=first-HORIZON
+        cutoff=first-(HORIZON+1)
         if cutoff<0:
             continue
         train_end=bars.index[cutoff]
@@ -190,7 +190,7 @@ def main():
           "recall_at_55":float(recall_score(y,(p>0.55).astype(int),zero_division=0))}
     meta={"status":"completed","ticker":"QQQ","initial_cash_usd":INITIAL_CASH,
       "prediction_horizon_sessions":HORIZON,"retraining":"Monthly expanding calendar with trailing 1260 matured observations; minimum 756.",
-      "label":"Close(t+5)/Close(t)-1 > 0; training labels only included when fully matured by month start.",
+      "label":"Close(t+6)/Close(t+1)-1 > 0, matching next-close entry and a 5-session holding horizon; labels included only when fully matured by month start.",
       "execution":"Signal after close t; target position executed at close t+1.",
       "model":"StandardScaler + LogisticRegression(C=0.2), fixed parameters; no hyperparameter tuning.",
       "features":list(features.columns),"model_refits":fitted,"prediction_metrics":metrics,
