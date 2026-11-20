@@ -1,4 +1,4 @@
-name: Linda Raschke Holy Grail Daily Backtest
+name: Linda Raschke Holy Grail Daily Backtest v1.0.1
 on:
   pull_request:
     paths:
