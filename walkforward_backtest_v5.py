@@ -203,29 +203,37 @@ def main():
                                       "status": "insufficient_walkforward_history"})
                     continue
                 plan_rows = []
+                strategy_modes = ("confluence", "trend_breakout", "reversal_absorption")
                 for date, pred in forecasts.iterrows():
                     if date not in bars.index or date not in x.index:
                         continue
-                    row = build_trade_decision(
-                        close=float(close.loc[date]), atr=float(atr.loc[date]),
-                        probability_up=float(pred["probability_up"]),
-                        expected_return=float(pred["expected_return"]),
-                        features=x.loc[date].to_dict(),
-                        allow_short=(ticker == "NQ=F"),
-                        round_trip_cost=DECISION_COST_FLOOR,
-                    )
-                    row.update({"as_of": date, "ticker": ticker, "asset": asset,
-                                "horizon_sessions": horizon,
-                                "train_end": pred["train_end"],
-                                "n_train": int(pred["n_train"]),
-                                "probability_calibrated": False})
-                    plan_rows.append(row)
-                plans = pd.DataFrame(plan_rows).set_index("as_of") if plan_rows else pd.DataFrame()
-                if plans.empty:
+                    for strategy_mode in strategy_modes:
+                        row = build_trade_decision(
+                            close=float(close.loc[date]), atr=float(atr.loc[date]),
+                            probability_up=float(pred["probability_up"]),
+                            expected_return=float(pred["expected_return"]),
+                            features=x.loc[date].to_dict(),
+                            allow_short=(ticker == "NQ=F"),
+                            round_trip_cost=DECISION_COST_FLOOR,
+                            strategy_mode=strategy_mode,
+                        )
+                        row.update({"as_of": date, "ticker": ticker, "asset": asset,
+                                    "horizon_sessions": horizon,
+                                    "train_end": pred["train_end"],
+                                    "n_train": int(pred["n_train"]),
+                                    "probability_calibrated": False})
+                        plan_rows.append(row)
+                plans_all = pd.DataFrame(plan_rows)
+                if plans_all.empty:
                     summaries.append({"ticker": ticker, "horizon": horizon, "status": "no_plans"})
                     continue
+                plans_by_mode = {
+                    mode: plans_all[plans_all["strategy_mode"] == mode].set_index("as_of").sort_index()
+                    for mode in strategy_modes
+                }
+                baseline_plans = plans_by_mode["confluence"]
                 forecasts = forecasts.join(
-                    plans[["decision", "reason"]].rename(columns={"reason": "decision_reason"}),
+                    baseline_plans[["decision", "reason"]].rename(columns={"reason": "decision_reason"}),
                     how="left",
                 )
                 forecasts["ticker"] = ticker
@@ -238,7 +246,6 @@ def main():
                     forecasts["realized_forward_return_eval_only"] > 0
                 ).where(forecasts["realized_forward_return_eval_only"].notna())
                 all_forecasts.append(forecasts.reset_index())
-                all_plans.append(plans.reset_index())
                 quality = forecast_quality_summary(forecasts, close, horizon)
                 summaries.append({
                     "strategy_id": f"{ticker}_{horizon}d_forecast_quality",
@@ -246,70 +253,76 @@ def main():
                     "benchmark": "out_of_sample_forecast_diagnostics_only",
                     **quality,
                 })
-                plans["decision"] = plans["decision"].fillna("FLAT")
 
-                for cost_bps in COST_CASES_BPS:
-                    ledger, curve = simulate_trades(
-                        bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
-                        initial_equity=100_000.0, risk_budget_pct=0.005,
-                        max_gross_exposure=1.0, round_trip_cost_bps=cost_bps,
-                        slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE, max_holding_sessions=horizon,
-                    )
-                    stats = performance_summary(ledger, curve)
-                    tag = f"{ticker}_{horizon}d_cost{int(cost_bps)}bps"
-                    if not ledger.empty:
-                        ledger = ledger.copy()
-                        ledger["ticker"], ledger["horizon_sessions"], ledger["round_trip_cost_bps"] = ticker, horizon, cost_bps
-                        ledger["strategy_id"] = tag
-                        all_ledgers.append(ledger)
-                    if not curve.empty:
-                        curve = curve.copy()
-                        curve["ticker"], curve["horizon_sessions"], curve["round_trip_cost_bps"] = ticker, horizon, cost_bps
-                        curve["strategy_id"] = tag
-                        all_curves.append(curve)
-                    summaries.append({
-                        "strategy_id": tag, "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
-                        "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
-                        "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
-                        "forecast_count": int(len(forecasts)),
-                        "long_signals": int((plans["decision"] == "LONG").sum()),
-                        "short_signals": int((plans["decision"] == "SHORT").sum()),
-                        "flat_signals": int((plans["decision"] == "FLAT").sum()),
-                        "probability_long_gate_count": int(plans["gate_probability_long"].sum()),
-                        "probability_short_gate_count": int(plans["gate_probability_short"].sum()),
-                        "edge_long_gate_count": int(plans["gate_edge_long"].sum()),
-                        "edge_short_gate_count": int(plans["gate_edge_short"].sum()),
-                        "bull_trend_gate_count": int(plans["gate_bull_trend"].sum()),
-                        "bear_trend_gate_count": int(plans["gate_bear_trend"].sum()),
-                        "long_structure_gate_count": int(plans["gate_long_structure"].sum()),
-                        "short_structure_gate_count": int(plans["gate_short_structure"].sum()),
-                        "probability_calibrated": False,
-                        "feed": "Yahoo Finance daily OHLCV",
-                        **stats,
-                    })
-                    if not curve.empty:
-                        for benchmark_symbol in ("SPY", "QQQ"):
-                            if benchmark_symbol not in prices:
-                                continue
-                            benchmark_curve = build_benchmark_curve(
-                                prices[benchmark_symbol], curve["date"], initial_equity=100000.0
-                            )
-                            if benchmark_curve.empty:
-                                continue
-                            benchmark_tag = f"{tag}_benchmark_{benchmark_symbol}"
-                            benchmark_curve["ticker"] = benchmark_symbol
-                            benchmark_curve["strategy_id"] = benchmark_tag
-                            benchmark_curve["benchmark_for"] = tag
-                            all_curves.append(benchmark_curve)
-                            benchmark_stats = performance_summary(pd.DataFrame(), benchmark_curve)
-                            summaries.append({
-                                "strategy_id": benchmark_tag, "status": "ok",
-                                "ticker": ticker, "benchmark_ticker": benchmark_symbol,
-                                "horizon_sessions": horizon,
-                                "round_trip_cost_bps": 0.0, "slippage_bps_per_side": 0.0,
-                                "benchmark": "buy_and_hold_close_to_close_same_dates",
-                                **benchmark_stats,
-                            })
+                for strategy_mode in strategy_modes:
+                    plans = plans_by_mode[strategy_mode].copy()
+                    plans["decision"] = plans["decision"].fillna("FLAT")
+                    all_plans.append(plans.reset_index())
+                    for cost_bps in COST_CASES_BPS:
+                        ledger, curve = simulate_trades(
+                            bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
+                            initial_equity=100_000.0, risk_budget_pct=0.005,
+                            max_gross_exposure=1.0, round_trip_cost_bps=cost_bps,
+                            slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE, max_holding_sessions=horizon,
+                        )
+                        stats = performance_summary(ledger, curve)
+                        tag = f"{ticker}_{horizon}d_{strategy_mode}_cost{int(cost_bps)}bps"
+                        if not ledger.empty:
+                            ledger = ledger.copy()
+                            ledger["ticker"], ledger["horizon_sessions"], ledger["round_trip_cost_bps"] = ticker, horizon, cost_bps
+                            ledger["strategy_mode"] = strategy_mode
+                            ledger["strategy_id"] = tag
+                            all_ledgers.append(ledger)
+                        if not curve.empty:
+                            curve = curve.copy()
+                            curve["ticker"], curve["horizon_sessions"], curve["round_trip_cost_bps"] = ticker, horizon, cost_bps
+                            curve["strategy_mode"] = strategy_mode
+                            curve["strategy_id"] = tag
+                            all_curves.append(curve)
+                        summaries.append({
+                            "strategy_id": tag, "strategy_mode": strategy_mode,
+                            "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
+                            "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
+                            "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
+                            "forecast_count": int(len(forecasts)),
+                            "long_signals": int((plans["decision"] == "LONG").sum()),
+                            "short_signals": int((plans["decision"] == "SHORT").sum()),
+                            "flat_signals": int((plans["decision"] == "FLAT").sum()),
+                            "probability_long_gate_count": int(plans["gate_probability_long"].sum()),
+                            "probability_short_gate_count": int(plans["gate_probability_short"].sum()),
+                            "edge_long_gate_count": int(plans["gate_edge_long"].sum()),
+                            "edge_short_gate_count": int(plans["gate_edge_short"].sum()),
+                            "bull_trend_gate_count": int(plans["gate_bull_trend"].sum()),
+                            "bear_trend_gate_count": int(plans["gate_bear_trend"].sum()),
+                            "long_structure_gate_count": int(plans["gate_long_structure"].sum()),
+                            "short_structure_gate_count": int(plans["gate_short_structure"].sum()),
+                            "probability_calibrated": False,
+                            "feed": "Yahoo Finance daily OHLCV",
+                            **stats,
+                        })
+                        if not curve.empty:
+                            for benchmark_symbol in ("SPY", "QQQ"):
+                                if benchmark_symbol not in prices:
+                                    continue
+                                benchmark_curve = build_benchmark_curve(
+                                    prices[benchmark_symbol], curve["date"], initial_equity=100000.0
+                                )
+                                if benchmark_curve.empty:
+                                    continue
+                                benchmark_tag = f"{tag}_benchmark_{benchmark_symbol}"
+                                benchmark_curve["ticker"] = benchmark_symbol
+                                benchmark_curve["strategy_id"] = benchmark_tag
+                                benchmark_curve["benchmark_for"] = tag
+                                all_curves.append(benchmark_curve)
+                                benchmark_stats = performance_summary(pd.DataFrame(), benchmark_curve)
+                                summaries.append({
+                                    "strategy_id": benchmark_tag, "status": "ok",
+                                    "ticker": ticker, "benchmark_ticker": benchmark_symbol,
+                                    "horizon_sessions": horizon,
+                                    "round_trip_cost_bps": 0.0, "slippage_bps_per_side": 0.0,
+                                    "benchmark": "buy_and_hold_close_to_close_same_dates",
+                                    **benchmark_stats,
+                                })
             except Exception as exc:
                 summaries.append({"ticker": ticker, "horizon": horizon,
                                   "status": "backtest_error", "error": str(exc)})
@@ -334,6 +347,7 @@ def main():
         "shorts_enabled_only_for": ["NQ=F"],
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
+        "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
         "outputs": ["oos_forecasts.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv"],
         "summary_rows": len(summary_df),
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
