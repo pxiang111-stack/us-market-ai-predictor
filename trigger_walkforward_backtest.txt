@@ -20,3 +20,5 @@ QQQ drawdown warning diagnostics v1: evaluate 3%, 5%, and 8% future downside exc
 Re-run QQQ drawdown early-warning validation after fixing summary-row expectation.
 V5 report assembly fix and short coverage metadata regression check: 2026-11-20
 Force fresh V5 walk-forward execution after prior PR runs were cancelled before job creation: 2026-11-20T14:00+08:00
+
+Frequency sweep experiment added: QQQ baseline/active/aggressive gates, fixed 40bp edge floor, 10/20/30bp costs, identical purged OOS forecasts and execution. Trigger fresh validation 2026-11-20.
