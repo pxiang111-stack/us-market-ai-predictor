@@ -355,6 +355,7 @@ def main():
 
     # Direction-specific OOS trade diagnostics: a profitable combined result can
     # hide a losing short book (or vice versa), so report each side separately.
+    ledger_all = concat_frames(all_ledgers)
     side_rows = []
     if not ledger_all.empty:
         for keys, group in ledger_all.groupby(
@@ -385,7 +386,6 @@ def main():
 
     # Trade-level conditional diagnostics by regime. Regime labels are attached
     # from the signal date only; this is descriptive, not an optimized regime filter.
-    ledger_all = concat_frames(all_ledgers)
     regime_summary = pd.DataFrame()
     if not ledger_all.empty and "market_regime" in ledger_all:
         valid_regime = ledger_all.dropna(subset=["market_regime"]).copy()
@@ -426,7 +426,7 @@ def main():
         "risk_budget_pct": 0.5,
         "max_gross_exposure": 1.0,
         "position_units_are_not_exchange_contracts": True,
-        "shorts_enabled_only_for": ["NQ=F"],
+        "shorts_enabled_only_for": ["NQ=F", "QQQ", "SPY"],
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
         "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
