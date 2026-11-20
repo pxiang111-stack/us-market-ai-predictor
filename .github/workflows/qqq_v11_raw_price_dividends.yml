@@ -1,4 +1,4 @@
-name: V11-V14 QQQ Cash Account Research Backtests
+name: V11-V15 QQQ Cash Account and Walk-Forward ML Research
 on:
   workflow_dispatch:
   push:
