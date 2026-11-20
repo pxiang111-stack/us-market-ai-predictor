@@ -22,7 +22,7 @@ class QQQDrawdownDiagnosticsTests(unittest.TestCase):
         self.assertTrue(detail.iloc[0]["drawdown_5pct"])
         self.assertTrue(detail.iloc[0]["drawdown_8pct"])
         self.assertEqual(detail.iloc[0]["drawdown_5pct_first_hit_session"], 2)
-        self.assertEqual(len(summary), 2)
+        self.assertEqual(len(summary), 4)
         self.assertEqual(summary.iloc[0]["warning_count"], 1)
 
     def test_trade_short_signal_is_reported_separately(self):
