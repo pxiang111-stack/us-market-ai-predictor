@@ -13,12 +13,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingRegressor
 from sklearn.metrics import roc_auc_score, brier_score_loss
+from market_structure_v5 import build_market_structure
+from trade_decision_v5 import build_trade_decision, atr_value
 
 warnings.filterwarnings("ignore")
 OUT=Path("output"); OUT.mkdir(exist_ok=True)
 HORIZONS={"5d":5,"10d":10,"20d":20}
 TARGETS={"NQ_futures":"NQ=F","SOXL":"SOXL"}
-SYMBOLS=sorted(set(["NQ=F","^NDX","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
+SYMBOLS=sorted(set(["NQ=F","ES=F","^NDX","^GSPC","SOXL","QQQ","^SOX","SOXX","SMH","NVDA","AMD","AVGO",
  "MSFT","AMZN","GOOGL","META","CRWV","^VIX","HYG","LQD","TLT","IEF","UUP"]))
 COMPANIES=["NVDA","MSFT","AMZN","GOOGL","META","ORCL","CRWV"]
 
@@ -62,6 +64,66 @@ def make_features(prices,ticker):
         x["credit_ratio"]=cr; x["credit_mom20"]=cr.pct_change(20)
     return x.replace([np.inf,-np.inf],np.nan)
 
+
+def merge_market_structure_features(x, bars, ticker):
+    """Join causal daily OHLCV structure features to model inputs."""
+    if bars is None or bars.empty:
+        raise ValueError(f"No OHLCV bars supplied for {ticker}")
+    d = bars.copy()
+    idx = pd.to_datetime(d.index)
+    if getattr(idx, "tz", None) is not None:
+        idx = idx.tz_localize(None)
+    d.index = idx.normalize()
+    d = d[~d.index.duplicated(keep="last")].sort_index()
+    volume_valid = ticker not in {"^NDX", "^GSPC", "^SOX"}
+    ms = build_market_structure(d, open_interest=None, volume_is_valid=volume_valid)
+    cols = ["relative_volume", "volume_zscore", "close_location", "body_fraction",
+            "signed_volume_proxy_ratio", "trend_above_sma20", "sma20_above_sma50",
+            "sma50_above_sma200", "range_position_20", "breakout_up_20",
+            "breakout_down_20", "failed_breakout_up_20", "failed_breakout_down_20",
+            "breakout_up_volume_confirmed", "breakout_down_volume_confirmed",
+            "close_location_volume_pressure", "effort_result_absorption_proxy",
+            "volume_weighted_close_location_20", "range_compression_14_50",
+            "spring_reclaim_20", "upthrust_reject_20", "atr_pct_14",
+            "atr_pct_baseline_252", "regime_trend", "regime_volatility",
+            "market_regime"]
+    ms = ms[cols].rename(columns={c: "ms_" + c for c in cols})
+    out = x.copy()
+    xidx = pd.to_datetime(out.index)
+    if getattr(xidx, "tz", None) is not None:
+        xidx = xidx.tz_localize(None)
+    out.index = xidx.normalize()
+    out = out.join(ms, how="left")
+    metadata = {
+        "ticker": ticker,
+        "volume_valid": volume_valid,
+        "bars": int(len(d)),
+        "feature_rows_covered": int(ms.notna().any(axis=1).sum()),
+        "rvol_latest": None if pd.isna(ms["ms_relative_volume"].iloc[-1]) else float(ms["ms_relative_volume"].iloc[-1]),
+        "oi_status": "unavailable",
+        "session_split": False,
+    }
+    return out, metadata
+
+
+def download_market_structure_bars(ticker, period="10y"):
+    raw = yf.download(ticker, period=period, interval="1d", auto_adjust=True,
+                       progress=False, threads=False, timeout=25)
+    if raw is None or raw.empty:
+        raise ValueError(f"No OHLCV data returned for {ticker}")
+    if isinstance(raw.columns, pd.MultiIndex):
+        if ticker in raw.columns.get_level_values(-1):
+            raw = raw.xs(ticker, axis=1, level=-1)
+        elif ticker in raw.columns.get_level_values(0):
+            raw = raw.xs(ticker, axis=1, level=0)
+        else:
+            raw.columns = raw.columns.get_level_values(0)
+    required = ["Open", "High", "Low", "Close", "Volume"]
+    missing = [c for c in required if c not in raw.columns]
+    if missing:
+        raise ValueError(f"{ticker} OHLCV missing: {missing}")
+    return raw[required].dropna(subset=["Close"]).sort_index()
+
 def labeled(x,close,horizon):
     n=HORIZONS[horizon]; y=x.copy()
     y["forward_return"]=close.shift(-n).reindex(x.index)/close.reindex(x.index)-1
@@ -70,11 +132,15 @@ def labeled(x,close,horizon):
     return y
 
 def models():
+    # Preserve the natural training class prior. Balanced class weights can
+    # distort predict_proba(), while downstream rules compare its output to
+    # probability thresholds. This is not probability calibration: OOS Brier
+    # and calibration diagnostics remain mandatory.
     a=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
-      ("scale",StandardScaler()),("lr",LogisticRegression(max_iter=1500,class_weight="balanced"))])
+      ("scale",StandardScaler()),("lr",LogisticRegression(max_iter=1500))])
     b=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
       ("rf",RandomForestClassifier(n_estimators=250,min_samples_leaf=15,max_features="sqrt",
-       class_weight="balanced_subsample",n_jobs=-1,random_state=29))])
+       n_jobs=-1,random_state=29))])
     reg=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
       ("gb",HistGradientBoostingRegressor(max_iter=150,learning_rate=.04,l2_regularization=3,random_state=29))])
     return a,b,reg
@@ -247,33 +313,78 @@ def main():
         target_map=TARGETS
     if "NQ=F" not in prices and "^NDX" not in prices:
         raise RuntimeError("Neither NQ futures nor Nasdaq-100 cash-index data is available")
-    forecasts=[]; diagnostics=[]
+    forecasts=[]; diagnostics=[]; structure_metadata=[]; trade_decisions=[]
     for asset,ticker in target_map.items():
         if ticker not in prices:
             diagnostics.append({"asset":asset,"status":"price_data_missing"}); continue
         x=make_features(prices,ticker)
+        structure_bars = None
+        try:
+            structure_bars = download_market_structure_bars(ticker)
+            x, structure_meta = merge_market_structure_features(x, structure_bars, ticker)
+            structure_meta["status"] = "connected"
+        except Exception as exc:
+            structure_meta = {"ticker": ticker, "status": "unavailable", "error": str(exc),
+                              "oi_status": "unavailable", "session_split": False}
+            for col in ("ms_relative_volume", "ms_volume_zscore", "ms_close_location",
+                        "ms_body_fraction", "ms_signed_volume_proxy_ratio", "ms_trend_above_sma20",
+                        "ms_sma20_above_sma50", "ms_sma50_above_sma200", "ms_range_position_20",
+                        "ms_breakout_up_20", "ms_breakout_down_20", "ms_failed_breakout_up_20",
+                        "ms_failed_breakout_down_20", "ms_breakout_up_volume_confirmed",
+                        "ms_breakout_down_volume_confirmed", "ms_close_location_volume_pressure",
+                        "ms_effort_result_absorption_proxy", "ms_volume_weighted_close_location_20",
+                        "ms_range_compression_14_50", "ms_spring_reclaim_20", "ms_upthrust_reject_20"):
+                x[col] = np.nan
+        structure_metadata.append(structure_meta)
         for h in HORIZONS:
             try:
                 row,diag=run_forecast(asset,ticker,prices,x,h); diagnostics.append(diag)
-                if row: forecasts.append(row)
+                if row:
+                    forecasts.append(row)
+                    latest_features = x.iloc[-1].to_dict()
+                    decision = build_trade_decision(
+                        close=float(prices[ticker].iloc[-1]),
+                        atr=atr_value(structure_bars) if structure_bars is not None else float("nan"),
+                        probability_up=float(row["probability_up"]),
+                        expected_return=float(row["expected_return"]),
+                        features=latest_features,
+                        allow_short=(asset == "NQ_futures" and ticker == "NQ=F"),
+                    )
+                    decision.update({"as_of": row["as_of"], "asset": asset,
+                                     "ticker": ticker, "horizon": h})
+                    trade_decisions.append(decision)
+                    row["trade_decision"] = decision["decision"]
+                    row["entry_reference"] = decision["entry_reference"]
+                    row["stop_loss"] = decision["stop_loss"]
+                    row["take_profit_1r"] = decision["take_profit_1r"]
+                    row["take_profit_2r"] = decision["take_profit_2r"]
+                    row["max_position_fraction"] = decision["max_position_fraction"]
+                    row["decision_reason"] = decision["reason"]
             except Exception as e: diagnostics.append({"asset":asset,"horizon":h,"status":"error","error":str(e)})
     stress,stress_summary=market_stress(prices)
     company_data=[fundamentals(t) for t in COMPANIES]
     ai_risk_details,ai_risk_summary=ai_infrastructure_risk(company_data)
     news=headlines(); now=pd.Timestamp.now(tz="UTC").isoformat()
     pd.DataFrame(forecasts).to_csv(OUT/"market_forecasts_v4.csv",index=False)
+    pd.DataFrame(trade_decisions).to_csv(OUT/"trade_decisions_v5.csv",index=False)
     pd.DataFrame(diagnostics).to_csv(OUT/"walkforward_validation_v4.csv",index=False)
+    pd.DataFrame(structure_metadata).to_csv(OUT/"market_structure_model_inputs_v5.csv",index=False)
     pd.DataFrame(stress).to_csv(OUT/"market_stress_proxies_v4.csv",index=False)
     pd.DataFrame([stress_summary]).to_csv(OUT/"market_stress_summary_v4.csv",index=False)
     pd.DataFrame(company_data).to_csv(OUT/"ai_company_fundamentals_v4.csv",index=False)
     pd.DataFrame(ai_risk_details).to_csv(OUT/"ai_infrastructure_risk_details_v4.csv",index=False)
     pd.DataFrame([ai_risk_summary]).to_csv(OUT/"ai_infrastructure_risk_summary_v4.csv",index=False)
     pd.DataFrame(news).to_csv(OUT/"ai_news_v4.csv",index=False)
-    summary={"run_time_utc":now,"downloaded_price_series":len(prices),"forecast_rows":len(forecasts),
+    summary={"run_time_utc":now,"downloaded_price_series":len(prices),"forecast_rows":len(forecasts),"trade_decision_rows":len(trade_decisions),
+      "actionable_long_count":sum(1 for d in trade_decisions if d.get("decision")=="LONG"),
+      "actionable_short_count":sum(1 for d in trade_decisions if d.get("decision")=="SHORT"),
+      "flat_count":sum(1 for d in trade_decisions if d.get("decision")=="FLAT"),
       "news_articles":len(news),"fundamental_companies":len(company_data),
       "market_stress_proxy_score":stress_summary["risk_score"],"stress_metrics":stress_summary["coverage_items"],
       "ai_infrastructure_risk_score":ai_risk_summary["score"],
       "ai_risk_covered_dimensions":ai_risk_summary["covered_dimensions"],
+      "market_structure_targets_connected":sum(1 for m in structure_metadata if m.get("status")=="connected"),
+      "market_structure_targets_total":len(structure_metadata),
       "options_chain_data":"not_connected"}
     (OUT/"run_summary_v4.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     lines=["# Market Forecast & AI Risk V4","",f"- Run time UTC: {now}",
@@ -283,7 +394,14 @@ def main():
       "## NQ / SOXL forecasts",""]
     if forecasts: lines.append(pd.DataFrame(forecasts).to_markdown(index=False))
     else: lines.append("No forecast rows generated.")
-    lines += ["","## Walk-forward holdout diagnostics","",pd.DataFrame(diagnostics).to_markdown(index=False) if diagnostics else "No diagnostics.",
+    lines += ["","## Rule-based trade plans (not orders)","",
+      pd.DataFrame(trade_decisions).to_markdown(index=False) if trade_decisions else "No trade plans generated.",
+      "- Entry reference is the latest close; stop is 2x ATR; targets are 1R and 2R.",
+      "- Position fraction targets 0.5% equity risk with a 1.0x gross exposure cap; it is not broker buying power.",
+      "- Direction requires probability/expected-return thresholds, trend alignment, price/volume confirmation and estimated edge above assumed round-trip cost.",
+      "- Short signals are enabled only for actual NQ futures, not SOXL or the NDX cash-index proxy.",
+      "- These are end-of-day research plans, not intraday triggers or routed orders; the assumed cost is a placeholder and needs instrument-specific validation.",
+      "","## Walk-forward holdout diagnostics","",pd.DataFrame(diagnostics).to_markdown(index=False) if diagnostics else "No diagnostics.",
       "","## Market stress proxy","",f"- Score: {stress_summary['risk_score']}/100 (rule-based, not probability).",
       pd.DataFrame(stress).to_markdown(index=False) if stress else "No market stress metrics.",
       "","## AI infrastructure financing-risk screen","",
@@ -299,6 +417,7 @@ def main():
       "- Financial statement line items vary; missing values are not interpreted as zero.",
       "- Credit ETF ratios are market proxies, not CCC spreads or CDS.",
       "- Current headlines are report-only; they are not inserted into historical training, avoiding false historical news backtests.",
+      "- V5 daily OHLCV features are joined to NQ/SOXL model inputs when available; cash-index volume is excluded. OI and intraday session splits remain unavailable.",
       "- Universe is limited to the explicitly listed index, ETF, cloud and semiconductor symbols; not a whole-market scan.",""]
     (OUT/"market_dashboard_v4.md").write_text("\n".join(lines),encoding="utf-8")
     print(json.dumps(summary,indent=2),flush=True)

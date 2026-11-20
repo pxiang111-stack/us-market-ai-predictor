@@ -1,0 +1,30 @@
+Rerun V5 after correcting next-session fill-based R-multiple targets; validate all execution tests and matched-period benchmarks.
+
+rerun after execution stop management fix 2026-11-20
+
+validate adverse gap breakeven stop fill
+
+rerun after correcting stop-after-1r test bar path
+
+Conservative same-bar breakeven rule validation: 2026-11-20T11:55:00+08:00
+
+Latest diagnostics and concurrency validation: 2026-11-20T12:10:00+08:00
+
+Single PR-triggered validation run: 2026-11-20T12:15:00+08:00
+Categorical regime feature exclusion validation after commit 97410bef424ffa29743abf7aff58310c44395cc3
+
+
+Enable QQQ/SPY long-short decision validation after correcting short-side eligibility: 2026-11-20
+QQQ drawdown warning diagnostics v1: evaluate 3%, 5%, and 8% future downside excursions for 5/10/20-session OOS forecasts; compare bearish forecast warnings with actual SHORT trade entries; report precision, recall, false warnings, missed events, and lead sessions.
+
+Re-run QQQ drawdown early-warning validation after fixing summary-row expectation.
+V5 report assembly fix and short coverage metadata regression check: 2026-11-20
+Force fresh V5 walk-forward execution after prior PR runs were cancelled before job creation: 2026-11-20T14:00+08:00
+
+Frequency sweep experiment added: QQQ baseline/active/aggressive gates, fixed 40bp edge floor, 10/20/30bp costs, identical purged OOS forecasts and execution. Trigger fresh validation 2026-11-20.
+
+2026-11-20: rerun after linear-time equity curve optimization and matched QQQ buy-and-hold benchmark addition.
+
+2026-11-20: rerun with superseding concurrency to release the stalled historical backtest and validate the optimized code.
+Dedicated QQQ downside-risk model added; run purged labels, walk-forward alerts, and compare with directional warning baseline.
+Downside-risk label completeness guard added; rerun full validation and OOS experiment.

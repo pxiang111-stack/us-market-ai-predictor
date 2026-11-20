@@ -1,0 +1,180 @@
+"""Market-structure features from OHLCV and optional open-interest data.
+
+These are observable proxies, not direct identification of institutions or aggressor flow.
+Open interest is a two-sided contract count; price/OI combinations are regime labels only.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+
+_REQUIRED = {"Open", "High", "Low", "Close", "Volume"}
+
+
+def build_market_structure(
+    ohlcv: pd.DataFrame,
+    open_interest: pd.Series | None = None,
+    *,
+    volume_window: int = 20,
+    oi_change_window: int = 1,
+    volume_is_valid: bool = True,
+) -> pd.DataFrame:
+    """Return causal OHLCV/volume/OI features aligned to the input bar index.
+
+    volume_is_valid must be False for cash-index symbols whose vendor Volume
+    field is not an executable consolidated trading-volume measure.
+    RVOL and z-score compare the current completed bar with prior bars only.
+    """
+    missing = _REQUIRED.difference(ohlcv.columns)
+    if missing:
+        raise ValueError(f"ohlcv missing required columns: {sorted(missing)}")
+    if volume_window < 2 or oi_change_window < 1:
+        raise ValueError("volume_window must be >=2 and oi_change_window >=1")
+
+    d = ohlcv.loc[:, ["Open", "High", "Low", "Close", "Volume"]].copy()
+    d = d.sort_index()
+    for col in d.columns:
+        d[col] = pd.to_numeric(d[col], errors="coerce")
+    if d.index.has_duplicates:
+        d = d[~d.index.duplicated(keep="last")]
+
+    out = pd.DataFrame(index=d.index)
+    close = d["Close"]
+    candle_range = (d["High"] - d["Low"]).replace(0, np.nan)
+    out["return_1bar"] = close.pct_change()
+    out["close_location"] = ((close - d["Low"]) / candle_range).clip(0, 1)
+    out["body_fraction"] = ((d["Close"] - d["Open"]) / candle_range).clip(-1, 1)
+
+    # Multi-horizon daily structure; rolling reference levels exclude today's bar.
+    sma20 = close.rolling(20, min_periods=20).mean()
+    sma50 = close.rolling(50, min_periods=50).mean()
+    sma200 = close.rolling(200, min_periods=200).mean()
+    out["trend_above_sma20"] = (close > sma20).astype(float).where(sma20.notna())
+    out["sma20_above_sma50"] = (sma20 > sma50).astype(float).where(sma20.notna() & sma50.notna())
+    out["sma50_above_sma200"] = (sma50 > sma200).astype(float).where(sma50.notna() & sma200.notna())
+
+    # Causal market regime labels for conditional strategy evaluation. The
+    # volatility baseline uses only observations available before the current bar.
+    prev_close = close.shift(1)
+    regime_true_range = pd.concat([
+        d["High"] - d["Low"],
+        (d["High"] - prev_close).abs(),
+        (d["Low"] - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    regime_atr14 = regime_true_range.rolling(14, min_periods=14).mean()
+    atr_pct = regime_atr14 / close.replace(0, np.nan)
+    atr_pct_baseline = atr_pct.shift(1).rolling(252, min_periods=60).median()
+    out["atr_pct_14"] = atr_pct
+    out["atr_pct_baseline_252"] = atr_pct_baseline
+    vol_high = atr_pct > (atr_pct_baseline * 1.25)
+    vol_low = atr_pct < (atr_pct_baseline * 0.80)
+    out["regime_volatility"] = np.select(
+        [vol_high, vol_low], ["high_volatility", "low_volatility"],
+        default="normal_volatility",
+    )
+    trend_up = (sma50 > sma200) & (close > sma50)
+    trend_down = (sma50 < sma200) & (close < sma50)
+    out["regime_trend"] = np.select(
+        [trend_up, trend_down], ["uptrend", "downtrend"], default="range_or_transition",
+    )
+    out.loc[sma50.isna() | sma200.isna() | atr_pct_baseline.isna(),
+            ["regime_trend", "regime_volatility"]] = np.nan
+    out["market_regime"] = (
+        out["regime_trend"].astype("string") + "_" +
+        out["regime_volatility"].astype("string")
+    ).astype("string")
+    out.loc[out["regime_trend"].isna() | out["regime_volatility"].isna(),
+            "market_regime"] = pd.NA
+    prior_high20 = d["High"].shift(1).rolling(20, min_periods=20).max()
+    prior_low20 = d["Low"].shift(1).rolling(20, min_periods=20).min()
+    out["range_position_20"] = ((close - prior_low20) / (prior_high20 - prior_low20).replace(0, np.nan)).clip(0, 1)
+    valid_range = prior_high20.notna() & prior_low20.notna()
+    out["breakout_up_20"] = (close > prior_high20).astype(float).where(valid_range)
+    out["breakout_down_20"] = (close < prior_low20).astype(float).where(valid_range)
+    out["failed_breakout_up_20"] = ((d["High"] > prior_high20) & (close <= prior_high20)).astype(float).where(valid_range)
+    out["failed_breakout_down_20"] = ((d["Low"] < prior_low20) & (close >= prior_low20)).astype(float).where(valid_range)
+
+    # Use only bars strictly before the current completed bar as the baseline.
+    prior_volume = d["Volume"].shift(1)
+    volume_mean = prior_volume.rolling(volume_window, min_periods=volume_window).mean()
+    volume_std = prior_volume.rolling(volume_window, min_periods=volume_window).std(ddof=0)
+    if volume_is_valid:
+        out["relative_volume"] = d["Volume"] / volume_mean.replace(0, np.nan)
+        out["volume_zscore"] = (
+            (d["Volume"] - volume_mean) / volume_std.replace(0, np.nan)
+        )
+        out["dollar_volume"] = close * d["Volume"]
+        # Candle-direction volume is a coarse bar proxy, never bid/ask delta.
+        out["signed_volume_proxy"] = np.sign(d["Close"] - d["Open"]) * d["Volume"]
+        out["signed_volume_proxy_ratio"] = (
+            out["signed_volume_proxy"] / d["Volume"].replace(0, np.nan)
+        )
+        out["breakout_up_volume_confirmed"] = ((out["breakout_up_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_up_20"].notna())
+        out["breakout_down_volume_confirmed"] = ((out["breakout_down_20"] == 1) & (out["relative_volume"] >= 1.5)).astype(float).where(out["relative_volume"].notna() & out["breakout_down_20"].notna())
+        # Wyckoff-inspired effort/result proxies; these do not prove institutional intent.
+        signed_clv = 2.0 * out["close_location"] - 1.0
+        out["close_location_volume_pressure"] = signed_clv * out["relative_volume"]
+        out["effort_result_absorption_proxy"] = (
+            out["relative_volume"] / (out["body_fraction"].abs() + 0.10)
+        ).replace([np.inf, -np.inf], np.nan)
+        out["volume_weighted_close_location_20"] = (
+            (signed_clv * d["Volume"]).rolling(20, min_periods=20).sum()
+            / d["Volume"].rolling(20, min_periods=20).sum().replace(0, np.nan)
+        )
+        true_range = pd.concat([
+            d["High"] - d["Low"],
+            (d["High"] - d["Close"].shift(1)).abs(),
+            (d["Low"] - d["Close"].shift(1)).abs(),
+        ], axis=1).max(axis=1)
+        atr14 = true_range.rolling(14, min_periods=14).mean()
+        atr50 = true_range.rolling(50, min_periods=50).mean()
+        out["range_compression_14_50"] = atr14 / atr50.replace(0, np.nan)
+        out["spring_reclaim_20"] = (
+            (d["Low"] < prior_low20) & (close > prior_low20)
+            & (out["close_location"] >= 0.65)
+        ).astype(float).where(valid_range)
+        out["upthrust_reject_20"] = (
+            (d["High"] > prior_high20) & (close < prior_high20)
+            & (out["close_location"] <= 0.35)
+        ).astype(float).where(valid_range)
+        out["volume_data_status"] = "vendor_volume_available_proxy_only"
+    else:
+        for col in (
+            "relative_volume", "volume_zscore", "dollar_volume",
+            "signed_volume_proxy", "signed_volume_proxy_ratio",
+            "breakout_up_volume_confirmed", "breakout_down_volume_confirmed",
+            "close_location_volume_pressure", "effort_result_absorption_proxy",
+            "volume_weighted_close_location_20", "range_compression_14_50",
+            "spring_reclaim_20", "upthrust_reject_20",
+        ):
+            out[col] = np.nan
+        out["volume_data_status"] = "invalid_for_cash_index"
+
+    if open_interest is None:
+        out["open_interest"] = np.nan
+        out["oi_change"] = np.nan
+        out["price_oi_regime"] = "oi_unavailable"
+    else:
+        oi = pd.to_numeric(open_interest, errors="coerce").sort_index()
+        oi = oi[~oi.index.duplicated(keep="last")].reindex(out.index).ffill()
+        out["open_interest"] = oi
+        out["oi_change"] = oi.pct_change(oi_change_window)
+        price_change = out["return_1bar"]
+        oi_change = out["oi_change"]
+        conditions = [
+            (price_change > 0) & (oi_change > 0),
+            (price_change < 0) & (oi_change > 0),
+            (price_change > 0) & (oi_change < 0),
+            (price_change < 0) & (oi_change < 0),
+        ]
+        labels = [
+            "price_up_oi_up_building_exposure",
+            "price_down_oi_up_building_exposure",
+            "price_up_oi_down_short_cover_or_deleveraging",
+            "price_down_oi_down_long_liquidation_or_deleveraging",
+        ]
+        out["price_oi_regime"] = np.select(conditions, labels, default="mixed_or_flat")
+        out.loc[oi.isna() | oi_change.isna(), "price_oi_regime"] = "oi_unavailable"
+
+    return out.replace([np.inf, -np.inf], np.nan)
