@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from holy_grail_backtest_v1 import simulate, stats
+from holy_grail_backtest_v1 import simulate, stats, wilder_rma
 
 class TestHolyGrail(unittest.TestCase):
     def bars(self, rows):
@@ -22,6 +22,12 @@ class TestHolyGrail(unittest.TestCase):
         t=simulate(b,self.setup("SHORT",98.99,101.01,95),cost_side_bps=0,slip_side_bps=0)
         self.assertEqual(t.iloc[0].exit_reason,"stop")
         self.assertAlmostEqual(t.iloc[0].exit,101.01)
+    def test_wilder_rma_uses_sma_seed(self):
+        x=pd.Series(range(1,16),dtype=float)
+        y=wilder_rma(x,14)
+        self.assertAlmostEqual(y.iloc[13],7.5)
+        self.assertAlmostEqual(y.iloc[14],(7.5*13+15)/14)
+
     def test_empty_stats(self):
         self.assertEqual(stats(pd.DataFrame())["trades"],0)
 
