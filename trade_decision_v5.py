@@ -23,6 +23,7 @@ def build_trade_decision(
     *, close: float, atr: float, probability_up: float, expected_return: float,
     features: dict, allow_short: bool = False, round_trip_cost: float = 0.0015,
     risk_budget_pct: float = 0.005, max_gross_exposure: float = 1.0,
+    strategy_mode: str = "confluence",
 ) -> dict:
     """Convert forecast + structure into a conservative, explainable trade plan.
 
@@ -43,6 +44,8 @@ def build_trade_decision(
         result["reason"] = "Missing or invalid price, ATR, or model output; stand aside."
         return result
 
+    if strategy_mode not in {"confluence", "trend_breakout", "reversal_absorption"}:
+        raise ValueError(f"Unknown strategy_mode: {strategy_mode}")
     bull_trend = all(features.get(k) == 1 for k in (
         "ms_trend_above_sma20", "ms_sma20_above_sma50", "ms_sma50_above_sma200"))
     bear_trend = (
@@ -77,12 +80,36 @@ def build_trade_decision(
              or (features.get("ms_relative_volume", 0) >= 1.2
                  and features.get("ms_close_location", 1) <= 0.35))
     )
+
+    # Two deliberately distinct hypotheses. Breakout trades require a confirmed
+    # range break; reversal trades require a spring/upthrust reclaim/rejection.
+    # Neither is treated as proof of institutional accumulation/distribution.
+    if strategy_mode == "trend_breakout":
+        long_structure = (
+            bull_trend and features.get("ms_failed_breakout_up_20") != 1
+            and features.get("ms_breakout_up_volume_confirmed") == 1
+            and features.get("ms_close_location", 0) >= 0.65
+        )
+        short_structure = (
+            bear_trend and features.get("ms_failed_breakout_down_20") != 1
+            and features.get("ms_breakout_down_volume_confirmed") == 1
+            and features.get("ms_close_location", 1) <= 0.35
+        )
+        long_probability_gate, short_probability_gate = probability_up >= 0.62, probability_up <= 0.38
+    elif strategy_mode == "reversal_absorption":
+        long_structure = features.get("ms_spring_reclaim_20") == 1
+        short_structure = features.get("ms_upthrust_reject_20") == 1
+        long_probability_gate, short_probability_gate = probability_up >= 0.55, probability_up <= 0.45
+    else:
+        long_probability_gate, short_probability_gate = probability_up >= 0.62, probability_up <= 0.38
+
     net_edge = abs(expected_return) - round_trip_cost
     # Persist each gate independently so a FLAT decision can be diagnosed rather
     # than treated as an opaque failure. These are causal, as-of-date features.
     result.update({
-        "gate_probability_long": bool(probability_up >= 0.62),
-        "gate_probability_short": bool(probability_up <= 0.38),
+        "strategy_mode": strategy_mode,
+        "gate_probability_long": bool(long_probability_gate),
+        "gate_probability_short": bool(short_probability_gate),
         "gate_edge_long": bool(expected_return > round_trip_cost),
         "gate_edge_short": bool(expected_return < -round_trip_cost),
         "gate_bull_trend": bool(bull_trend),
@@ -92,9 +119,9 @@ def build_trade_decision(
         "gate_allow_short": bool(allow_short),
     })
     direction = None
-    if probability_up >= 0.62 and expected_return > round_trip_cost and long_structure:
+    if long_probability_gate and expected_return > round_trip_cost and long_structure:
         direction = "LONG"
-    elif allow_short and probability_up <= 0.38 and expected_return < -round_trip_cost and short_structure:
+    elif allow_short and short_probability_gate and expected_return < -round_trip_cost and short_structure:
         direction = "SHORT"
     if direction is None:
         result["reason"] = (
