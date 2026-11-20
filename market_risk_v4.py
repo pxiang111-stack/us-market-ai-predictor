@@ -132,11 +132,15 @@ def labeled(x,close,horizon):
     return y
 
 def models():
+    # Preserve the natural training class prior. Balanced class weights can
+    # distort predict_proba(), while downstream rules compare its output to
+    # probability thresholds. This is not probability calibration: OOS Brier
+    # and calibration diagnostics remain mandatory.
     a=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
-      ("scale",StandardScaler()),("lr",LogisticRegression(max_iter=1500,class_weight="balanced"))])
+      ("scale",StandardScaler()),("lr",LogisticRegression(max_iter=1500))])
     b=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
       ("rf",RandomForestClassifier(n_estimators=250,min_samples_leaf=15,max_features="sqrt",
-       class_weight="balanced_subsample",n_jobs=-1,random_state=29))])
+       n_jobs=-1,random_state=29))])
     reg=Pipeline([("imp",SimpleImputer(strategy="median",add_indicator=True)),
       ("gb",HistGradientBoostingRegressor(max_iter=150,learning_rate=.04,l2_regularization=3,random_state=29))])
     return a,b,reg
