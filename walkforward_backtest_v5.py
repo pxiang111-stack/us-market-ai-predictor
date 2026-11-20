@@ -338,6 +338,36 @@ def main():
     summary_df = pd.DataFrame(summaries)
     summary_df.to_csv(OUT / "performance_summary.csv", index=False)
 
+    # Direction-specific OOS trade diagnostics: a profitable combined result can
+    # hide a losing short book (or vice versa), so report each side separately.
+    side_rows = []
+    if not ledger_all.empty:
+        for keys, group in ledger_all.groupby(
+            ["ticker", "horizon_sessions", "strategy_mode", "round_trip_cost_bps", "side"],
+            dropna=False,
+        ):
+            ticker_name, horizon_value, mode, cost_value, side = keys
+            pnl = pd.to_numeric(group["net_pnl"], errors="coerce").dropna()
+            wins = pnl[pnl > 0]
+            losses = pnl[pnl < 0]
+            risk_cash = pd.to_numeric(group.get("equity_before"), errors="coerce") * 0.005
+            r_multiple = (pnl / risk_cash.reindex(pnl.index)).replace([np.inf, -np.inf], np.nan).dropna()
+            side_rows.append({
+                "ticker": ticker_name,
+                "horizon_sessions": int(horizon_value),
+                "strategy_mode": mode,
+                "round_trip_cost_bps": float(cost_value),
+                "side": side,
+                "trade_count": int(len(pnl)),
+                "win_rate_pct": float((pnl > 0).mean() * 100.0) if len(pnl) else None,
+                "profit_factor": float(wins.sum() / abs(losses.sum())) if len(losses) and abs(losses.sum()) > 0 else (float("inf") if len(wins) else None),
+                "expectancy_net_pnl": float(pnl.mean()) if len(pnl) else None,
+                "median_net_pnl": float(pnl.median()) if len(pnl) else None,
+                "mean_net_r_multiple": float(r_multiple.mean()) if len(r_multiple) else None,
+                "max_single_trade_loss": float(pnl.min()) if len(pnl) else None,
+            })
+    pd.DataFrame(side_rows).to_csv(OUT / "side_performance_summary.csv", index=False)
+
     # Trade-level conditional diagnostics by regime. Regime labels are attached
     # from the signal date only; this is descriptive, not an optimized regime filter.
     ledger_all = concat_frames(all_ledgers)
