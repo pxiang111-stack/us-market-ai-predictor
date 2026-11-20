@@ -64,11 +64,13 @@ def generate_walkforward_forecasts(
         outputs.append({
             "as_of": x.index[i], "probability_up": p,
             "expected_return": expected, "train_end": fitted_at,
-            "n_train": fitted_n, "horizon_sessions": horizon_sessions,
+            "n_train": fitted_n,
+            "train_up_rate": float(train["up"].mean()),
+            "horizon_sessions": horizon_sessions,
             "retrained": i == last_fit_position,
             "probability_calibrated": False,
         })
     return pd.DataFrame(outputs).set_index("as_of") if outputs else pd.DataFrame(
         columns=["probability_up", "expected_return", "train_end", "n_train",
-                 "horizon_sessions", "retrained", "probability_calibrated"]
+                 "train_up_rate", "horizon_sessions", "retrained", "probability_calibrated"]
     )
