@@ -100,6 +100,12 @@ class TradeDecisionTests(unittest.TestCase):
         self.assertEqual(denied["decision"], "FLAT")
         self.assertEqual(allowed["decision"], "SHORT")
 
+    def test_unknown_strategy_mode_is_rejected(self):
+        with self.assertRaises(ValueError):
+            build_trade_decision(close=100, atr=2, probability_up=.7,
+                expected_return=.04, features=self.features(),
+                strategy_mode="unknown_mode")
+
     def test_atr(self):
         idx = pd.date_range("2026-01-01", periods=15)
         bars = pd.DataFrame({"High":np.arange(16,31),"Low":np.arange(14,29),
