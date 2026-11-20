@@ -24,7 +24,7 @@ def download_raw_bars() -> pd.DataFrame:
         raise RuntimeError("QQQ raw daily data unavailable")
     if isinstance(raw.columns, pd.MultiIndex):
         raw.columns = raw.columns.get_level_values(0)
-    required = ["High", "Low", "Close"]
+    required = ["High", "Low", "Close", "Adj Close"]
     missing = [c for c in required if c not in raw.columns]
     if missing:
         raise RuntimeError(f"Missing raw OHLC columns: {missing}")
@@ -38,9 +38,6 @@ def download_raw_bars() -> pd.DataFrame:
         idx = idx.tz_localize(None)
     raw.index = idx.normalize()
     raw = raw[~raw.index.duplicated(keep="last")].sort_index()
-    if (raw["Stock Splits"].fillna(0) != 0).any():
-        # QQQ split events must be reflected in share count before trading.
-        pass
     return raw
 
 def simulate(name: str, bars: pd.DataFrame, target: pd.Series, buy_at_start=False):
@@ -82,7 +79,7 @@ def simulate(name: str, bars: pd.DataFrame, target: pd.Series, buy_at_start=Fals
             trades.append({"date":str(date.date()),"side":"SELL","shares":qty,"price":price,"notional":notional,"cost":fee,"cash_after":cash,"shares_after":shares})
         equity = cash + shares * price
         peak = max(peak, equity)
-        rows.append({"date":str(date.date()),"raw_close":price,"dividend_per_share":div_per_share,"cash":cash,"shares":shares,"market_value":shares*price,"equity":equity,"drawdown_pct":(equity/peak-1)*100,"dividends_cumulative":dividends,"costs_cumulative":costs,"signal_from_prior_close":float(executable.loc[date])})
+        rows.append({"date":str(date.date()),"raw_close":price,"adj_close":float(row["Adj Close"]),"dividend_per_share":div_per_share,"cash":cash,"shares":shares,"market_value":shares*price,"equity":equity,"drawdown_pct":(equity/peak-1)*100,"dividends_cumulative":dividends,"costs_cumulative":costs,"signal_from_prior_close":float(executable.loc[date])})
     curve = pd.DataFrame(rows)
     ledger = pd.DataFrame(trades, columns=["date","side","shares","price","notional","cost","cash_after","shares_after"])
     daily = curve.equity.pct_change().dropna()
@@ -122,8 +119,22 @@ def main():
     pd.DataFrame(summaries).to_csv(OUT/"account_summary.csv",index=False)
     pd.concat(curves,ignore_index=True).to_csv(OUT/"equity_cash_share_curves.csv",index=False)
     pd.concat(ledgers,ignore_index=True).to_csv(OUT/"trade_ledger.csv",index=False)
+    split_checks=[]
+    for date, row in bars[bars["Stock Splits"].fillna(0) > 0].iterrows():
+        loc=bars.index.get_loc(date)
+        if loc == 0:
+            continue
+        prev=bars.iloc[loc-1]
+        split_checks.append({"date":str(date.date()),"split_ratio":float(row["Stock Splits"]),
+          "previous_close":float(prev["Close"]),"event_close":float(row["Close"]),
+          "previous_adj_close":float(prev["Adj Close"]),"event_adj_close":float(row["Adj Close"]),
+          "close_ratio_event_vs_previous":float(row["Close"]/prev["Close"]),
+          "adj_close_ratio_event_vs_previous":float(row["Adj Close"]/prev["Adj Close"]),
+          "close_to_adj_close_previous":float(prev["Close"]/prev["Adj Close"]),
+          "close_to_adj_close_event":float(row["Close"]/row["Adj Close"])})
+    pd.DataFrame(split_checks).to_csv(OUT/"split_diagnostics.csv",index=False)
     meta={"status":"completed","ticker":"QQQ","initial_cash_usd":INITIAL_CASH,
-      "price_source":"Yahoo Finance raw OHLC; auto_adjust=False",
+      "price_source":"Yahoo Finance OHLC + Adj Close; auto_adjust=False. OHLC split treatment is explicitly audited against Adj Close around each split event before changing share-count logic.",
       "dividends":"Cash distributions credited on ex-date to shares held at prior close; not reinvested",
       "execution":"signal after close t; execute at raw close t+1; buy-and-hold enters first close",
       "account":"whole shares, cash only, long only, no leverage, no shorting, no fractional shares",
@@ -132,7 +143,8 @@ def main():
       "10bp is assumed combined friction, not broker-specific verified fees.",
       "Cash dividends are not reinvested; taxes, cash interest and market impact excluded.",
       "Only QQQ is tested; this is not proof of whole-market stock selection skill.",
-      "Historical data vendor revisions may alter past bars."]}
+      "Historical data vendor revisions may alter past bars.",
+      "split_diagnostics.csv compares Close and Adj Close around each reported split; do not infer split treatment from auto_adjust=False alone."]}
     (OUT/"experiment_metadata.json").write_text(json.dumps(meta,indent=2),encoding="utf-8")
     print(pd.DataFrame(summaries).to_string(index=False),flush=True)
 
