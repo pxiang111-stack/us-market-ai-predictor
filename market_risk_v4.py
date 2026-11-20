@@ -147,7 +147,12 @@ def models():
 
 def run_forecast(asset,ticker,prices,x,horizon):
     z=labeled(x,prices[ticker],horizon).dropna(subset=["up","forward_return"])
-    current=x.dropna(how="all").tail(1); cols=list(x.columns); n=HORIZONS[horizon]
+    current=x.dropna(how="all").tail(1)
+    # Regime strings are diagnostics, not numeric model features.
+    cols=x.select_dtypes(include=[np.number, "bool"]).columns.tolist()
+    n=HORIZONS[horizon]
+    if not cols:
+        return None, {"asset":asset,"horizon":horizon,"status":"no_numeric_features"}
     if len(z)<500 or z.up.nunique()<2 or current.empty:
         return None,{"asset":asset,"horizon":horizon,"status":"insufficient_history","n":len(z)}
     split=int(len(z)*.8); fit=z.iloc[:max(1,split-n)]; test=z.iloc[split:]
