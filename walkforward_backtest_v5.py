@@ -221,7 +221,8 @@ def main():
                                     "horizon_sessions": horizon,
                                     "train_end": pred["train_end"],
                                     "n_train": int(pred["n_train"]),
-                                    "probability_calibrated": False})
+                                    "probability_calibrated": False,
+                                    "market_regime": x.loc[date].get("ms_market_regime", None)})
                         plan_rows.append(row)
                 plans_all = pd.DataFrame(plan_rows)
                 if plans_all.empty:
@@ -271,6 +272,8 @@ def main():
                             ledger = ledger.copy()
                             ledger["ticker"], ledger["horizon_sessions"], ledger["round_trip_cost_bps"] = ticker, horizon, cost_bps
                             ledger["strategy_mode"] = strategy_mode
+                            regime_by_date = plans["market_regime"].to_dict()
+                            ledger["market_regime"] = ledger["signal_date"].map(regime_by_date)
                             ledger["strategy_id"] = tag
                             all_ledgers.append(ledger)
                         if not curve.empty:
@@ -334,6 +337,40 @@ def main():
     concat_frames(all_curves).to_csv(OUT / "daily_equity_curves.csv", index=False)
     summary_df = pd.DataFrame(summaries)
     summary_df.to_csv(OUT / "performance_summary.csv", index=False)
+
+    # Trade-level conditional diagnostics by regime. Regime labels are attached
+    # from the signal date only; this is descriptive, not an optimized regime filter.
+    ledger_all = concat_frames(all_ledgers)
+    regime_summary = pd.DataFrame()
+    if not ledger_all.empty and "market_regime" in ledger_all:
+        valid_regime = ledger_all.dropna(subset=["market_regime"]).copy()
+        if not valid_regime.empty:
+            regime_summary = valid_regime.groupby(
+                ["ticker", "horizon_sessions", "round_trip_cost_bps",
+                 "strategy_mode", "market_regime"], dropna=False
+            ).agg(
+                trade_count=("net_pnl", "size"),
+                wins=("net_pnl", lambda z: int((z > 0).sum())),
+                net_pnl_sum=("net_pnl", "sum"),
+                expectancy_per_trade=("net_pnl", "mean"),
+                median_net_pnl=("net_pnl", "median"),
+            ).reset_index()
+            regime_summary["win_rate_pct"] = (
+                regime_summary["wins"] / regime_summary["trade_count"] * 100.0
+            )
+            pf = valid_regime.groupby(
+                ["ticker", "horizon_sessions", "round_trip_cost_bps",
+                 "strategy_mode", "market_regime"]
+            )["net_pnl"].apply(
+                lambda z: (z[z > 0].sum() / abs(z[z < 0].sum()))
+                if (z < 0).any() else (float("inf") if (z > 0).any() else 0.0)
+            ).rename("profit_factor").reset_index()
+            regime_summary = regime_summary.merge(
+                pf, on=["ticker", "horizon_sessions", "round_trip_cost_bps",
+                        "strategy_mode", "market_regime"], how="left"
+            )
+    regime_summary.to_csv(OUT / "regime_trade_summary.csv", index=False)
+
     payload = {
         "status": "completed",
         "targets": list(TARGETS),
@@ -348,7 +385,7 @@ def main():
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
         "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
-        "outputs": ["oos_forecasts.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv"],
+        "outputs": ["oos_forecasts.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv", "regime_trade_summary.csv"],
         "summary_rows": len(summary_df),
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
         "limitations": [
