@@ -156,12 +156,15 @@ def main():
         tr=simulate(bars,ss)
         if not tr.empty:
             tr.insert(0,"ticker",symbol); ledgers.append(tr)
-        for label, mask in [("full",pd.Series(True,index=tr.index)),
-                            ("in_sample_pre_2019",tr.entry_date<SPLIT),
-                            ("out_of_sample_2019_plus",tr.entry_date>=SPLIT)]:
-            part=tr.loc[mask]
-            summaries.append({"ticker":symbol,"period":label,"status":"ok" if len(part) else "no_trades",
-                              **stats(part)})
+        if tr.empty:
+            summaries.append({"ticker":symbol,"period":"full","status":"no_trades",**stats(tr)})
+        else:
+            for label, mask in [("full",pd.Series(True,index=tr.index)),
+                                ("in_sample_pre_2019",tr.entry_date<SPLIT),
+                                ("out_of_sample_2019_plus",tr.entry_date>=SPLIT)]:
+                part=tr.loc[mask]
+                summaries.append({"ticker":symbol,"period":label,"status":"ok" if len(part) else "no_trades",
+                                  **stats(part)})
         summaries.append({"ticker":symbol,"period":"buy_and_hold_full","status":"benchmark",
                           "buy_hold_return_pct":float((bars.Close.iloc[-1]/bars.Close.iloc[0]-1)*100)})
     ledger=pd.concat(ledgers,ignore_index=True) if ledgers else pd.DataFrame()
