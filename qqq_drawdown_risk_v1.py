@@ -172,8 +172,13 @@ def evaluate_drawdown_forecasts(
         details.loc[idx, "first_hit_session"] = int(hit[0] + 1) if len(hit) else np.nan
 
     rows = []
+    # The most recent forecast rows have no fully observed future horizon yet.
+    # Keep them in the detail file as live scores, but exclude them from OOS metrics.
+    eval_details = details[details["future_event_eval_only"].notna()].copy()
+    if eval_details.empty:
+        return details, pd.DataFrame()
     keys = ["horizon_sessions", "drawdown_threshold_pct"]
-    for _, group in details.groupby(keys):
+    for _, group in eval_details.groupby(keys):
         probabilities = pd.to_numeric(group["drawdown_risk_score"], errors="coerce")
         y = group["future_event_eval_only"].astype(int)
         auc = float(roc_auc_score(y, probabilities)) if y.nunique() == 2 else None
