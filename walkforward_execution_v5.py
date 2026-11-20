@@ -103,9 +103,16 @@ def simulate_trades(
             if partial_date is None and target1_hit:
                 partial_date, partial_price = dates[j], target1
                 # After banking the first half at +1R, protect the remainder
-                # at breakeven so a later reversal cannot erase the booked gain.
+                # at breakeven. Daily OHLC cannot reveal whether price reached
+                # 1R before reversing through entry, so if both levels trade
+                # in this same bar, conservatively book the partial and exit
+                # the remainder at breakeven before considering a 2R target.
                 active_stop = entry
                 partial_cost = half_units * (entry + target1) * cost_rate
+                breakeven_hit_same_bar = (l <= entry) if direction == 1 else (h >= entry)
+                if breakeven_hit_same_bar:
+                    exit_i, exit_price, exit_reason = j, entry, "stop_after_1r"
+                    break
                 if target2_hit:
                     exit_i, exit_price, exit_reason = j, target2, "target_2r"
                     break
