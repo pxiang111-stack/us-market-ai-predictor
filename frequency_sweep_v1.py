@@ -10,8 +10,6 @@ import json
 from pathlib import Path
 
 import pandas as pd
-import yfinance as yf
-
 from market_risk_v4 import download_prices, make_features, merge_market_structure_features
 from trade_decision_v5 import build_trade_decision
 from walkforward_backtest_v5 import atr_series, fetch_bars
@@ -53,6 +51,35 @@ def main() -> None:
     close = prices["QQQ"].reindex(features.index)
     atr = atr_series(bars).reindex(features.index)
     rows, ledgers, curves = [], [], []
+
+    # Matched-date buy-and-hold benchmark: same QQQ bars and starting equity
+    # as every strategy curve, so active profiles are not judged in isolation.
+    benchmark_close = pd.to_numeric(close.reindex(bars.index), errors="coerce").dropna()
+    if len(benchmark_close) > 1:
+        benchmark_curve = pd.DataFrame({
+            "date": benchmark_close.index,
+            "equity": 100_000.0 * benchmark_close / float(benchmark_close.iloc[0]),
+        })
+        benchmark_stats = performance_summary(pd.DataFrame(), benchmark_curve)
+        for horizon in HORIZONS:
+            rows.append({
+                "strategy_id": f"QQQ_{horizon}d_buy_and_hold",
+                "ticker": "QQQ", "profile": "buy_and_hold",
+                "horizon_sessions": horizon, "cost_bps": 0.0,
+                "slippage_bps_per_side": 0.0,
+                "forecast_count": 0, "signal_count": 0,
+                "long_signals": 0, "short_signals": 0,
+                "flat_signals": 0, "probability_calibrated": False,
+                "decision_cost_floor_bps": 0.0,
+                "benchmark": "matched_date_buy_and_hold",
+                **benchmark_stats,
+            })
+            curve_copy = benchmark_curve.copy()
+            curve_copy["strategy_id"] = f"QQQ_{horizon}d_buy_and_hold"
+            curve_copy["profile"] = "buy_and_hold"
+            curve_copy["horizon_sessions"] = horizon
+            curve_copy["cost_bps"] = 0.0
+            curves.append(curve_copy)
 
     for horizon in HORIZONS:
         print(f"[INFO] QQQ {horizon}-session purged walk-forward forecasts...", flush=True)
