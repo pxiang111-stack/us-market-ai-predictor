@@ -55,10 +55,8 @@ def simulate(name: str, bars: pd.DataFrame, target: pd.Series, buy_at_start=Fals
             div_cash = shares * div_per_share
             cash += div_cash
             dividends += div_cash
-        # Handle splits before execution; QQQ has no split in this period, but fail safely.
-        split = float(row["Stock Splits"]) if pd.notna(row["Stock Splits"]) else 0.0
-        if split > 0:
-            shares = int(round(shares * split))
+        # Yahoo OHLC is already on a split-adjusted share basis. Do NOT multiply
+        # the share count again; that would double-count QQQ's 2000 2-for-1 split.
         desired = bool(executable.loc[date] > 0)
         target_shares = int(cash // (price * (1.0 + COST_BPS/10000.0))) if desired and shares == 0 else (shares if desired else 0)
         if target_shares > shares:
@@ -134,7 +132,7 @@ def main():
           "close_to_adj_close_event":float(row["Close"]/row["Adj Close"])})
     pd.DataFrame(split_checks).to_csv(OUT/"split_diagnostics.csv",index=False)
     meta={"status":"completed","ticker":"QQQ","initial_cash_usd":INITIAL_CASH,
-      "price_source":"Yahoo Finance OHLC + Adj Close; auto_adjust=False. OHLC split treatment is explicitly audited against Adj Close around each split event before changing share-count logic.",
+      "price_source":"Yahoo Finance OHLC + Adj Close; auto_adjust=False. OHLC is already split-adjusted; Adj Close additionally reflects dividend adjustments. Share count is not multiplied on split dates.",
       "dividends":"Cash distributions credited on ex-date to shares held at prior close; not reinvested",
       "execution":"signal after close t; execute at raw close t+1; buy-and-hold enters first close",
       "account":"whole shares, cash only, long only, no leverage, no shorting, no fractional shares",
@@ -144,7 +142,7 @@ def main():
       "Cash dividends are not reinvested; taxes, cash interest and market impact excluded.",
       "Only QQQ is tested; this is not proof of whole-market stock selection skill.",
       "Historical data vendor revisions may alter past bars.",
-      "split_diagnostics.csv compares Close and Adj Close around each reported split; do not infer split treatment from auto_adjust=False alone."]}
+      "split_diagnostics.csv audits Close and Adj Close around each reported split. Yahoo OHLC already uses split-adjusted share units, so the simulator must not multiply shares again."]}
     (OUT/"experiment_metadata.json").write_text(json.dumps(meta,indent=2),encoding="utf-8")
     print(pd.DataFrame(summaries).to_string(index=False),flush=True)
 
