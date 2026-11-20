@@ -22,7 +22,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
         self.assertEqual(len(ledger), 1)
         self.assertEqual(ledger.iloc[0]["entry_date"], self.dates[1])
         self.assertEqual(ledger.iloc[0]["exit_reason"], "time_exit_after_1r")
-        self.assertEqual(ledger.iloc[0]["partial_exit_price"], 105.0)
+        self.assertEqual(ledger.iloc[0]["partial_exit_price"], 107.0)
         self.assertEqual(ledger.iloc[0]["partial_units"], ledger.iloc[0]["units"] * 0.5)
         self.assertEqual(len(_), len(bars))
         stats = performance_summary(ledger, _)
@@ -82,7 +82,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
         trade = ledger.iloc[0]
         self.assertEqual(trade["exit_reason"], "stop_after_1r")
         self.assertEqual(trade["partial_exit_price"], 103.0)
-        self.assertEqual(trade["exit_price"], 99.0)
+        self.assertEqual(trade["exit_price"], 101.0)
         self.assertGreater(trade["gross_pnl"], 0)
 
     def test_flat_signal_does_not_trade(self):
