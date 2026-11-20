@@ -2,7 +2,7 @@
 name: Daily US Market AI Scan
 on:
   push:
-    branches: [main, assistant-v4-research]
+    branches: [main, assistant-v4-research, assistant-v11-raw-price-dividends]
     paths:
       - 'us_market_ai_v3.py'
       - 'us_market_ai_v3_1_news.py'
