@@ -26,6 +26,16 @@ class TradeDecisionTests(unittest.TestCase):
         self.assertEqual(d["take_profit_2r"], 108)
         self.assertAlmostEqual(d["max_position_fraction"], .125)
 
+    def test_lower_probability_gate_can_be_compared_without_changing_cost_floor(self):
+        baseline = build_trade_decision(close=100, atr=2, probability_up=.60,
+            expected_return=.04, features=self.features(), round_trip_cost=.004)
+        active = build_trade_decision(close=100, atr=2, probability_up=.60,
+            expected_return=.04, features=self.features(), round_trip_cost=.004,
+            probability_threshold_long=.58, probability_threshold_short=.42)
+        self.assertEqual(baseline["decision"], "FLAT")
+        self.assertEqual(active["decision"], "LONG")
+        self.assertEqual(active["round_trip_cost_assumption"], .004)
+
     def test_no_trade_when_edge_does_not_cover_cost(self):
         d = build_trade_decision(close=100, atr=2, probability_up=.70,
             expected_return=.001, features=self.features())
