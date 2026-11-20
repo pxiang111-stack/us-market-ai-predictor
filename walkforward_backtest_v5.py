@@ -102,16 +102,43 @@ def forecast_quality_summary(forecasts: pd.DataFrame, close: pd.Series, horizon:
         return {"forecast_eval_n": 0, "forecast_auc": None, "forecast_brier": None}
     y = (valid["realized"] > 0).astype(int)
     pred = (valid["p"] >= 0.5).astype(int)
+    brier = float(brier_score_loss(y, valid["p"]))
+    base_rate = float(y.mean())
+    climatology_brier = float(brier_score_loss(y, np.full(len(y), base_rate)))
+    brier_50 = float(brier_score_loss(y, np.full(len(y), 0.5)))
+    # Expected calibration error: weighted absolute gap between mean forecast
+    # probability and realized frequency in fixed, predeclared probability bins.
+    calibration = pd.DataFrame({"p": valid["p"].clip(0.0, 1.0), "y": y})
+    calibration["bin"] = pd.cut(
+        calibration["p"], bins=np.linspace(0.0, 1.0, 11),
+        include_lowest=True, labels=False,
+    )
+    ece = 0.0
+    for _, group in calibration.groupby("bin", observed=False):
+        if len(group):
+            ece += len(group) / len(calibration) * abs(float(group["p"].mean()) - float(group["y"].mean()))
+    error = valid["expected"] - valid["realized"]
     auc = float(roc_auc_score(y, valid["p"])) if y.nunique() == 2 else None
     return {
         "forecast_eval_n": int(len(valid)),
         "forecast_auc": auc,
-        "forecast_brier": float(brier_score_loss(y, valid["p"])),
+        "forecast_brier": brier,
+        "forecast_brier_skill_vs_50": float(1.0 - brier / brier_50) if brier_50 > 0 else None,
+        # This test-period climatology is a diagnostic reference, not a deployable forecast.
+        "forecast_brier_skill_vs_test_climatology": (
+            float(1.0 - brier / climatology_brier) if climatology_brier > 0 else None
+        ),
+        "forecast_ece_10": float(ece),
+        "forecast_mean_probability_pct": float(valid["p"].mean() * 100.0),
+        "forecast_observed_up_rate_pct": base_rate * 100.0,
+        "forecast_calibration_gap_pct": float((valid["p"].mean() - base_rate) * 100.0),
         "forecast_directional_accuracy_50_pct": float((pred == y).mean() * 100.0),
-        "forecast_base_rate_accuracy_pct": float(max(y.mean(), 1.0 - y.mean()) * 100.0),
-        "forecast_up_rate_pct": float(y.mean() * 100.0),
+        "forecast_base_rate_accuracy_pct": float(max(base_rate, 1.0 - base_rate) * 100.0),
+        "forecast_up_rate_pct": base_rate * 100.0,
         "predicted_return_mean_pct": float(valid["expected"].mean() * 100.0),
         "realized_return_mean_pct": float(valid["realized"].mean() * 100.0),
+        "predicted_return_mae_pct": float(error.abs().mean() * 100.0),
+        "predicted_return_rmse_pct": float(np.sqrt((error ** 2).mean()) * 100.0),
         "predicted_vs_realized_spearman_ic": (
             float(valid["expected"].corr(valid["realized"], method="spearman"))
             if valid["expected"].nunique() > 1 and valid["realized"].nunique() > 1 else None
