@@ -34,6 +34,7 @@ def generate_walkforward_forecasts(
     outputs = []
     fitted_at = None
     fitted_n = 0
+    fitted_up_rate = float("nan")
     classifier_a = classifier_b = regressor = None
     last_fit_position = -10**9
 
@@ -54,6 +55,7 @@ def generate_walkforward_forecasts(
             last_fit_position = i
             fitted_at = str(train.index.max().date())
             fitted_n = int(len(train))
+            fitted_up_rate = float(train["up"].mean())
         current = x.iloc[[i]]
         try:
             p = float((classifier_a.predict_proba(current[feature_cols])[0, 1]
@@ -65,7 +67,7 @@ def generate_walkforward_forecasts(
             "as_of": x.index[i], "probability_up": p,
             "expected_return": expected, "train_end": fitted_at,
             "n_train": fitted_n,
-            "train_up_rate": float(train["up"].mean()),
+            "train_up_rate": fitted_up_rate,
             "horizon_sessions": horizon_sessions,
             "retrained": i == last_fit_position,
             "probability_calibrated": False,
