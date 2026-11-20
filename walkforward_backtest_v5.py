@@ -213,7 +213,7 @@ def main():
                             probability_up=float(pred["probability_up"]),
                             expected_return=float(pred["expected_return"]),
                             features=x.loc[date].to_dict(),
-                            allow_short=(ticker == "NQ=F"),
+                            allow_short=(ticker in {"NQ=F", "QQQ", "SPY"}),
                             round_trip_cost=DECISION_COST_FLOOR,
                             strategy_mode=strategy_mode,
                         )
