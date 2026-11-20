@@ -10,6 +10,7 @@ on:
       - 'qqq_v12_short_horizon.py'
       - 'qqq_v13_robustness_audit.py'
       - 'qqq_v14_portfolio.py'
+      - 'qqq_v15_walkforward_ml.py'
       - '.github/workflows/qqq_v11_raw_price_dividends.yml'
 permissions:
   contents: read
@@ -23,9 +24,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: python -m pip install --upgrade pip pandas numpy yfinance
+        run: python -m pip install --upgrade pip pandas numpy yfinance scikit-learn
       - name: Compile
-        run: python -m compileall -q qqq_v8_trend_breakout.py qqq_v11_raw_price_dividends.py qqq_v12_short_horizon.py qqq_v13_robustness_audit.py qqq_v14_portfolio.py
+        run: python -m compileall -q qqq_v8_trend_breakout.py qqq_v11_raw_price_dividends.py qqq_v12_short_horizon.py qqq_v13_robustness_audit.py qqq_v14_portfolio.py qqq_v15_walkforward_ml.py
       - name: Run raw-price cash account backtest
         run: python qqq_v11_raw_price_dividends.py
       - name: Run V12 short-horizon cash-account experiments
@@ -34,7 +35,9 @@ jobs:
         run: python qqq_v13_robustness_audit.py
       - name: Run V14 trend-core tactical portfolio tests
         run: python qqq_v14_portfolio.py
-      - name: Upload V11, V12, V13 and V14 reports
+      - name: Run V15 monthly walk-forward ML model
+        run: python qqq_v15_walkforward_ml.py
+      - name: Upload V11 through V15 reports
         uses: actions/upload-artifact@v4
         with:
           name: qqq-v11-raw-price-dividends
@@ -43,5 +46,6 @@ jobs:
             output/qqq_v12_short_horizon/
             output/qqq_v13_robustness/
             output/qqq_v14_portfolio/
+            output/qqq_v15_walkforward_ml/
           if-no-files-found: error
           retention-days: 30
