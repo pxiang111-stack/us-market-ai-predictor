@@ -1,8 +1,5 @@
 name: V5 Purged Walk-Forward Backtest
 on:
-  push:
-    paths:
-      - 'trigger_walkforward_backtest.txt'
   pull_request:
     paths:
       - 'trigger_walkforward_backtest.txt'
