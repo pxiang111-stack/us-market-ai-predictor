@@ -40,8 +40,6 @@ jobs:
         run: python frequency_sweep_v1.py
       - name: Run cost-aware QQQ frequency and execution diagnostics
         run: python frequency_sweep_v2.py
-      - name: Run cost-aware QQQ frequency and execution diagnostics
-        run: python frequency_sweep_v2.py
       - name: Run dedicated QQQ downside-risk walk-forward model
         run: python qqq_drawdown_risk_v1.py
       - name: Upload OOS forecasts, trades and equity curves
