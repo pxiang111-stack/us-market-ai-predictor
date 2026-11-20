@@ -67,6 +67,39 @@ class TradeDecisionTests(unittest.TestCase):
             expected_return=.04, features=f)
         self.assertEqual(d2["decision"], "LONG")
 
+
+    def test_trend_breakout_requires_confirmed_volume_breakout(self):
+        f = self.features()
+        f["ms_breakout_up_volume_confirmed"] = 0
+        d = build_trade_decision(close=100, atr=2, probability_up=.70,
+            expected_return=.04, features=f, strategy_mode="trend_breakout")
+        self.assertEqual(d["decision"], "FLAT")
+        f["ms_breakout_up_volume_confirmed"] = 1
+        d2 = build_trade_decision(close=100, atr=2, probability_up=.70,
+            expected_return=.04, features=f, strategy_mode="trend_breakout")
+        self.assertEqual(d2["decision"], "LONG")
+
+    def test_reversal_absorption_uses_spring_without_full_bull_trend(self):
+        f = self.features()
+        f.update({"ms_trend_above_sma20":0,"ms_sma20_above_sma50":0,
+                  "ms_sma50_above_sma200":0,"ms_spring_reclaim_20":1})
+        d = build_trade_decision(close=100, atr=2, probability_up=.60,
+            expected_return=.02, features=f, strategy_mode="reversal_absorption")
+        self.assertEqual(d["decision"], "LONG")
+
+    def test_reversal_short_requires_upthrust_and_short_permission(self):
+        f = self.features()
+        f.update({"ms_upthrust_reject_20":1,"ms_trend_above_sma20":1,
+                  "ms_sma20_above_sma50":1,"ms_sma50_above_sma200":1})
+        denied = build_trade_decision(close=100, atr=2, probability_up=.40,
+            expected_return=-.02, features=f, strategy_mode="reversal_absorption",
+            allow_short=False)
+        allowed = build_trade_decision(close=100, atr=2, probability_up=.40,
+            expected_return=-.02, features=f, strategy_mode="reversal_absorption",
+            allow_short=True)
+        self.assertEqual(denied["decision"], "FLAT")
+        self.assertEqual(allowed["decision"], "SHORT")
+
     def test_atr(self):
         idx = pd.date_range("2026-01-01", periods=15)
         bars = pd.DataFrame({"High":np.arange(16,31),"Low":np.arange(14,29),
