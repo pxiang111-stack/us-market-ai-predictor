@@ -123,8 +123,8 @@ def main():
     mom3 = close.pct_change(3)
     pullback = bull & (mom3 < -0.03) & (rsi(close, 2) < 10)
     momentum = bull & (mom3 > 0.015) & (close > sma20)
-    pullback_active = timed_position(pullback, 3)
-    momentum_active = timed_position(momentum, 3)
+    pullback_active = timed_position(pullback, 3) * bull.astype(float)
+    momentum_active = timed_position(momentum, 3) * bull.astype(float)
     trend = bull.astype(float)
 
     strategies = {
