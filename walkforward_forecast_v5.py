@@ -30,7 +30,12 @@ def generate_walkforward_forecasts(
         z["up"] = (z["forward_return"] > 0).astype(float)
         z.iloc[-horizon_sessions:, z.columns.get_loc("up")] = np.nan
         z.iloc[-horizon_sessions:, z.columns.get_loc("forward_return")] = np.nan
-    feature_cols = list(x.columns)
+    # Regime labels are categorical diagnostics used by the decision layer and
+    # post-trade attribution. The sklearn pipelines use median imputation, so
+    # only numeric/bool columns may enter the model feature matrix.
+    feature_cols = x.select_dtypes(include=[np.number, "bool"]).columns.tolist()
+    if not feature_cols:
+        raise ValueError("No numeric model features available for walk-forward training")
     outputs = []
     fitted_at = None
     fitted_n = 0
