@@ -15,7 +15,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
         bars = pd.DataFrame({
             "Open": [100, 101, 103, 106, 106],
             "High": [101, 106, 104, 107, 107],
-            "Low": [99, 100, 102, 105, 105],
+            "Low": [99, 102, 102, 105, 105],
             "Close": [100, 104, 103, 106, 106],
         }, index=self.dates)
         ledger, _ = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
@@ -56,7 +56,7 @@ class WalkForwardExecutionTests(unittest.TestCase):
         bars = pd.DataFrame({
             "Open": [100, 101, 103, 106, 106],
             "High": [101, 114, 104, 107, 107],
-            "Low": [99, 100, 102, 105, 105],
+            "Low": [99, 102, 102, 105, 105],
             "Close": [100, 112, 103, 106, 106],
         }, index=self.dates)
         ledger, curve = simulate_trades(bars, self.signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
@@ -82,6 +82,44 @@ class WalkForwardExecutionTests(unittest.TestCase):
         trade = ledger.iloc[0]
         self.assertEqual(trade["exit_reason"], "stop_after_1r")
         self.assertEqual(trade["partial_exit_price"], 103.0)
+        self.assertEqual(trade["exit_price"], 101.0)
+        self.assertGreater(trade["gross_pnl"], 0)
+
+
+    def test_same_bar_1r_and_breakeven_touch_exits_remainder_conservatively_long(self):
+        bars = pd.DataFrame({
+            "Open": [100, 101, 100, 100, 100],
+            "High": [101, 104, 101, 101, 101],
+            "Low": [99, 100, 99, 99, 99],
+            "Close": [100, 102, 100, 100, 100],
+        }, index=self.dates)
+        signals = self.signals.copy()
+        signals["stop_loss"] = 99.0
+        ledger, _ = simulate_trades(bars, signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
+        trade = ledger.iloc[0]
+        self.assertEqual(trade["partial_exit_date"], self.dates[1])
+        self.assertEqual(trade["exit_date"], self.dates[1])
+        self.assertEqual(trade["exit_reason"], "stop_after_1r")
+        self.assertEqual(trade["partial_exit_price"], 103.0)
+        self.assertEqual(trade["exit_price"], 101.0)
+        self.assertGreater(trade["gross_pnl"], 0)
+
+    def test_same_bar_1r_and_breakeven_touch_exits_remainder_conservatively_short(self):
+        bars = pd.DataFrame({
+            "Open": [100, 101, 102, 100, 100],
+            "High": [101, 102, 103, 101, 101],
+            "Low": [99, 98, 101, 99, 99],
+            "Close": [100, 99, 102, 100, 100],
+        }, index=self.dates)
+        signals = self.signals.copy()
+        signals["decision"] = "SHORT"
+        signals["stop_loss"] = 103.0
+        ledger, _ = simulate_trades(bars, signals, round_trip_cost_bps=0, slippage_bps_per_side=0)
+        trade = ledger.iloc[0]
+        self.assertEqual(trade["partial_exit_date"], self.dates[1])
+        self.assertEqual(trade["exit_date"], self.dates[1])
+        self.assertEqual(trade["exit_reason"], "stop_after_1r")
+        self.assertEqual(trade["partial_exit_price"], 99.0)
         self.assertEqual(trade["exit_price"], 101.0)
         self.assertGreater(trade["gross_pnl"], 0)
 
