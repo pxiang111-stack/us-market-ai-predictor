@@ -29,6 +29,7 @@ def build_trade_decision(
     structure_relative_volume_min: float = 1.2,
     structure_close_location_long: float = 0.65,
     structure_close_location_short: float = 0.35,
+    flow_pressure_threshold: float = 0.05,
 ) -> dict:
     """Convert forecast + structure into a conservative, explainable trade plan.
 
@@ -62,11 +63,11 @@ def build_trade_decision(
     # proxy. Spring/upthrust patterns can independently confirm a reclaim/rejection.
     flow_pressure = features.get("ms_volume_weighted_close_location_20", np.nan)
     bullish_effort = (
-        (np.isfinite(flow_pressure) and flow_pressure >= 0.05)
+        (np.isfinite(flow_pressure) and flow_pressure >= flow_pressure_threshold)
         or features.get("ms_spring_reclaim_20") == 1
     )
     bearish_effort = (
-        (np.isfinite(flow_pressure) and flow_pressure <= -0.05)
+        (np.isfinite(flow_pressure) and flow_pressure <= -flow_pressure_threshold)
         or features.get("ms_upthrust_reject_20") == 1
     )
     long_structure = (
