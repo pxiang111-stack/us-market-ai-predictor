@@ -18,6 +18,10 @@ class TradeDecisionTests(unittest.TestCase):
         d = build_trade_decision(close=100, atr=2, probability_up=.70,
             expected_return=.04, features=self.features())
         self.assertEqual(d["decision"], "LONG")
+        self.assertTrue(d["gate_probability_long"])
+        self.assertTrue(d["gate_edge_long"])
+        self.assertTrue(d["gate_bull_trend"])
+        self.assertTrue(d["gate_long_structure"])
         self.assertEqual(d["stop_loss"], 96)
         self.assertEqual(d["take_profit_2r"], 108)
         self.assertAlmostEqual(d["max_position_fraction"], .125)
