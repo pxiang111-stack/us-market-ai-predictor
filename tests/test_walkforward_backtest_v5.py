@@ -34,6 +34,7 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
         forecasts = pd.DataFrame({
             "probability_up": [0.9 if x > 0 else 0.1 for x in realized],
             "expected_return": realized.values * 0.8,
+            "train_up_rate": [0.5] * len(realized),
         }, index=idx[:-1])
         stats = forecast_quality_summary(forecasts, close, 1)
         self.assertEqual(stats["forecast_eval_n"], 7)
