@@ -78,6 +78,19 @@ def build_trade_decision(
                  and features.get("ms_close_location", 1) <= 0.35))
     )
     net_edge = abs(expected_return) - round_trip_cost
+    # Persist each gate independently so a FLAT decision can be diagnosed rather
+    # than treated as an opaque failure. These are causal, as-of-date features.
+    result.update({
+        "gate_probability_long": bool(probability_up >= 0.62),
+        "gate_probability_short": bool(probability_up <= 0.38),
+        "gate_edge_long": bool(expected_return > round_trip_cost),
+        "gate_edge_short": bool(expected_return < -round_trip_cost),
+        "gate_bull_trend": bool(bull_trend),
+        "gate_bear_trend": bool(bear_trend),
+        "gate_long_structure": bool(long_structure),
+        "gate_short_structure": bool(short_structure),
+        "gate_allow_short": bool(allow_short),
+    })
     direction = None
     if probability_up >= 0.62 and expected_return > round_trip_cost and long_structure:
         direction = "LONG"
