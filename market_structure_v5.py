@@ -53,6 +53,39 @@ def build_market_structure(
     out["trend_above_sma20"] = (close > sma20).astype(float).where(sma20.notna())
     out["sma20_above_sma50"] = (sma20 > sma50).astype(float).where(sma20.notna() & sma50.notna())
     out["sma50_above_sma200"] = (sma50 > sma200).astype(float).where(sma50.notna() & sma200.notna())
+
+    # Causal market regime labels for conditional strategy evaluation. The
+    # volatility baseline uses only observations available before the current bar.
+    prev_close = close.shift(1)
+    regime_true_range = pd.concat([
+        d["High"] - d["Low"],
+        (d["High"] - prev_close).abs(),
+        (d["Low"] - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    regime_atr14 = regime_true_range.rolling(14, min_periods=14).mean()
+    atr_pct = regime_atr14 / close.replace(0, np.nan)
+    atr_pct_baseline = atr_pct.shift(1).rolling(252, min_periods=60).median()
+    out["atr_pct_14"] = atr_pct
+    out["atr_pct_baseline_252"] = atr_pct_baseline
+    vol_high = atr_pct > (atr_pct_baseline * 1.25)
+    vol_low = atr_pct < (atr_pct_baseline * 0.80)
+    out["regime_volatility"] = np.select(
+        [vol_high, vol_low], ["high_volatility", "low_volatility"],
+        default="normal_volatility",
+    )
+    trend_up = (sma50 > sma200) & (close > sma50)
+    trend_down = (sma50 < sma200) & (close < sma50)
+    out["regime_trend"] = np.select(
+        [trend_up, trend_down], ["uptrend", "downtrend"], default="range_or_transition",
+    )
+    out.loc[sma50.isna() | sma200.isna() | atr_pct_baseline.isna(),
+            ["regime_trend", "regime_volatility"]] = np.nan
+    out["market_regime"] = (
+        out["regime_trend"].astype("string") + "_" +
+        out["regime_volatility"].astype("string")
+    ).astype("string")
+    out.loc[out["regime_trend"].isna() | out["regime_volatility"].isna(),
+            "market_regime"] = pd.NA
     prior_high20 = d["High"].shift(1).rolling(20, min_periods=20).max()
     prior_low20 = d["Low"].shift(1).rolling(20, min_periods=20).min()
     out["range_position_20"] = ((close - prior_low20) / (prior_high20 - prior_low20).replace(0, np.nan)).clip(0, 1)
