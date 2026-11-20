@@ -430,7 +430,7 @@ def main():
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
         "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
-        "outputs": ["oos_forecasts.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv", "regime_trade_summary.csv"],
+        "outputs": ["oos_forecasts.csv", "qqq_drawdown_warning_detail.csv", "qqq_drawdown_warning_summary.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv", "side_performance_summary.csv", "regime_trade_summary.csv"],
         "summary_rows": len(summary_df),
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
         "limitations": [
