@@ -106,6 +106,10 @@ def forecast_quality_summary(forecasts: pd.DataFrame, close: pd.Series, horizon:
     base_rate = float(y.mean())
     climatology_brier = float(brier_score_loss(y, np.full(len(y), base_rate)))
     brier_50 = float(brier_score_loss(y, np.full(len(y), 0.5)))
+    train_rate = pd.to_numeric(forecasts.get("train_up_rate", pd.Series(index=forecasts.index, dtype=float)), errors="coerce").reindex(valid.index)
+    train_rate = train_rate.clip(0.0, 1.0)
+    train_rate_brier = float(((train_rate - y) ** 2).mean()) if train_rate.notna().all() else None
+    train_rate_accuracy = float(((train_rate >= 0.5).astype(int) == y).mean() * 100.0) if train_rate.notna().all() else None
     # Expected calibration error: weighted absolute gap between mean forecast
     # probability and realized frequency in fixed, predeclared probability bins.
     calibration = pd.DataFrame({"p": valid["p"].clip(0.0, 1.0), "y": y})
@@ -124,6 +128,11 @@ def forecast_quality_summary(forecasts: pd.DataFrame, close: pd.Series, horizon:
         "forecast_auc": auc,
         "forecast_brier": brier,
         "forecast_brier_skill_vs_50": float(1.0 - brier / brier_50) if brier_50 > 0 else None,
+        "forecast_brier_vs_training_base_rate": train_rate_brier,
+        "forecast_brier_skill_vs_training_base_rate": (
+            float(1.0 - brier / train_rate_brier) if train_rate_brier is not None and train_rate_brier > 0 else None
+        ),
+        "forecast_training_base_rate_accuracy_pct": train_rate_accuracy,
         # This test-period climatology is a diagnostic reference, not a deployable forecast.
         "forecast_brier_skill_vs_test_climatology": (
             float(1.0 - brier / climatology_brier) if climatology_brier > 0 else None
