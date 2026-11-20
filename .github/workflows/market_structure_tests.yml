@@ -4,6 +4,10 @@ on:
     branches: [assistant-v5-market-structure]
     paths:
       - 'market_structure_v5.py'
+      - 'market_risk_v4.py'
+      - 'walkforward_forecast_v5.py'
+      - 'trade_decision_v5.py'
+      - 'tests/**'
       - 'tests/test_market_structure_v5.py'
       - '.github/workflows/market_structure_tests.yml'
   pull_request:
