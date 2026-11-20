@@ -41,8 +41,12 @@ def future_drawdown_labels(bars: pd.DataFrame, horizon: int, threshold: float):
     close = pd.to_numeric(bars["Close"], errors="coerce")
     future_lows = pd.concat([low.shift(-step) for step in range(1, horizon + 1)], axis=1)
     future_min = future_lows.min(axis=1)
+    observed_future_bars = future_lows.notna().sum(axis=1)
     drawdown = future_min / close - 1.0
     label = (drawdown <= -threshold).astype(float)
+    # Missing OHLC bars are unknown outcomes, not negative examples.
+    label.loc[(observed_future_bars < horizon) | close.isna() | (close <= 0)] = np.nan
+    drawdown.loc[(observed_future_bars < horizon) | close.isna() | (close <= 0)] = np.nan
     label.iloc[-horizon:] = np.nan
     drawdown.iloc[-horizon:] = np.nan
     return label, drawdown
