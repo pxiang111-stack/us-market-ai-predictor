@@ -102,13 +102,17 @@ def _flip_conditions(history: pd.DataFrame, i: int) -> list[bool]:
         and row.NQ_close > row.NQ_20d_high
     )
 
-    # 3) Literal operational interpretation: two consecutive daily rises,
-    # current score >= 0 and absolute current score >= 1 (therefore >= +1).
+    # 3) Operational interpretation of "recover from -2": start at or below
+    # -2, rise by at least one score point on each of two consecutive sessions,
+    # and finish at or above zero. Freeze this interpretation pending owner
+    # confirmation; do not tune it on the holdout sample.
     scores = pd.to_numeric(history["rank_model_score"].iloc[i-2:i+1],
                            errors="coerce")
     c3 = bool(scores.notna().all() and
-              scores.iloc[2] > scores.iloc[1] > scores.iloc[0] and
-              scores.iloc[2] >= 0 and abs(scores.iloc[2]) >= 1)
+              scores.iloc[0] <= -2 and
+              scores.iloc[1] - scores.iloc[0] >= 1 and
+              scores.iloc[2] - scores.iloc[1] >= 1 and
+              scores.iloc[2] >= 0)
 
     # 4) VIX closes below 20 for two consecutive sessions.
     vix = pd.to_numeric(history["VIX_close"].iloc[i-1:i+1],
