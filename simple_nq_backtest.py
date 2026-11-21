@@ -126,12 +126,16 @@ def _trade_exit(bars: list[dict[str, Any]], start: int, stop: float, target: flo
 
 def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
                  commission_bps: float = DEFAULT_COMMISSION_BPS,
-                 slippage_bps: float = DEFAULT_SLIPPAGE_BPS) -> tuple[dict[str, Any], list[dict[str, Any]], list[float]]:
+                 slippage_bps: float = DEFAULT_SLIPPAGE_BPS,
+                 start_index: int = 205,
+                 include_warmup: bool = True) -> tuple[dict[str, Any], list[dict[str, Any]], list[float]]:
+    if start_index < 205 or start_index >= len(bars) - 1:
+        raise ValueError("start_index must be >= 205 and leave at least two bars")
     cash = float(initial_equity)
-    curve: list[float] = [float(initial_equity)] * 205
+    curve: list[float] = [float(initial_equity)] * start_index if include_warmup else []
     trades: list[dict[str, Any]] = []
     invested_days = 0
-    i = 205
+    i = start_index
     while i < len(bars) - 1:
         history = bars[:i + 1]
         regime = classify_regime([x["close"] for x in history])["regime"]
@@ -201,25 +205,30 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         })
         i = exit_i + 1
 
-    while len(curve) < len(bars):
+    expected_length = len(bars) if include_warmup else len(bars) - start_index
+    while len(curve) < expected_length:
         curve.append(cash)
-    curve = curve[:len(bars)]
-    exposure = invested_days / max(1, len(bars))
+    curve = curve[:expected_length]
+    exposure = invested_days / max(1, len(bars) - start_index)
     return _metrics("SUPPORT_BOUNCE_V1", initial_equity, curve, trades, exposure), trades, curve
 
 def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
-                 commission_bps: float, slippage_bps: float) -> dict[str, Any]:
-    first = bars[0]
+                 commission_bps: float, slippage_bps: float,
+                 start_index: int = 0) -> dict[str, Any]:
+    period_bars = bars[start_index:]
+    if len(period_bars) < 2:
+        raise ValueError("Buy-and-hold period must contain at least two bars")
+    first = period_bars[0]
     entry = _slipped(first["open"], "buy", slippage_bps)
     shares = int(initial_equity // (entry * (1 + commission_bps / 10_000)))
     fee_in = _commission(shares * entry, commission_bps)
-    last = bars[-1]
+    last = period_bars[-1]
     exit_price = _slipped(last["close"], "sell", slippage_bps)
     fee_out = _commission(shares * exit_price, commission_bps)
     final = initial_equity - shares * entry - fee_in + shares * exit_price - fee_out
     curve = [initial_equity]
-    for k in range(1, len(bars)):
-        marked = initial_equity - shares * entry - fee_in + shares * bars[k]["close"]
+    for k in range(1, len(period_bars)):
+        marked = initial_equity - shares * entry - fee_in + shares * period_bars[k]["close"]
         curve.append(marked)
     curve[-1] = final
     return _metrics("BUY_AND_HOLD", initial_equity, curve, [{
@@ -228,13 +237,14 @@ def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
 
 
 def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
-                     commission_bps: float, slippage_bps: float) -> dict[str, Any]:
+                     commission_bps: float, slippage_bps: float,
+                     start_index: int = 0) -> dict[str, Any]:
     cash, shares = initial_equity, 0
     curve, trades = [], []
     entry_cost = 0.0
     invested_days = 0
     for i, bar in enumerate(bars):
-        if i >= 200:
+        if i >= max(200, start_index):
             closes = [x["close"] for x in bars[:i]]
             sma50 = sum(closes[-50:]) / 50
             sma200 = sum(closes[-200:]) / 200
@@ -255,9 +265,10 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
                 trades.append({"net_pnl": proceeds - entry_cost})
                 shares = 0
                 entry_cost = 0.0
-        if shares:
-            invested_days += 1
-        curve.append(cash + shares * bar["close"])
+        if i >= start_index:
+            if shares:
+                invested_days += 1
+            curve.append(cash + shares * bar["close"])
     if shares:
         price = _slipped(bars[-1]["close"], "sell", slippage_bps)
         fee = _commission(shares * price, commission_bps)
@@ -267,7 +278,7 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
         shares = 0
         curve[-1] = cash
     return _metrics("SMA50_200_LONG_FLAT", initial_equity, curve, trades,
-                    invested_days / max(1, len(bars)))
+                    invested_days / max(1, len(bars) - start_index))
 
 
 def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
