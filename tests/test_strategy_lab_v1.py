@@ -57,6 +57,19 @@ class CashAccountStrategyLabTests(unittest.TestCase):
         self.assertLess(charged["ending_equity"], free["ending_equity"])
         self.assertGreater(charged["transaction_costs_usd"], 0.0)
 
+
+    def test_start_date_uses_prior_warmup_signal_but_scores_only_requested_window(self):
+        signals = pd.Series([False, True, True, False, False], index=self.dates)
+        ledger, curve, stats = simulate_cash_account(
+            self.bars, signals, initial_equity=1000.0,
+            cost_bps_per_order=0.0, start_date=self.dates[2]
+        )
+        self.assertEqual(curve.index[0], self.dates[2])
+        self.assertEqual(ledger.iloc[0]["date"], self.dates[2])
+        self.assertEqual(ledger.iloc[0]["side"], "BUY")
+        self.assertEqual(ledger.iloc[0]["shares"], 9)
+        self.assertEqual(stats["initial_equity_usd"], 1000.0)
+
     def test_signals_use_only_current_and_prior_completed_bars(self):
         close = np.linspace(100.0, 500.0, 300)
         bars = pd.DataFrame({
@@ -64,8 +77,8 @@ class CashAccountStrategyLabTests(unittest.TestCase):
             "Close": close, "Dividends": 0.0,
         }, index=pd.date_range("2020-01-01", periods=300, freq="B"))
         signals = build_strategy_signals(bars)
-        self.assertEqual(len(signals), 300 - 252)
-        self.assertTrue(signals.index[0] == bars.index[252])
+        self.assertEqual(len(signals), 300)
+        self.assertTrue(signals.index[0] == bars.index[0])
         self.assertTrue(signals["QQQ_buy_hold"].all())
 
 
