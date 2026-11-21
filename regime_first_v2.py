@@ -182,7 +182,10 @@ def evaluate_history(data: pd.DataFrame, initial_state: str = "NEUTRAL") -> pd.D
             vol_mult = 0.5
         else:
             vol_mult = 1.0
-        monitor_mult = 0.0 if bool(row.get("monitor_hard_veto", False)) else 1.0
+        veto_value = row.get("monitor_hard_veto", False)
+        veto_active = (pd.notna(veto_value) and
+                       str(veto_value).strip().lower() in {"true", "1", "yes"})
+        monitor_mult = 0.0 if veto_active else 1.0
         cap = STATE_CAP[state]
         budget = cap * vol_mult * data_gap_mult * monitor_mult
 
