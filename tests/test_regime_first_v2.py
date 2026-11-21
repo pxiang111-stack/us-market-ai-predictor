@@ -68,9 +68,10 @@ class RegimeFirstV2Tests(unittest.TestCase):
 
     def test_credit_trigger_requires_ccc_above_14_and_bbb_hy_widening(self):
         rows = []
-        for day in range(1, 7):
+        dates = pd.bdate_range("2026-11-09", periods=6)
+        for day, date in enumerate(dates, start=1):
             rows.append(row(
-                f"2026-11-{day+10:02d}", CCC_spread=15.0,
+                date.strftime("%Y-%m-%d"), CCC_spread=15.0,
                 BBB_spread=3.0 + day * 0.1,
                 HY_spread=5.0 + day * 0.2,
             ))
