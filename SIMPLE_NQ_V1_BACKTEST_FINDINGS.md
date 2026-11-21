@@ -43,17 +43,30 @@ The signal requires a daily support test and close above the zone midpoint, but 
 
 Do not optimize V1 thresholds against this same full sample and then report the improved in-sample result as proof.
 
-## 4. Next validation gate
+## 4. Frozen final-20% holdout result
 
-Before changing the rule, preserve this V1 result as the benchmark. The 80/20 date split for this dataset places the final 20% at **2023-07-06 through 2026-11-20** (850 sessions). That period should remain untouched until a revised rule is specified and frozen.
+The final 20% was evaluated separately, with indicators warmed by the preceding 3,398 sessions and each strategy starting with fresh $10,000 capital at the holdout boundary. The untouched period is **2023-07-06 through 2026-11-20** (850 sessions).
 
-Next work should:
-1. Add a genuine point-in-time holdout runner that warms indicators using pre-holdout bars but starts with fresh $10,000 cash at the holdout boundary.
-2. Report V1 holdout results against buy-and-hold, SMA50/200 and cash.
-3. Only then test one clearly motivated change at a time, such as stop placement below the actual signal-bar low with a volatility buffer, or skipping next-session entries that gap too far from the signal close.
-4. Keep every revision as a separately named version and report both development-period and untouched holdout results.
+| Strategy | Final equity | Total return | CAGR | Max drawdown | Trades | Win rate | Profit factor |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Support bounce V1 | $8,910.98 | -10.89% | -3.36% | -12.14% | 53 | 20.75% | 0.466 |
+| QQQ buy and hold | $16,696.64 | 66.97% | 16.43% | -22.34% | 1 | 100%* | inf* |
+| SMA50/200 long/flat | $12,748.55 | 27.49% | 7.47% | -15.07% | 33 | 33.33% | 1.708 |
+| Cash, no trade | $10,000.00 | 0.00% | 0.00% | 0.00% | 0 | — | — |
 
-## 5. Limitations
+*Buy-and-hold trade statistics represent one continuous holding period and are not comparable to strategy trade statistics.
+
+**Holdout conclusion:** V1 also loses money in the untouched final 20%, and underperforms QQQ, SMA50/200 and cash. This is independent evidence against the current rule, not merely an in-sample problem. Do not use V1 for live trading.
+
+The runner keeps all pre-holdout bars available for indicator warmup, but resets strategy capital and trade state at the split. The holdout metrics are reported separately from full-sample metrics.
+
+## 5. Next validation gate
+
+Preserve these V1 results as a fixed benchmark. Do not alter V1 parameters and re-label the resulting in-sample improvement as validation.
+
+A next version should test one clearly motivated change at a time, such as stop placement below the actual signal-bar low with a volatility buffer, or skipping next-session entries that gap too far from the signal close. Each revision must have a distinct version name and be assessed on development data before a new, later, untouched evaluation period is selected. Since this current holdout has now been inspected, it is no longer untouched for future tuning decisions.
+
+## 6. Limitations
 
 - This is a full-sample diagnostic, not a final walk-forward validation.
 - Yahoo Finance adjusted history may be revised. The exact downloaded CSV is included in the workflow artifact for reproducibility.
