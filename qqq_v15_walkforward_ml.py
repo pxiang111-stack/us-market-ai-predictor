@@ -78,10 +78,21 @@ def build_features(b):
     f=f.replace([np.inf,-np.inf],np.nan)
     return f
 
+def build_labels(close: pd.Series, horizon: int = HORIZON) -> pd.Series:
+    """Five-session return label from the next-close entry to its exit.
+
+    A label is valid only when both the next-session entry close and the
+    horizon exit close are observable. This masks the full horizon+1 tail.
+    """
+    entry_close = close.shift(-1)
+    exit_close = close.shift(-(horizon + 1))
+    label = (exit_close / entry_close - 1.0 > 0).astype(float)
+    return label.where(entry_close.notna() & exit_close.notna())
+
+
 def walk_forward_predictions(bars, features):
     close=bars["Close"]
-    labels=(close.shift(-(HORIZON+1))/close.shift(-1)-1>0).astype(float)
-    labels.iloc[-HORIZON:]=np.nan
+    labels=build_labels(close)
     pred=pd.Series(np.nan,index=bars.index,dtype=float)
     fitted=0
     months=pd.Series(bars.index.to_period("M"),index=bars.index)
