@@ -20,6 +20,7 @@ def simulate_trades(
     round_trip_cost_bps: float = 15.0,
     slippage_bps_per_side: float = 5.0,
     max_holding_sessions: int = 10,
+    whole_shares_only: bool = False,
     return_diagnostics: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame] | tuple[pd.DataFrame, pd.DataFrame, dict]:
     """Simulate one position at a time; signals indexed by decision date."""
@@ -92,10 +93,15 @@ def simulate_trades(
 
         risk_cash = equity * risk_budget_pct
         units = min(risk_cash / risk_per_unit, equity * max_gross_exposure / entry)
+        if whole_shares_only:
+            # One position at a time, long-only, fully funded: reserve entry
+            # costs and round down to whole shares before any order is recorded.
+            max_cash_units = equity * max_gross_exposure / (entry * (1.0 + cost_rate))
+            units = int(np.floor(min(units, max_cash_units)))
         if units <= 0:
             diagnostics["skipped_zero_units"] += 1
             continue
-        half_units = units * 0.5
+        half_units = (units // 2) if whole_shares_only else units * 0.5
         partial_date = partial_price = partial_cost = None
         active_stop = stop
         exit_i = exit_price = exit_reason = None
@@ -118,6 +124,11 @@ def simulate_trades(
                 break
 
             if partial_date is None and target1_hit:
+                if whole_shares_only and units < 2:
+                    # A one-share position cannot be split into half shares.
+                    # Exit the whole share at the first profit target instead.
+                    exit_i, exit_price, exit_reason = j, target1, "target_1r_full"
+                    break
                 partial_date, partial_price = dates[j], target1
                 # After banking the first half at +1R, protect the remainder
                 # at breakeven. Daily OHLC cannot reveal whether price reached
@@ -163,6 +174,7 @@ def simulate_trades(
         ledger.append({
             "signal_date": signal_date, "entry_date": dates[entry_i], "exit_date": dates[exit_i],
             "side": side, "entry_price": entry, "exit_price": exit_price,
+            "whole_shares_only": bool(whole_shares_only),
             "risk_per_unit_at_fill": risk_per_unit, "target_1r_at_fill": target1,
             "target_2r_at_fill": target2,
             "exit_reason": exit_reason, "units": units,
