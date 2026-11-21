@@ -27,7 +27,13 @@ HORIZONS = (5, 10, 20)
 COST_CASES_BPS = (10.0, 20.0, 30.0)
 SLIPPAGE_BPS_PER_SIDE = 5.0
 # Keep signal eligibility conservative across the full execution-cost sensitivity range.
-DECISION_COST_FLOOR = (max(COST_CASES_BPS) + 2 * SLIPPAGE_BPS_PER_SIDE) / 10000.0
+def decision_cost_floor(cost_bps: float) -> float:
+    """Per-scenario minimum expected edge: round-trip cost plus both-side slippage."""
+    return (float(cost_bps) + 2 * SLIPPAGE_BPS_PER_SIDE) / 10000.0
+
+
+# Retain the worst-case value for reporting/backward-compatible tests only.
+DECISION_COST_FLOOR = decision_cost_floor(max(COST_CASES_BPS))
 
 
 def fetch_bars(ticker: str) -> pd.DataFrame:
@@ -203,37 +209,45 @@ def main():
                     summaries.append({"ticker": ticker, "horizon": horizon,
                                       "status": "insufficient_walkforward_history"})
                     continue
-                plan_rows = []
                 strategy_modes = ("confluence", "trend_breakout", "reversal_absorption")
-                for date, pred in forecasts.iterrows():
-                    if date not in bars.index or date not in x.index:
-                        continue
-                    for strategy_mode in strategy_modes:
-                        row = build_trade_decision(
-                            close=float(close.loc[date]), atr=float(atr.loc[date]),
-                            probability_up=float(pred["probability_up"]),
-                            expected_return=float(pred["expected_return"]),
-                            features=x.loc[date].to_dict(),
-                            allow_short=False,  # $10k cash-account comparison: no shorting or leverage
-                            round_trip_cost=DECISION_COST_FLOOR,
-                            strategy_mode=strategy_mode,
-                        )
-                        row.update({"as_of": date, "ticker": ticker, "asset": asset,
-                                    "horizon_sessions": horizon,
-                                    "train_end": pred["train_end"],
-                                    "n_train": int(pred["n_train"]),
-                                    "probability_calibrated": False,
-                                    "market_regime": x.loc[date].get("ms_market_regime", None)})
-                        plan_rows.append(row)
-                plans_all = pd.DataFrame(plan_rows)
-                if plans_all.empty:
+                plans_by_cost_mode = {}
+                for cost_bps in COST_CASES_BPS:
+                    plan_rows = []
+                    scenario_cost_floor = decision_cost_floor(cost_bps)
+                    for date, pred in forecasts.iterrows():
+                        if date not in bars.index or date not in x.index:
+                            continue
+                        for strategy_mode in strategy_modes:
+                            row = build_trade_decision(
+                                close=float(close.loc[date]), atr=float(atr.loc[date]),
+                                probability_up=float(pred["probability_up"]),
+                                expected_return=float(pred["expected_return"]),
+                                features=x.loc[date].to_dict(),
+                                allow_short=False,  # $10k cash-account comparison: no shorting or leverage
+                                round_trip_cost=scenario_cost_floor,
+                                strategy_mode=strategy_mode,
+                            )
+                            row.update({"as_of": date, "ticker": ticker, "asset": asset,
+                                        "horizon_sessions": horizon,
+                                        "round_trip_cost_bps": cost_bps,
+                                        "decision_cost_floor_bps": scenario_cost_floor * 10000.0,
+                                        "train_end": pred["train_end"],
+                                        "n_train": int(pred["n_train"]),
+                                        "probability_calibrated": False,
+                                        "market_regime": x.loc[date].get("ms_market_regime", None)})
+                            plan_rows.append(row)
+                    plans_all = pd.DataFrame(plan_rows)
+                    if not plans_all.empty:
+                        plans_by_cost_mode[cost_bps] = {
+                            mode: plans_all[plans_all["strategy_mode"] == mode].set_index("as_of").sort_index()
+                            for mode in strategy_modes
+                        }
+                if not plans_by_cost_mode:
                     summaries.append({"ticker": ticker, "horizon": horizon, "status": "no_plans"})
                     continue
-                plans_by_mode = {
-                    mode: plans_all[plans_all["strategy_mode"] == mode].set_index("as_of").sort_index()
-                    for mode in strategy_modes
-                }
-                baseline_plans = plans_by_mode["confluence"]
+                # Forecast report carries the least-cost (10bp) confluence decision;
+                # each backtest below uses its own matching cost hurdle.
+                baseline_plans = plans_by_cost_mode[COST_CASES_BPS[0]]["confluence"]
                 forecasts = forecasts.join(
                     baseline_plans[["decision", "reason"]].rename(columns={"reason": "decision_reason"}),
                     how="left",
@@ -257,10 +271,10 @@ def main():
                 })
 
                 for strategy_mode in strategy_modes:
-                    plans = plans_by_mode[strategy_mode].copy()
-                    plans["decision"] = plans["decision"].fillna("FLAT")
-                    all_plans.append(plans.reset_index())
                     for cost_bps in COST_CASES_BPS:
+                        plans = plans_by_cost_mode[cost_bps][strategy_mode].copy()
+                        plans["decision"] = plans["decision"].fillna("FLAT")
+                        all_plans.append(plans.reset_index())
                         ledger, curve = simulate_trades(
                             bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
                             initial_equity=10_000.0, risk_budget_pct=0.005,
@@ -287,7 +301,7 @@ def main():
                             "strategy_id": tag, "strategy_mode": strategy_mode,
                             "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
                             "round_trip_cost_bps": cost_bps, "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
-                            "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
+                            "decision_cost_floor_bps": decision_cost_floor(cost_bps) * 10000.0,
                             "forecast_count": int(len(forecasts)),
                             "long_signals": int((plans["decision"] == "LONG").sum()),
                             "short_signals": int((plans["decision"] == "SHORT").sum()),
