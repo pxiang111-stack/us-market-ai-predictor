@@ -128,8 +128,8 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
                  commission_bps: float = DEFAULT_COMMISSION_BPS,
                  slippage_bps: float = DEFAULT_SLIPPAGE_BPS) -> tuple[dict[str, Any], list[dict[str, Any]], list[float]]:
     cash = float(initial_equity)
-    curve = []
-    trades = []
+    curve: list[float] = []
+    trades: list[dict[str, Any]] = []
     invested_days = 0
     i = 205
     while i < len(bars) - 1:
@@ -137,8 +137,8 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         regime = classify_regime([x["close"] for x in history])["regime"]
         levels = build_support_resistance(history)
         setup = evaluate_setups(history, regime, levels)
-        curve.append(cash)
         if setup["action"] != "LONG_CANDIDATE":
+            curve.append(cash)
             i += 1
             continue
 
@@ -147,12 +147,14 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         stop = float(zone["low"]) - 0.25 * atr
         target_zones = [z for z in levels["resistances"] if float(z["low"]) > float(history[-1]["close"])]
         if not target_zones:
+            curve.append(cash)
             i += 1
             continue
         target = min(target_zones, key=lambda z: float(z["low"]))["low"]
         next_bar = bars[i + 1]
         entry = _slipped(float(next_bar["open"]), "buy", slippage_bps)
         if not (stop < entry < target):
+            curve.append(cash)
             i += 1
             continue
         risk_budget = cash * RISK_FRACTION
@@ -161,23 +163,28 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         by_cash = int(cash // (entry * (1.0 + commission_bps / 10_000.0)))
         shares = max(0, min(by_risk, by_cash))
         if shares < 1:
+            curve.append(cash)
             i += 1
             continue
+
+        # Signal is known at today's close; entry is next session's open.
+        curve.append(cash)
         buy_notional = shares * entry
         buy_fee = _commission(buy_notional, commission_bps)
-        if buy_notional + buy_fee > cash:
-            i += 1
-            continue
-        cash -= buy_notional + buy_fee
+        cash_after_buy = cash - buy_notional - buy_fee
         exit_i, exit_price, reason = _trade_exit(
             bars, i + 1, stop, target, slippage_bps
         )
         sell_notional = shares * exit_price
         sell_fee = _commission(sell_notional, commission_bps)
-        cash += sell_notional - sell_fee
-        net_pnl = cash - (cash - (sell_notional - sell_fee) + buy_notional + buy_fee)
-        # Explicit trade P&L, independent of subsequent account activity.
+        cash = cash_after_buy + sell_notional - sell_fee
         net_pnl = sell_notional - sell_fee - buy_notional - buy_fee
+
+        # Mark open risk daily, then record realized equity on the exit date.
+        for mark_i in range(i + 1, exit_i):
+            curve.append(cash_after_buy + shares * float(bars[mark_i]["close"]))
+        curve.append(cash)
+        invested_days += exit_i - i
         trades.append({
             "signal_date": history[-1]["date"],
             "entry_date": next_bar["date"],
@@ -192,16 +199,13 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
             "net_pnl": round(net_pnl, 4),
             "net_return_pct": round(net_pnl / (buy_notional + buy_fee) * 100, 3),
         })
-        invested_days += exit_i - i
-        # Mark realized equity across the holding period at its ending value.
-        curve.extend([cash] * max(0, exit_i - i - 1))
         i = exit_i + 1
 
-    curve.append(cash)
-    curve = curve[-(len(bars) - 205):]
+    while len(curve) < len(bars) - 205:
+        curve.append(cash)
+    curve = curve[:len(bars) - 205]
     exposure = invested_days / max(1, len(bars) - 205)
     return _metrics("SUPPORT_BOUNCE_V1", initial_equity, curve, trades, exposure), trades, curve
-
 
 def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
                  commission_bps: float, slippage_bps: float) -> dict[str, Any]:
