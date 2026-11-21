@@ -78,6 +78,39 @@ def load_rank_score(path: Path, dates: pd.DatetimeIndex) -> pd.Series:
     return frame.set_index("date")["rank_model_score"].reindex(dates).rename("rank_model_score")
 
 
+def align_crypto_to_nq_close(crypto: pd.DataFrame,
+                             nq_dates: pd.DatetimeIndex) -> pd.DataFrame:
+    """Align UTC daily crypto bars to the NQ session close without look-ahead.
+
+    Yahoo's crypto daily index labels the UTC calendar day whose bar closes at
+    the *next* 00:00 UTC. That close is not yet known at the NQ cash-session
+    close on the same calendar date. Therefore each completed UTC bar is made
+    available to the following NQ session date. Prior-20-day bands are
+    calculated before shifting the availability date, so the current aligned
+    crypto close is compared with the 20 completed UTC sessions before it.
+    """
+    if crypto is None or crypto.empty or "Close" not in crypto:
+        return pd.DataFrame(index=nq_dates,
+                            columns=["Close", "prior_20d_high", "prior_20d_low"],
+                            dtype=float)
+    daily = crypto.copy().sort_index()
+    idx = pd.DatetimeIndex(pd.to_datetime(daily.index))
+    if idx.tz is not None:
+        idx = idx.tz_convert("UTC").tz_localize(None)
+    daily.index = idx.normalize()
+    daily = daily[~daily.index.duplicated(keep="last")]
+    close = pd.to_numeric(daily["Close"], errors="coerce")
+    prior_high = close.shift(1).rolling(20, min_periods=20).max()
+    prior_low = close.shift(1).rolling(20, min_periods=20).min()
+    available = pd.DataFrame({
+        "Close": close,
+        "prior_20d_high": prior_high,
+        "prior_20d_low": prior_low,
+    })
+    available.index = available.index + pd.Timedelta(days=1)
+    return available.reindex(nq_dates).ffill()
+
+
 def build_market_frame(period: str, rank_score_file: Path) -> pd.DataFrame:
     prices = {}
     errors = {}
@@ -124,16 +157,16 @@ def build_market_frame(period: str, rank_score_file: Path) -> pd.DataFrame:
             print(f"[DATA GAP] {field} ({series_id}): {exc}", flush=True)
 
     for asset in ("BTC", "ETH"):
-        close_field = f"{asset}_close"
         if asset in prices:
-            # Crypto trades 7 days/week: calculate its 20-session bands on the
-            # full UTC daily series, then align those prior-only bands to NQ dates.
-            crypto_close = prices[asset]["Close"]
-            prior_high = crypto_close.shift(1).rolling(20, min_periods=20).max()
-            prior_low = crypto_close.shift(1).rolling(20, min_periods=20).min()
-            z[f"{asset}_20d_high"] = prior_high.reindex(z.index).ffill()
-            z[f"{asset}_20d_low"] = prior_low.reindex(z.index).ffill()
+            # UTC crypto daily closes are only available at the next UTC
+            # midnight; align both close and prior-only bands to the next NQ
+            # session date to prevent same-day look-ahead.
+            aligned = align_crypto_to_nq_close(prices[asset], z.index)
+            z[f"{asset}_close"] = aligned["Close"]
+            z[f"{asset}_20d_high"] = aligned["prior_20d_high"]
+            z[f"{asset}_20d_low"] = aligned["prior_20d_low"]
         else:
+            z[f"{asset}_close"] = np.nan
             z[f"{asset}_20d_high"] = np.nan
             z[f"{asset}_20d_low"] = np.nan
 
