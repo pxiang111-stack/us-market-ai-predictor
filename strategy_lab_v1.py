@@ -75,22 +75,33 @@ def build_strategy_signals(bars: pd.DataFrame) -> pd.DataFrame:
     sma200 = close.rolling(200, min_periods=200).mean()
     momentum_12_1 = close.shift(21) / close.shift(252) - 1.0
 
-    donchian_entry = close > high.rolling(55, min_periods=55).max().shift(1)
-    donchian_exit = close < low.rolling(20, min_periods=20).min().shift(1)
-    donchian_state = []
-    invested = False
-    for entry, exit_ in zip(donchian_entry.fillna(False), donchian_exit.fillna(False)):
-        if not invested and bool(entry):
-            invested = True
-        elif invested and bool(exit_):
-            invested = False
-        donchian_state.append(invested)
+    def donchian_state(entry_days: int, exit_days: int) -> list[bool]:
+        entry = close > high.rolling(entry_days, min_periods=entry_days).max().shift(1)
+        exit_ = close < low.rolling(exit_days, min_periods=exit_days).min().shift(1)
+        state: list[bool] = []
+        invested = False
+        for enter, leave in zip(entry.fillna(False), exit_.fillna(False)):
+            if not invested and bool(enter):
+                invested = True
+            elif invested and bool(leave):
+                invested = False
+            state.append(invested)
+        return state
+
+    sma100 = close.rolling(100, min_periods=100).mean()
+    sma150 = close.rolling(150, min_periods=150).mean()
+    sma250 = close.rolling(250, min_periods=250).mean()
 
     signals = pd.DataFrame(index=bars.index)
     signals["QQQ_buy_hold"] = True
+    signals["SMA100_trend"] = close > sma100
+    signals["SMA150_trend"] = close > sma150
     signals["SMA200_trend"] = close > sma200
+    signals["SMA250_trend"] = close > sma250
     signals["MOM_12_1_plus_SMA200"] = (close > sma200) & (momentum_12_1 > 0)
-    signals["Donchian_55_20"] = donchian_state
+    signals["Donchian_20_10"] = donchian_state(20, 10)
+    signals["Donchian_40_20"] = donchian_state(40, 20)
+    signals["Donchian_55_20"] = donchian_state(55, 20)
     # Keep warm-up rows so the first scored session can use a valid prior-close signal.
     return signals.fillna(False).astype(bool)
 
@@ -276,7 +287,7 @@ def main() -> None:
         "warmup_sessions_excluded_from_performance": WARMUP_SESSIONS,
         "cost_cases_bps_per_order": list(COST_CASES_BPS),
         "holdout_fraction": HOLDOUT_FRACTION,
-        "strategies": ["QQQ_buy_hold", "SMA200_trend", "MOM_12_1_plus_SMA200", "Donchian_55_20"],
+        "strategies": list(summary["strategy"].drop_duplicates()),
         "execution": "close signal t, next session open fill; whole shares; cash-only; long or cash",
         "dividends": "cash credited on ex-date for shares held at prior close; not reinvested automatically",
         "splits": "Yahoo Finance OHLC history is requested with auto_adjust=False; split-adjusted price history is used",
