@@ -153,7 +153,7 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         target = min(target_zones, key=lambda z: float(z["low"]))["low"]
         next_bar = bars[i + 1]
         entry = _slipped(float(next_bar["open"]), "buy", slippage_bps)
-        if not (stop < entry < target):
+        if not (stop < entry < target) or (target - entry) / (entry - stop) < 1.5:
             curve.append(cash)
             i += 1
             continue
@@ -231,84 +231,40 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
                      commission_bps: float, slippage_bps: float) -> dict[str, Any]:
     cash, shares = initial_equity, 0
     curve, trades = [], []
+    entry_cost = 0.0
+    invested_days = 0
     for i, bar in enumerate(bars):
         if i >= 200:
             closes = [x["close"] for x in bars[:i]]
-            want_long = closes[-1] > sum(closes[-50:]) / 50 and sum(closes[-50:]) / 50 > sum(closes[-200:]) / 200
+            sma50 = sum(closes[-50:]) / 50
+            sma200 = sum(closes[-200:]) / 200
+            want_long = closes[-1] > sma50 and sma50 > sma200
             if want_long and shares == 0:
                 price = _slipped(bar["open"], "buy", slippage_bps)
                 qty = int(cash // (price * (1 + commission_bps / 10_000)))
                 if qty:
                     fee = _commission(qty * price, commission_bps)
-                    cash -= qty * price + fee
+                    entry_cost = qty * price + fee
+                    cash -= entry_cost
                     shares = qty
             elif not want_long and shares:
                 price = _slipped(bar["open"], "sell", slippage_bps)
                 fee = _commission(shares * price, commission_bps)
-                cash += shares * price - fee
-                trades.append({"net_pnl": 0.0})
+                proceeds = shares * price - fee
+                cash += proceeds
+                trades.append({"net_pnl": proceeds - entry_cost})
                 shares = 0
+                entry_cost = 0.0
+        if shares:
+            invested_days += 1
         curve.append(cash + shares * bar["close"])
     if shares:
         price = _slipped(bars[-1]["close"], "sell", slippage_bps)
         fee = _commission(shares * price, commission_bps)
-        cash += shares * price - fee
+        proceeds = shares * price - fee
+        cash += proceeds
+        trades.append({"net_pnl": proceeds - entry_cost})
         shares = 0
         curve[-1] = cash
-    return _metrics("SMA50_200_LONG_FLAT", initial_equity, curve, trades, 0.5)
-
-
-def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
-                 initial_equity: float = 10_000.0,
-                 commission_bps: float = DEFAULT_COMMISSION_BPS,
-                 slippage_bps: float = DEFAULT_SLIPPAGE_BPS) -> dict[str, Any]:
-    bars = load_bars(csv_path)
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    strategy, trades, curve = run_strategy(bars, initial_equity, commission_bps, slippage_bps)
-    benchmarks = [
-        run_buy_hold(bars, initial_equity, commission_bps, slippage_bps),
-        run_sma_baseline(bars, initial_equity, commission_bps, slippage_bps),
-    ]
-    summary = {
-        "data_file": str(csv_path),
-        "first_date": bars[0]["date"],
-        "last_date": bars[-1]["date"],
-        "bars": len(bars),
-        "initial_equity": initial_equity,
-        "commission_bps_each_side": commission_bps,
-        "slippage_bps_each_side": slippage_bps,
-        "price_basis_warning": "Verify OHLC is consistently adjusted; mixed adjusted/raw prices invalidate results.",
-        "strategies": [strategy, *benchmarks],
-        "note": "Daily OHLC cannot reveal intraday ordering; if stop and target both touch, stop is assumed first.",
-    }
-    (out / "simple_nq_backtest_summary.json").write_text(
-        json.dumps(summary, indent=2), encoding="utf-8"
-    )
-    with (out / "simple_nq_backtest_trades.csv").open("w", newline="", encoding="utf-8") as handle:
-        fields = list(trades[0]) if trades else [
-            "signal_date", "entry_date", "exit_date", "shares", "entry_price",
-            "stop", "target", "exit_price", "exit_reason", "commission_total",
-            "net_pnl", "net_return_pct",
-        ]
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(trades)
-    return summary
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the Simple NQ / QQQ V1 daily backtest")
-    parser.add_argument("--csv", required=True, help="Adjusted daily OHLCV CSV")
-    parser.add_argument("--output-dir", default="output")
-    parser.add_argument("--capital", type=float, default=10_000.0)
-    parser.add_argument("--commission-bps", type=float, default=DEFAULT_COMMISSION_BPS)
-    parser.add_argument("--slippage-bps", type=float, default=DEFAULT_SLIPPAGE_BPS)
-    args = parser.parse_args()
-    print(json.dumps(run_backtest(
-        args.csv, args.output_dir, args.capital, args.commission_bps, args.slippage_bps
-    ), indent=2))
-
-
-if __name__ == "__main__":
-    main()
+    return _metrics("SMA50_200_LONG_FLAT", initial_equity, curve, trades,
+                    invested_days / max(1, len(bars)))
