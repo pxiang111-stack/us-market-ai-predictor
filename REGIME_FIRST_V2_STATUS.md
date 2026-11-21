@@ -2,36 +2,36 @@
 
 Date: 2026-11-22
 
-## Implemented in this repository
+## Implemented and committed
 
-- `regime_first_v2.py`: deterministic three-state gate (`RISK_OFF`, `NEUTRAL`, `RISK_ON`).
-- RISK_OFF triggers are evaluated independently, so one missing feed cannot hide another confirmed trigger.
-- RISK_OFF recovery requires two consecutive valid recovery closes before moving to NEUTRAL.
-- RISK_ON requires the base regime conditions plus all four flip gates.
-- Risk budget applies the state cap, VIX multiplier, one-time missing-critical-data haircut, and optional hard-monitor-veto multiplier.
-- Missing critical columns are recorded as data gaps rather than crashing the evaluator.
-- The engine never emits an active short direction; RISK_OFF permits only reduce/hedge.
-- Unit tests were added in `tests/test_regime_first_v2.py`; the Actions workflow now compiles the module and runs the test suite when the module, tests, or workflow changes.
+- `regime_first_v2.py`: deterministic three-state engine, hysteresis, four flip gates, state risk caps, VIX multiplier, missing-critical-data haircut, optional hard monitor veto.
+- Independent BTC, ETH, NQ/VIX and credit stress triggers; a missing feed does not hide another confirmed trigger.
+- Credit trigger follows the written rule: CCC OAS >14% plus five consecutive widening sessions in both BBB and broad HY OAS (CCC itself need not widen).
+- `run_regime_first_v2.py`: daily data adapter for NQ futures, NDX, BTC, ETH and VIX from Yahoo Finance; CCC/BBB/HY OAS from FRED CSV; prior-only NQ and crypto rolling bands; daily CSV and latest Markdown report.
+- The adapter refuses to fabricate `rank_model_score`. It reads `output/rank_model_score.csv` with columns `date,rank_model_score`; if unavailable, it records the critical data gap and halves the risk budget.
+- GitHub Actions now runs the Regime-First adapter after the existing V4 research pipeline and uploads both reports under `output/`.
+- Unit tests cover state transitions, missing feeds, hard veto, flip gates and credit widening.
 
-## Not yet complete
+## Critical unresolved data interface
 
-This is currently a standalone rules engine. It is **not yet connected** to the daily market-data pipeline and does not yet write a live daily Regime-First report.
+The market-wide `rank_model_score` used by v1.6-A is not yet mapped from the legacy source. The existing V4 stock-ranking score is a cross-sectional stock opportunity score and must not be substituted for a market direction score. Until a validated adapter exists, the daily engine will show this as a data gap and cannot authorize RISK_ON.
 
-The following inputs or modules still require a point-in-time source and validation:
+## Other incomplete layers
 
-1. A canonical daily `rank_model_score`. The existing stock-ranking output has per-stock opportunity/factor scores; that is not automatically equivalent to the market-wide direction score used by the v1.6-A framework.
-2. CCC, BBB and HY spread history with publication-date handling.
-3. GEX, DIX, SPY/QQQ flows and institution-order veto mapping. A hard veto must be explicitly defined; warnings must not silently become zero-risk vetoes.
-4. Eventized signal clusters, swing-point detection, ATR/stop-distance sizing, option liquidity checks and portfolio-level risk aggregation.
-5. Walk-forward and point-in-time historical validation, including the 19 dated calls, 117-day sample and 2022-2026 window.
+- Historical point-in-time FRED vintages and survivorship-bias-free equity universe are not yet integrated for the 2022-2026 validation.
+- Eventized break/key-level/time/confirmation clusters are not yet connected to the daily output.
+- GEX, DIX, SPY/QQQ flows and COT are not yet sourced or mapped to explicit hard-veto rules.
+- ATR/stop-distance sizing, option spread/open-interest/volume checks, and portfolio-level risk aggregation remain to be implemented.
+- The 19 historical decisions and 117-day sample have not yet been reconstructed and tested.
+- A successful GitHub Actions run has not yet been confirmed.
 
-## Frozen interpretation notes requiring owner confirmation before live activation
+## Frozen interpretation notes
 
-- Rank-score recovery is currently coded as: the score starts at or below -2, rises by at least 1 point on each of two consecutive sessions, and finishes at or above 0. This is a literal operational interpretation of the written rule, not a calibrated parameter.
-- The top-level principle that the short leg only closes/reduces risk takes precedence over examples that describe opening a QQQ put on a failed bounce. No active short signal is generated until that conflict is explicitly resolved.
-- For the 2026-11-20 example, a missing critical NQ 20-day low halves the risk budget once. With RISK_OFF cap 1% and VIX 39.47 multiplier 0.5, the resulting maximum is 0.25% before any hard veto. The missing R5 statistic is a signal-data gap, not a second critical-contract haircut.
-- GEX/DIX readings are not hard vetoes by themselves in this implementation. They require explicit, independently validated veto conditions.
+- Flip score recovery is currently implemented as start <= -2, two consecutive rises of at least 1 point, ending >= 0. This is an explicit operational interpretation, not calibrated.
+- The top-level rule prohibiting active short direction takes precedence; no active short signal is generated.
+- Hard monitor veto requires an explicit `monitor_hard_veto` boolean input. GEX/DIX warnings are not treated as hard vetoes by default.
+- The 27,480 NQ level remains frozen as written.
 
 ## Validation status
 
-Code and tests have been committed. A successful GitHub Actions run has not yet been confirmed; do not treat the module as production-validated or use it to authorize live orders.
+The rules engine and daily adapter are committed but not production-validated. No live orders should be authorized from these outputs. Daily data quality, rank-score mapping, historical validation and the first successful CI run remain gating items.
