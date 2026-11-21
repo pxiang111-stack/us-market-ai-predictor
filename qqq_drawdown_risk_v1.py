@@ -225,6 +225,7 @@ def main():
     if "QQQ" not in prices:
         raise RuntimeError("QQQ close series unavailable")
     bars = download_market_structure_bars("QQQ", period="10y")
+    scored_start = bars.index[-1] - pd.DateOffset(years=3)
     features = make_features(prices, "QQQ")
     features, _ = merge_market_structure_features(features, bars, "QQQ")
     forecasts = []
@@ -237,6 +238,10 @@ def main():
     if not forecasts:
         raise RuntimeError("No out-of-sample drawdown forecasts generated")
     forecast_frame = pd.concat(forecasts, ignore_index=True)
+    forecast_frame["as_of"] = pd.to_datetime(forecast_frame["as_of"]).dt.tz_localize(None).dt.normalize()
+    forecast_frame = forecast_frame.loc[forecast_frame["as_of"] >= scored_start].copy()
+    if forecast_frame.empty:
+        raise RuntimeError("No downside-risk forecasts in the latest three-year scored window")
     baseline_path = Path("output/walkforward_v5/oos_forecasts.csv")
     baseline = pd.read_csv(baseline_path) if baseline_path.exists() else None
     detail, summary = evaluate_drawdown_forecasts(forecast_frame, bars, baseline)
@@ -245,6 +250,8 @@ def main():
     payload = {
         "status": "completed",
         "ticker": "QQQ",
+        "scored_backtest_years": 3,
+        "scored_start": str(scored_start.date()),
         "horizons_sessions": list(HORIZONS),
         "future_low_drawdown_thresholds_pct": [int(x * 100) for x in DRAWDOWN_THRESHOLDS],
         "alert_thresholds": list(ALERT_THRESHOLDS),
