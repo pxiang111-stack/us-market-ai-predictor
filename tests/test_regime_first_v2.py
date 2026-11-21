@@ -66,6 +66,18 @@ class RegimeFirstV2Tests(unittest.TestCase):
         self.assertEqual(result.iloc[-1].state, "RISK_OFF")
         self.assertIn("ETH_close", result.iloc[-1].data_gaps)
 
+    def test_credit_trigger_requires_ccc_above_14_and_bbb_hy_widening(self):
+        rows = []
+        for day in range(1, 7):
+            rows.append(row(
+                f"2026-11-{day+10:02d}", CCC_spread=15.0,
+                BBB_spread=3.0 + day * 0.1,
+                HY_spread=5.0 + day * 0.2,
+            ))
+        result = evaluate_history(pd.DataFrame(rows))
+        self.assertTrue(result.iloc[-1].hard_risk_off)
+        self.assertEqual(result.iloc[-1].state, "RISK_OFF")
+
     def test_monitor_hard_veto_zeroes_new_risk(self):
         data = pd.DataFrame([row("2026-11-20", monitor_hard_veto=True)])
         result = evaluate_history(data)
