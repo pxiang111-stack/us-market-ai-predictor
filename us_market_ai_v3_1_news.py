@@ -213,24 +213,42 @@ def features_for(t,d,spy,news_path):
 
 
 def fetch_gdelt_articles(query, max_records=30):
-    """Fetch recent public news headlines from GDELT DOC API (no API key)."""
+    """Fetch recent headlines from GDELT, falling back to Google News RSS."""
     url = "https://api.gdeltproject.org/api/v2/doc/doc"
-    params = {
-        "query": query,
-        "mode": "ArtList",
-        "format": "json",
-        "maxrecords": str(max_records),
-        "timespan": "7d",
-        "sort": "HybridRel"
-    }
+    params = {"query": query, "mode": "ArtList", "format": "json",
+              "maxrecords": str(max_records), "timespan": "7d", "sort": "HybridRel"}
     headers = {"User-Agent": "Mozilla/5.0 (compatible; MarketSentimentResearch/1.0)"}
+    articles = []
     try:
         response = requests.get(url, params=params, headers=headers, timeout=8)
         response.raise_for_status()
-        payload = response.json()
-        return payload.get("articles", []) or []
+        articles = response.json().get("articles", []) or []
     except Exception as exc:
-        print(f"[WARN] News request failed for query [{query}]: {exc}")
+        print(f"[WARN] GDELT request failed for query [{query}]: {exc}")
+    if articles:
+        return articles
+    # GDELT can return an empty list without an HTTP error; try an independent RSS index.
+    try:
+        import xml.etree.ElementTree as ET
+        response = requests.get(
+            "https://news.google.com/rss/search",
+            params={"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"},
+            headers=headers, timeout=12,
+        )
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+        fallback = []
+        for item in root.findall(".//item")[:max_records]:
+            title = item.findtext("title")
+            if not title:
+                continue
+            source = item.find("source")
+            fallback.append({"title": title, "url": item.findtext("link"),
+                "domain": source.text if source is not None else None,
+                "seendate": item.findtext("pubDate"), "source": "Google News RSS"})
+        return fallback
+    except Exception as exc:
+        print(f"[WARN] RSS fallback failed for query [{query}]: {exc}")
         return []
 
 def score_headlines(articles):
@@ -244,6 +262,10 @@ def score_headlines(articles):
     for article in articles:
         title = str(article.get("title", "")).strip()
         if len(title) < 8:
+            continue
+        # VADER is English-centric; non-English titles are missing evidence, not neutral.
+        letters = [ch for ch in title if ch.isalpha()]
+        if not letters or sum(ch.isascii() for ch in letters) / len(letters) < 0.75:
             continue
         scores.append(analyzer.polarity_scores(title)["compound"])
     if not scores:

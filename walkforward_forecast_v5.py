@@ -7,7 +7,28 @@ not fills; execution is handled by walkforward_execution_v5.
 from __future__ import annotations
 import numpy as np
 import pandas as pd
-from market_risk_v4 import labeled, models
+from market_risk_v4 import models
+
+
+def build_execution_aligned_labels(
+    close: pd.Series, next_session_open: pd.Series, horizon_sessions: int
+) -> pd.DataFrame:
+    """Label the return actually available to a next-open, fixed-horizon trade.
+
+    A signal is formed after close t, entered at open t+1, and marked at
+    close t+h. The label therefore uses close[t+h] / open[t+1] - 1.
+    """
+    if horizon_sessions < 1:
+        raise ValueError("horizon_sessions must be >= 1")
+    px = pd.to_numeric(close, errors="coerce")
+    op = pd.to_numeric(next_session_open.reindex(px.index), errors="coerce")
+    entry = op.shift(-1)
+    exit_price = px.shift(-horizon_sessions)
+    forward_return = exit_price / entry - 1.0
+    valid = entry.notna() & exit_price.notna() & entry.gt(0) & exit_price.gt(0)
+    out = pd.DataFrame({"forward_return": forward_return.where(valid)}, index=px.index)
+    out["up"] = (out["forward_return"] > 0).astype(float).where(valid)
+    return out
 
 
 def generate_walkforward_forecasts(
@@ -15,21 +36,17 @@ def generate_walkforward_forecasts(
     close: pd.Series,
     horizon_sessions: int,
     *,
+    entry_open: pd.Series,
     min_train_rows: int = 500,
     retrain_every: int = 20,
     max_train_rows: int | None = 1260,
+    start_date: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     if horizon_sessions < 1 or min_train_rows < 100 or retrain_every < 1:
         raise ValueError("Invalid horizon, minimum training size, or retrain interval")
     x = features.sort_index().copy()
     px = close.reindex(x.index)
-    z = labeled(x, px, f"{horizon_sessions}d") if f"{horizon_sessions}d" in {"5d", "10d", "20d"} else None
-    if z is None:
-        z = x.copy()
-        z["forward_return"] = px.shift(-horizon_sessions) / px - 1
-        z["up"] = (z["forward_return"] > 0).astype(float)
-        z.iloc[-horizon_sessions:, z.columns.get_loc("up")] = np.nan
-        z.iloc[-horizon_sessions:, z.columns.get_loc("forward_return")] = np.nan
+    z = x.join(build_execution_aligned_labels(px, entry_open.reindex(x.index), horizon_sessions))
     # Regime labels are categorical diagnostics used by the decision layer and
     # post-trade attribution. The sklearn pipelines use median imputation, so
     # only numeric/bool columns may enter the model feature matrix.
@@ -43,7 +60,10 @@ def generate_walkforward_forecasts(
     classifier_a = classifier_b = regressor = None
     last_fit_position = -10**9
 
+    score_start = pd.Timestamp(start_date).normalize() if start_date is not None else None
     for i in range(len(x)):
+        if score_start is not None and pd.Timestamp(x.index[i]).normalize() < score_start:
+            continue
         if i < horizon_sessions:
             continue
         cutoff = x.index[i - horizon_sessions]

@@ -147,7 +147,12 @@ def models():
 
 def run_forecast(asset,ticker,prices,x,horizon):
     z=labeled(x,prices[ticker],horizon).dropna(subset=["up","forward_return"])
-    current=x.dropna(how="all").tail(1); cols=list(x.columns); n=HORIZONS[horizon]
+    current=x.dropna(how="all").tail(1)
+    # Regime strings are diagnostics, not numeric model features.
+    cols=x.select_dtypes(include=[np.number, "bool"]).columns.tolist()
+    n=HORIZONS[horizon]
+    if not cols:
+        return None, {"asset":asset,"horizon":horizon,"status":"no_numeric_features"}
     if len(z)<500 or z.up.nunique()<2 or current.empty:
         return None,{"asset":asset,"horizon":horizon,"status":"insufficient_history","n":len(z)}
     split=int(len(z)*.8); fit=z.iloc[:max(1,split-n)]; test=z.iloc[split:]
@@ -163,13 +168,25 @@ def run_forecast(asset,ticker,prices,x,horizon):
       "test_up_rate":float(test.up.mean()),"test_mean_forward_return":float(test.forward_return.mean())}
     a.fit(z[cols],z.up.astype(int)); b.fit(z[cols],z.up.astype(int)); g.fit(z[cols],z.forward_return)
     prob=float((a.predict_proba(current[cols])[0,1]+b.predict_proba(current[cols])[0,1])/2)
-    exp=float(g.predict(current[cols])[0]); hist=z.forward_return
+    hist=z.forward_return
+    exp_raw=float(g.predict(current[cols])[0])
+    q10,q50,q90=(float(hist.quantile(q)) for q in (.1,.5,.9))
+    # Regression estimates can extrapolate far beyond the observed target
+    # distribution (especially on leveraged ETFs). Bound the displayed estimate
+    # to the training-sample 10th/90th percentiles and retain raw value for audit.
+    exp=float(np.clip(exp_raw,q10,q90))
+    validation_auc=float(diag["auc"])
+    validation_gate=validation_auc >= 0.52
+    signal=("bullish_bias" if prob>=.6 and exp>0 else
+            "bearish_bias" if prob<=.4 and exp<0 else "mixed_or_neutral")
+    if not validation_gate:
+        signal="low_validation_skill_flat"
     row={"as_of":str(current.index[-1].date()),"asset":asset,"ticker":ticker,"horizon":horizon,
-      "probability_up":prob,"expected_return":exp,
-      "historical_q10":float(hist.quantile(.1)),"historical_median":float(hist.median()),
-      "historical_q90":float(hist.quantile(.9)),
-      "signal":"bullish_bias" if prob>=.6 and exp>0 else "bearish_bias" if prob<=.4 and exp<0 else "mixed_or_neutral",
-      "note":"Empirical historical return quantiles, not confidence intervals."}
+      "probability_up":prob,"expected_return":exp,"expected_return_raw":exp_raw,
+      "historical_q10":q10,"historical_median":q50,"historical_q90":q90,
+      "validation_auc":validation_auc,"validation_gate":validation_gate,
+      "signal":signal,
+      "note":"Expected return clipped to training q10/q90; empirical quantiles are not confidence intervals. Low OOS AUC blocks trade signals."}
     return row,diag
 
 def market_stress(prices):
@@ -350,6 +367,14 @@ def main():
                         features=latest_features,
                         allow_short=(asset == "NQ_futures" and ticker == "NQ=F"),
                     )
+                    if not row.get("validation_gate", False):
+                        decision.update({
+                            "decision": "FLAT", "entry_reference": np.nan,
+                            "stop_loss": np.nan, "take_profit_1r": np.nan,
+                            "take_profit_2r": np.nan, "max_position_fraction": 0.0,
+                            "execution_status": "blocked_low_oos_validation",
+                            "reason": f"Blocked: holdout AUC {row['validation_auc']:.3f} below 0.52 minimum; forecast is research-only.",
+                        })
                     decision.update({"as_of": row["as_of"], "asset": asset,
                                      "ticker": ticker, "horizon": h})
                     trade_decisions.append(decision)

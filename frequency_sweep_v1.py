@@ -50,15 +50,17 @@ def main() -> None:
     features, _ = merge_market_structure_features(features, bars, "QQQ")
     close = prices["QQQ"].reindex(features.index)
     atr = atr_series(bars).reindex(features.index)
+    scored_start = bars.index[-1] - pd.DateOffset(years=3)
+    eval_bars = bars.loc[bars.index >= scored_start].copy()
     rows, ledgers, curves = [], [], []
 
-    # Matched-date buy-and-hold benchmark: same QQQ bars and starting equity
+    # Matched-date buy-and-hold benchmark on the latest three-year score window.
     # as every strategy curve, so active profiles are not judged in isolation.
-    benchmark_close = pd.to_numeric(close.reindex(bars.index), errors="coerce").dropna()
+    benchmark_close = pd.to_numeric(close.reindex(eval_bars.index), errors="coerce").dropna()
     if len(benchmark_close) > 1:
         benchmark_curve = pd.DataFrame({
             "date": benchmark_close.index,
-            "equity": 100_000.0 * benchmark_close / float(benchmark_close.iloc[0]),
+            "equity": 10_000.0 * benchmark_close / float(benchmark_close.iloc[0]),
         })
         benchmark_stats = performance_summary(pd.DataFrame(), benchmark_curve)
         for horizon in HORIZONS:
@@ -85,22 +87,23 @@ def main() -> None:
         print(f"[INFO] QQQ {horizon}-session purged walk-forward forecasts...", flush=True)
         forecasts = generate_walkforward_forecasts(
             features, close, horizon, min_train_rows=500,
-            retrain_every=63, max_train_rows=1260,
+            retrain_every=63, max_train_rows=1260, start_date=scored_start,
         )
+        forecasts = forecasts.loc[forecasts.index >= scored_start].copy()
         if forecasts.empty:
             rows.append({"horizon_sessions": horizon, "status": "insufficient_forecasts"})
             continue
         for profile_name, gates in PROFILES.items():
             plans = []
             for date, pred in forecasts.iterrows():
-                if date not in bars.index or pd.isna(atr.get(date)):
+                if date not in eval_bars.index or pd.isna(atr.get(date)):
                     continue
                 plan = build_trade_decision(
                     close=float(close.loc[date]), atr=float(atr.loc[date]),
                     probability_up=float(pred["probability_up"]),
                     expected_return=float(pred["expected_return"]),
                     features=features.loc[date].to_dict(),
-                    allow_short=True, round_trip_cost=DECISION_COST_FLOOR,
+                    allow_short=False, round_trip_cost=DECISION_COST_FLOOR,
                     strategy_mode="confluence",
                     probability_threshold_long=gates["p_long"],
                     probability_threshold_short=gates["p_short"],
@@ -119,12 +122,12 @@ def main() -> None:
             short_count = int((plan_frame["decision"] == "SHORT").sum())
             for cost in COSTS_BPS:
                 ledger, curve = simulate_trades(
-                    bars,
+                    eval_bars,
                     plan_frame[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
-                    initial_equity=100_000.0, risk_budget_pct=0.005,
+                    initial_equity=10_000.0, risk_budget_pct=0.005,
                     max_gross_exposure=1.0, round_trip_cost_bps=cost,
                     slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE,
-                    max_holding_sessions=horizon,
+                    max_holding_sessions=horizon, whole_shares_only=True,
                 )
                 stats = performance_summary(ledger, curve)
                 tag = f"QQQ_{horizon}d_{profile_name}_cost{int(cost)}bps"
@@ -164,6 +167,8 @@ def main() -> None:
     ) if curves else pd.DataFrame().to_csv(OUT / "frequency_sweep_equity.csv", index=False)
     payload = {
         "status": "completed", "ticker": "QQQ", "horizons": list(HORIZONS),
+        "scored_backtest_years": 3, "scored_start": str(scored_start.date()),
+        "initial_equity_usd": 10000.0, "whole_shares_only": True, "shorts_enabled": False,
         "profiles": PROFILES, "cost_cases_round_trip_bps": list(COSTS_BPS),
         "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
         "risk_budget_pct": 0.5, "max_gross_exposure": 1.0,

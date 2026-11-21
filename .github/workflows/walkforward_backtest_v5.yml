@@ -6,8 +6,11 @@ on:
       - 'qqq_drawdown_risk_v1.py'
       - 'frequency_sweep_v2.py'
       - 'walkforward_execution_v5.py'
+      - 'walkforward_forecast_v5.py'
+      - 'walkforward_backtest_v5.py'
       - 'tests/test_qqq_drawdown_risk_v1.py'
       - 'tests/test_walkforward_execution_v5.py'
+      - 'tests/test_walkforward_forecast_v5.py'
       - '.github/workflows/walkforward_backtest_v5.yml'
   workflow_dispatch:
 permissions:
