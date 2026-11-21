@@ -43,4 +43,5 @@ The rules engine and daily adapter are committed but not production-validated. N
 - Fixed a look-ahead risk in crypto alignment: Yahoo daily crypto bars labelled with UTC date D close at the following UTC midnight, after the NQ session close on date D. The adapter now makes that completed bar available to NQ on D+1 and shifts its prior-20-day bands consistently. Synthetic tests assert that the same-date incomplete bar is never used.
 - Fixed event-study bookkeeping so the first row of a sample is not falsely counted as a state-entry event.
 - Added a direct VIX>45 test proving the volatility multiplier is 0.25 and not 0.5.
-- These changes are committed; CI must still complete successfully before the code is considered verified.
+- FRED credit observations are now forward-filled for at most three NQ sessions. Older CCC values become a recorded critical data gap instead of being silently treated as current; BBB/HY stale values also disable the credit-widening trigger.
+- A GitHub Actions run completed the compile-and-unit-test step successfully for the crypto alignment, VIX, state engine, and event-study fixes; the run was then cancelled by a newer commit while the V4 scan was running. The newest run, including the FRED freshness test, is queued. Full workflow success is not yet confirmed.
