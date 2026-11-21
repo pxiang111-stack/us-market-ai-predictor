@@ -45,12 +45,16 @@ jobs:
 
       - name: Compile and test research modules
         run: |
-          python -m compileall -q us_market_ai_v3_1_news.py quant_research.py regime_first_v2.py tests
+          python -m compileall -q us_market_ai_v3_1_news.py quant_research.py regime_first_v2.py run_regime_first_v2.py tests
           python -m unittest discover -s tests -v
 
       - name: Run V4 factor and ML research model
         run: |
           python us_market_ai_v3_1_news.py
+
+      - name: Run Regime-First v2 daily state engine
+        run: |
+          python run_regime_first_v2.py --period 3y
 
       - name: Upload prediction reports
         uses: actions/upload-artifact@v4
