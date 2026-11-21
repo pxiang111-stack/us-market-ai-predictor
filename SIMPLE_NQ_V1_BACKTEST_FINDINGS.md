@@ -11,9 +11,9 @@ Execution: signal after completed close; entry at next session open; daily OHLC 
 
 | Strategy | Final equity | Total return | CAGR | Max drawdown | Trades | Win rate | Profit factor |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Support bounce V1 | $6,205.16 | -37.95% | -2.79% | -38.71% | 287 | 18.47% | 0.511 |
+| Support bounce V1 | $6,204.63 | -37.95% | -2.79% | -38.71% | 287 | 18.47% | 0.511 |
 | QQQ buy and hold | $151,415.61 | 1,414.16% | 17.50% | -35.12% | 1 | 100%* | inf* |
-| SMA50/200 long/flat | $28,720.95 | 187.21% | 6.46% | -21.22% | 122 | 31.97% | 1.869 |
+| SMA50/200 long/flat | $28,720.97 | 187.21% | 6.46% | -21.22% | 122 | 31.97% | 1.869 |
 | Cash, no trade | $10,000.00 | 0.00% | 0.00% | 0.00% | 0 | — | — |
 
 *The buy-and-hold trade statistics are not comparable to strategy trade statistics; it is one continuous holding period.
@@ -24,10 +24,10 @@ Of 287 V1 trades:
 - 176 exited at an ordinary stop.
 - 38 exited after a gap below the stop.
 - 20 had both stop and target touched in one daily bar and were conservatively recorded stop-first.
-- 44 reached the target.
-- 9 gapped through the target.
+- 46 reached the target.
+- 7 gapped through the target.
 
-Thus, 234 of 287 trades (81.5%) exited through a stop variant. Median holding time was one session; mean holding time was 1.92 sessions.
+Thus, 234 of 287 trades (81.5%) exited through a stop variant. Median holding time was one session; mean holding time was 1.91 trading sessions. Median planned reward/risk was 3.11R, while the mean was 8.34R (pulled upward by a few extremely distant resistance targets).
 
 By entry regime:
 - RANGE_TRANSITION: 153 trades; 16.34% win rate.
@@ -58,7 +58,7 @@ The final 20% was evaluated separately, with indicators warmed by the preceding 
 
 **Holdout conclusion:** V1 also loses money in the untouched final 20%, and underperforms QQQ, SMA50/200 and cash. This is independent evidence against the current rule, not merely an in-sample problem. Do not use V1 for live trading.
 
-The runner keeps all pre-holdout bars available for indicator warmup, but resets strategy capital and trade state at the split. The holdout metrics are reported separately from full-sample metrics.
+The runner keeps all pre-holdout bars available for indicator warmup, but resets strategy capital and trade state at the split. The holdout metrics are reported separately from full-sample metrics. Within the holdout trade list, 2024 was the only profitable calendar-year subset (+$67); the partial 2023 period, 2025 and 2026 were negative. This is descriptive, not a parameter-selection exercise.
 
 ## 5. Next validation gate
 
