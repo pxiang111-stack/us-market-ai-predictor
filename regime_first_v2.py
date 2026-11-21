@@ -46,7 +46,7 @@ def _valid(row: pd.Series, fields: tuple[str, ...]) -> bool:
 
 
 def _spread_widening_5d(history: pd.DataFrame) -> bool:
-    fields = ("CCC_spread", "BBB_spread", "HY_spread")
+    fields = ("BBB_spread", "HY_spread")
     if len(history) < 6 or not all(f in history for f in fields):
         return False
     z = history[list(fields)].tail(6).apply(pd.to_numeric, errors="coerce")
@@ -201,8 +201,8 @@ def evaluate_history(data: pd.DataFrame, initial_state: str = "NEUTRAL") -> pd.D
             action = "不做"  # Event-confirmed small-long permission is a separate signal-layer decision.
 
         notes = []
-        if "BBB_spread" not in row.index or "HY_spread" not in row.index:
-            notes.append("CCC同步信用利差触发器不可用")
+        if (pd.isna(row.get("BBB_spread")) or pd.isna(row.get("HY_spread"))):
+            notes.append("BBB/HY数据缺失，CCC>14%的信用风险触发器不可用")
         if gaps:
             notes.append("关键字段缺失，风险预算减半")
         if monitor_mult == 0.0:
