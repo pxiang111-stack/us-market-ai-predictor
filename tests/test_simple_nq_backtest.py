@@ -69,6 +69,11 @@ class BacktestExecutionTests(unittest.TestCase):
                                      close, close + 1, close - 1, close, 1000])
             result = run_backtest(csv_path, output_dir=output_dir)
             self.assertEqual(result["bars"], 270)
+            self.assertEqual(result["holdout"]["bars"], 54)
+            self.assertEqual(result["holdout"]["start_date"],
+                             (date(2025, 1, 1) + timedelta(days=216)).isoformat())
+            self.assertEqual(result["holdout"]["fresh_starting_equity"], 10_000)
+            self.assertEqual(len(result["holdout"]["strategies"]), 4)
             self.assertTrue((output_dir / "simple_nq_backtest_summary.json").exists())
             self.assertTrue((output_dir / "simple_nq_backtest_trades.csv").exists())
 
