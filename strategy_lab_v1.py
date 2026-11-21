@@ -92,12 +92,24 @@ def build_strategy_signals(bars: pd.DataFrame) -> pd.DataFrame:
     sma150 = close.rolling(150, min_periods=150).mean()
     sma250 = close.rolling(250, min_periods=250).mean()
 
+    # Hysteresis rule: enter on a faster 150-day trend confirmation, but
+    # remain invested until the slower 200-day trend breaks.
+    hysteresis_state: list[bool] = []
+    invested = False
+    for enter, leave in zip((close > sma150).fillna(False), (close < sma200).fillna(False)):
+        if not invested and bool(enter):
+            invested = True
+        elif invested and bool(leave):
+            invested = False
+        hysteresis_state.append(invested)
+
     signals = pd.DataFrame(index=bars.index)
     signals["QQQ_buy_hold"] = True
     signals["SMA100_trend"] = close > sma100
     signals["SMA150_trend"] = close > sma150
     signals["SMA200_trend"] = close > sma200
     signals["SMA250_trend"] = close > sma250
+    signals["SMA150_entry_SMA200_exit"] = hysteresis_state
     signals["MOM_12_1_plus_SMA200"] = (close > sma200) & (momentum_12_1 > 0)
     signals["Donchian_20_10"] = donchian_state(20, 10)
     signals["Donchian_40_20"] = donchian_state(40, 20)
