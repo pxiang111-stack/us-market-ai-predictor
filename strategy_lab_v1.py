@@ -96,13 +96,14 @@ def build_strategy_signals(bars: pd.DataFrame) -> pd.DataFrame:
     return signals.fillna(False).astype(bool)
 
 
-def _curve_metrics(curve: pd.DataFrame) -> dict:
+def _curve_metrics(curve: pd.DataFrame, starting_equity: float | None = None) -> dict:
     if curve.empty or len(curve) < 2:
         return {"status": "insufficient_curve"}
     equity = pd.to_numeric(curve["equity"], errors="coerce").dropna()
     if len(equity) < 2 or (equity <= 0).any():
         return {"status": "invalid_equity"}
     returns = equity.pct_change().dropna()
+    base_equity = float(starting_equity) if starting_equity is not None else float(equity.iloc[0])
     years = max((equity.index[-1] - equity.index[0]).days / 365.25, 1 / 365.25)
     drawdown = equity / equity.cummax() - 1.0
     vol = returns.std(ddof=1) if len(returns) > 1 else np.nan
@@ -111,10 +112,10 @@ def _curve_metrics(curve: pd.DataFrame) -> dict:
         "status": "ok",
         "start_date": str(equity.index[0].date()),
         "end_date": str(equity.index[-1].date()),
-        "start_equity": float(equity.iloc[0]),
+        "start_equity": base_equity,
         "ending_equity": float(equity.iloc[-1]),
-        "total_return_pct": float((equity.iloc[-1] / equity.iloc[0] - 1.0) * 100.0),
-        "cagr_pct": float(((equity.iloc[-1] / equity.iloc[0]) ** (1.0 / years) - 1.0) * 100.0),
+        "total_return_pct": float((equity.iloc[-1] / base_equity - 1.0) * 100.0),
+        "cagr_pct": float(((equity.iloc[-1] / base_equity) ** (1.0 / years) - 1.0) * 100.0),
         "max_drawdown_pct": float(drawdown.min() * 100.0),
         "sharpe_daily": float(sharpe) if pd.notna(sharpe) else None,
     }
@@ -150,7 +151,7 @@ def simulate_cash_account(
 
         # The first row uses its own predeclared target; subsequent rows use
         # the previous session's completed-close signal (no look-ahead).
-        target = bool(s.iloc[0]) if i == 0 else bool(s.iloc[i - 1])
+        target = False if i == 0 else bool(s.iloc[i - 1])
         open_price = float(bar["Open"])
         if not np.isfinite(open_price) or open_price <= 0:
             raise ValueError(f"Invalid open price on {date}")
@@ -192,7 +193,7 @@ def simulate_cash_account(
     ledger_df = pd.DataFrame(ledger)
     curve_df = pd.DataFrame(curve).set_index("date")
     costs = float(ledger_df["cost"].sum()) if not ledger_df.empty else 0.0
-    stats = _curve_metrics(curve_df)
+    stats = _curve_metrics(curve_df, starting_equity=initial_equity)
     stats.update({
         "initial_equity_usd": float(initial_equity),
         "ending_cash_usd": float(cash),
