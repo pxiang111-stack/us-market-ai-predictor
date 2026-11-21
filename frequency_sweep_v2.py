@@ -32,7 +32,7 @@ PROFILES = {
 def make_plans(forecasts, eval_bars, close, atr, features, gates, edge_floor_bps, horizon, profile_name):
     plans = []
     for date, pred in forecasts.iterrows():
-        if date not in bars.index or pd.isna(atr.get(date)):
+        if date not in eval_bars.index or pd.isna(atr.get(date)):
             continue
         plan = build_trade_decision(
             close=float(close.loc[date]), atr=float(atr.loc[date]),
@@ -116,7 +116,7 @@ def main() -> None:
                 }
                 for gate_mode, edge_floor_bps in gate_modes.items():
                     plan_frame = make_plans(
-                        forecasts, bars, close, atr, features, gates,
+                        forecasts, eval_bars, close, atr, features, gates,
                         edge_floor_bps, horizon, profile_name,
                     )
                     signal_count = int((plan_frame["decision"] != "FLAT").sum())
