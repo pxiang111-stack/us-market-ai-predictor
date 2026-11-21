@@ -268,3 +268,78 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
         curve[-1] = cash
     return _metrics("SMA50_200_LONG_FLAT", initial_equity, curve, trades,
                     invested_days / max(1, len(bars)))
+
+
+def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
+                 initial_equity: float = 10_000.0,
+                 commission_bps: float = DEFAULT_COMMISSION_BPS,
+                 slippage_bps: float = DEFAULT_SLIPPAGE_BPS) -> dict[str, Any]:
+    bars = load_bars(csv_path)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    strategy, trades, _ = run_strategy(
+        bars, initial_equity, commission_bps, slippage_bps
+    )
+    buy_hold = run_buy_hold(bars, initial_equity, commission_bps, slippage_bps)
+    sma = run_sma_baseline(bars, initial_equity, commission_bps, slippage_bps)
+    cash = _metrics(
+        "CASH_NO_TRADE", initial_equity,
+        [initial_equity] * len(bars), [], 0.0,
+    )
+    summary = {
+        "data_source": "Yahoo Finance via yfinance; auto_adjust=True",
+        "data_file": str(csv_path),
+        "first_date": bars[0]["date"],
+        "last_date": bars[-1]["date"],
+        "bars": len(bars),
+        "initial_equity": initial_equity,
+        "commission_bps_each_side": commission_bps,
+        "slippage_bps_each_side": slippage_bps,
+        "price_basis": "Adjusted OHLC from yfinance auto_adjust=True",
+        "strategies": [strategy, buy_hold, sma, cash],
+        "limitations": [
+            "Full-sample research run only; final 20% frozen holdout not yet implemented.",
+            "Daily OHLC cannot reveal intraday ordering; same-day stop and target hits assume stop first.",
+            "Historical Yahoo Finance data may be revised; preserve the downloaded CSV with this report.",
+            "No survivorship issue for single ETF history, but distributions and adjusted-price execution assumptions need separate review.",
+        ],
+        "note": "A completed backtest is not evidence of predictive edge; compare net results and drawdowns against all three baselines.",
+    }
+    (out / "simple_nq_backtest_summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8"
+    )
+
+    trade_fields = [
+        "signal_date", "entry_date", "exit_date", "shares", "entry_price",
+        "stop", "target", "exit_price", "exit_reason", "commission_total",
+        "net_pnl", "net_return_pct",
+    ]
+    with (out / "simple_nq_backtest_trades.csv").open(
+        "w", newline="", encoding="utf-8"
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=trade_fields)
+        writer.writeheader()
+        writer.writerows(trades)
+    return summary
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Run the Simple NQ / QQQ V1 daily backtest"
+    )
+    parser.add_argument("--csv", required=True, help="Adjusted daily OHLCV CSV")
+    parser.add_argument("--output-dir", default="output")
+    parser.add_argument("--capital", type=float, default=10_000.0)
+    parser.add_argument("--commission-bps", type=float, default=DEFAULT_COMMISSION_BPS)
+    parser.add_argument("--slippage-bps", type=float, default=DEFAULT_SLIPPAGE_BPS)
+    args = parser.parse_args()
+    result = run_backtest(
+        args.csv, args.output_dir, args.capital,
+        args.commission_bps, args.slippage_bps,
+    )
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()
