@@ -1,6 +1,7 @@
 import csv
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from simple_nq_backtest import (
@@ -36,6 +37,22 @@ class BacktestExecutionTests(unittest.TestCase):
             path.write_text("date,close\n2026-01-01,100\n", encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_bars(path)
+
+    def test_strategy_rejects_reward_risk_below_1_5(self):
+        bars = []
+        for i in range(207):
+            bars.append({
+                "date": f"2025-01-{(i % 28) + 1:02d}",
+                "open": 100, "high": 101, "low": 99, "close": 100, "volume": 1000,
+            })
+        fake_levels = {"atr": 1.0, "resistances": [{"low": 101.5}]}
+        fake_setup = {"action": "LONG_CANDIDATE", "zone": {"low": 99.0}}
+        with patch("simple_nq_backtest.classify_regime", return_value={"regime": "UPTREND"}), \\
+             patch("simple_nq_backtest.build_support_resistance", return_value=fake_levels), \\
+             patch("simple_nq_backtest.evaluate_setups", return_value=fake_setup):
+            metrics, trades, _ = run_strategy(bars, initial_equity=10_000)
+        self.assertEqual(trades, [])
+        self.assertEqual(metrics["final_equity"], 10_000)
 
     def test_strategy_stays_in_cash_when_no_setup(self):
         bars = []
