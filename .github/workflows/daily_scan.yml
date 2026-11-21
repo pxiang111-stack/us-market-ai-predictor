@@ -9,6 +9,7 @@ on:
       - 'us_market_ai_v3_1_news.py'
       - 'quant_research.py'
       - 'regime_first_v2.py'
+      - 'run_regime_first_v2.py'
       - 'tests/**'
       - 'requirements.txt'
       - '.github/workflows/daily_scan.yml'
