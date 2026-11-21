@@ -89,5 +89,21 @@ class CashAccountStrategyLabTests(unittest.TestCase):
             self.assertEqual(signals[name].dtype, bool)
 
 
+    def test_full_candidate_set_is_present_for_three_year_comparison(self):
+        close = np.linspace(100.0, 500.0, 300)
+        bars = pd.DataFrame({
+            "Open": close, "High": close + 1, "Low": close - 1,
+            "Close": close, "Dividends": 0.0,
+        }, index=pd.date_range("2020-01-01", periods=300, freq="B"))
+        signals = build_strategy_signals(bars)
+        expected = {
+            "QQQ_buy_hold", "SMA100_trend", "SMA150_trend",
+            "SMA200_trend", "SMA250_trend", "SMA150_entry_SMA200_exit",
+            "MOM_12_1_plus_SMA200", "Donchian_20_10",
+            "Donchian_40_20", "Donchian_55_20",
+        }
+        self.assertEqual(set(signals.columns), expected)
+
+
 if __name__ == "__main__":
     unittest.main()
