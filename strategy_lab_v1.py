@@ -23,6 +23,7 @@ OUT = Path("output/strategy_lab_v1")
 INITIAL_EQUITY = 10_000.0
 COST_CASES_BPS = (5.0, 10.0, 20.0, 30.0)
 HOLDOUT_FRACTION = 0.30
+BACKTEST_YEARS = 3
 WARMUP_SESSIONS = 252
 
 
@@ -38,7 +39,7 @@ def _flatten_yfinance_columns(frame: pd.DataFrame, ticker: str) -> pd.DataFrame:
     return d
 
 
-def download_qqq(period: str = "max") -> pd.DataFrame:
+def download_qqq(period: str = "4y") -> pd.DataFrame:
     raw = yf.download(
         "QQQ", period=period, interval="1d", auto_adjust=False,
         actions=True, progress=False, threads=False, timeout=30,
@@ -71,7 +72,6 @@ def build_strategy_signals(bars: pd.DataFrame) -> pd.DataFrame:
     high = pd.to_numeric(bars["High"], errors="coerce")
     low = pd.to_numeric(bars["Low"], errors="coerce")
 
-    sma50 = close.rolling(50, min_periods=50).mean()
     sma200 = close.rolling(200, min_periods=200).mean()
     momentum_12_1 = close.shift(21) / close.shift(252) - 1.0
 
@@ -91,8 +91,7 @@ def build_strategy_signals(bars: pd.DataFrame) -> pd.DataFrame:
     signals["SMA200_trend"] = close > sma200
     signals["MOM_12_1_plus_SMA200"] = (close > sma200) & (momentum_12_1 > 0)
     signals["Donchian_55_20"] = donchian_state
-    # Every strategy starts on the same date after the longest fixed lookback.
-    signals = signals.iloc[WARMUP_SESSIONS:].copy()
+    # Keep warm-up rows so the first scored session can use a valid prior-close signal.
     return signals.fillna(False).astype(bool)
 
 
@@ -127,6 +126,7 @@ def simulate_cash_account(
     *,
     initial_equity: float = INITIAL_EQUITY,
     cost_bps_per_order: float = 10.0,
+    start_date: pd.Timestamp | str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """Integer-share cash account; signal at close t fills at open t+1."""
     required = {"Open", "Close", "Dividends"}
@@ -140,8 +140,12 @@ def simulate_cash_account(
     cost_rate = cost_bps_per_order / 10000.0
     ledger, curve = [], []
     dividend_cash = 0.0
+    start_pos = 0 if start_date is None else int(b.index.searchsorted(pd.Timestamp(start_date)))
+    if start_pos >= len(b):
+        raise ValueError('start_date is after the available price history')
 
-    for i, (date, bar) in enumerate(b.iterrows()):
+    for i in range(start_pos, len(b)):
+        date, bar = b.iloc[i].name, b.iloc[i]
         # Shares held at the prior close receive the ex-date cash dividend.
         dividend_per_share = float(bar["Dividends"]) if pd.notna(bar["Dividends"]) else 0.0
         if i > 0 and dividend_per_share > 0 and shares:
@@ -149,8 +153,8 @@ def simulate_cash_account(
             cash += credit
             dividend_cash += credit
 
-        # The first row uses its own predeclared target; subsequent rows use
-        # the previous session's completed-close signal (no look-ahead).
+        # Execute the previous session close signal at today's open, including
+        # the valid warm-up signal immediately before the scored start date.
         target = False if i == 0 else bool(s.iloc[i - 1])
         open_price = float(bar["Open"])
         if not np.isfinite(open_price) or open_price <= 0:
@@ -222,8 +226,8 @@ def run_research(bars: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Dat
     for cost_bps in COST_CASES_BPS:
         for strategy in signals.columns:
             ledger, curve, stats = simulate_cash_account(
-                aligned, signals[strategy], initial_equity=INITIAL_EQUITY,
-                cost_bps_per_order=cost_bps,
+                bars, signals[strategy], initial_equity=INITIAL_EQUITY,
+                cost_bps_per_order=cost_bps, start_date=backtest_start,
             )
             curve = curve.copy()
             curve["strategy"] = strategy
@@ -239,6 +243,8 @@ def run_research(bars: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Dat
             summaries.append({
                 "strategy": strategy,
                 "cost_bps_per_order": cost_bps,
+                "backtest_start": str(backtest_start.date()),
+                "backtest_end": str(bars.index[-1].date()),
                 "holdout_start": str(holdout_start.date()),
                 **stats,
                 "holdout_total_return_pct": holdout.get("total_return_pct"),
@@ -253,7 +259,7 @@ def run_research(bars: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Dat
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    print("[INFO] Downloading raw-price QQQ OHLC plus dividend actions...", flush=True)
+    print("[INFO] Downloading 3 scored years plus warm-up history of raw-price QQQ OHLC and dividend actions...", flush=True)
     bars = download_qqq()
     summary, curves, ledger = run_research(bars)
     summary.to_csv(OUT / "strategy_summary.csv", index=False)
@@ -263,6 +269,8 @@ def main() -> None:
         "status": "completed",
         "ticker": "QQQ",
         "initial_equity_usd": INITIAL_EQUITY,
+        "scored_backtest_years": BACKTEST_YEARS,
+        "warmup_sessions_excluded_from_performance": WARMUP_SESSIONS,
         "cost_cases_bps_per_order": list(COST_CASES_BPS),
         "holdout_fraction": HOLDOUT_FRACTION,
         "strategies": ["QQQ_buy_hold", "SMA200_trend", "MOM_12_1_plus_SMA200", "Donchian_55_20"],
@@ -274,7 +282,8 @@ def main() -> None:
             "No taxes, cash interest, bid/ask quote replay, market impact, or broker-specific commissions.",
             "Daily OHLC cannot determine intraday order sequencing; strategies use next-open market fills.",
             "Fixed rule parameters are research hypotheses, not optimized or proven profitable.",
-            "The final chronological 30% is reported separately as a holdout; repeated inspection can still create research overfitting.",
+            "Only the latest 3 calendar years are scored; prior sessions are indicator warm-up only.",
+            "The final chronological 30% of the 3-year window is reported separately as a holdout; repeated inspection can still create research overfitting.",
         ],
         "summary_rows": int(len(summary)),
     }
