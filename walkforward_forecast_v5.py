@@ -18,6 +18,7 @@ def generate_walkforward_forecasts(
     min_train_rows: int = 500,
     retrain_every: int = 20,
     max_train_rows: int | None = 1260,
+    start_date: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     if horizon_sessions < 1 or min_train_rows < 100 or retrain_every < 1:
         raise ValueError("Invalid horizon, minimum training size, or retrain interval")
@@ -43,7 +44,10 @@ def generate_walkforward_forecasts(
     classifier_a = classifier_b = regressor = None
     last_fit_position = -10**9
 
+    score_start = pd.Timestamp(start_date).normalize() if start_date is not None else None
     for i in range(len(x)):
+        if score_start is not None and pd.Timestamp(x.index[i]).normalize() < score_start:
+            continue
         if i < horizon_sessions:
             continue
         cutoff = x.index[i - horizon_sessions]
