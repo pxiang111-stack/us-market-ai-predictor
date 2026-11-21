@@ -123,6 +123,29 @@ class WalkForwardExecutionTests(unittest.TestCase):
         self.assertEqual(trade["exit_price"], 101.0)
         self.assertGreater(trade["gross_pnl"], 0)
 
+    def test_whole_share_cash_mode_uses_integer_shares_and_full_exit_for_single_share(self):
+        bars = pd.DataFrame({
+            "Open": [100, 101, 102, 102, 102],
+            "High": [101, 108, 103, 103, 103],
+            "Low": [99, 100, 101, 101, 101],
+            "Close": [100, 107, 102, 102, 102],
+        }, index=self.dates)
+        ledger, curve = simulate_trades(
+            bars, self.signals, initial_equity=1000.0,
+            risk_budget_pct=0.01, max_gross_exposure=1.0,
+            round_trip_cost_bps=0.0, slippage_bps_per_side=0.0,
+            whole_shares_only=True,
+        )
+        self.assertEqual(len(ledger), 1)
+        trade = ledger.iloc[0]
+        self.assertEqual(trade["units"], 1)
+        self.assertEqual(trade["partial_units"], 0)
+        self.assertTrue(trade["whole_shares_only"])
+        self.assertLessEqual(trade["units"] * trade["entry_price"], 1000.0)
+        self.assertEqual(trade["exit_reason"], "target_1r_full")
+        self.assertEqual(trade["exit_price"], 107.0)
+        self.assertTrue(float(trade["units"]).is_integer())
+
     def test_flat_signal_does_not_trade(self):
         bars = pd.DataFrame({"Open":[100]*5,"High":[101]*5,"Low":[99]*5,"Close":[100]*5},index=self.dates)
         signals = self.signals.copy()
