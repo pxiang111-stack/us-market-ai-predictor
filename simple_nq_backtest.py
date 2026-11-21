@@ -128,7 +128,7 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
                  commission_bps: float = DEFAULT_COMMISSION_BPS,
                  slippage_bps: float = DEFAULT_SLIPPAGE_BPS) -> tuple[dict[str, Any], list[dict[str, Any]], list[float]]:
     cash = float(initial_equity)
-    curve: list[float] = []
+    curve: list[float] = [float(initial_equity)] * 205
     trades: list[dict[str, Any]] = []
     invested_days = 0
     i = 205
@@ -201,10 +201,10 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         })
         i = exit_i + 1
 
-    while len(curve) < len(bars) - 205:
+    while len(curve) < len(bars):
         curve.append(cash)
-    curve = curve[:len(bars) - 205]
-    exposure = invested_days / max(1, len(bars) - 205)
+    curve = curve[:len(bars)]
+    exposure = invested_days / max(1, len(bars))
     return _metrics("SUPPORT_BOUNCE_V1", initial_equity, curve, trades, exposure), trades, curve
 
 def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
