@@ -214,7 +214,7 @@ def main():
                             probability_up=float(pred["probability_up"]),
                             expected_return=float(pred["expected_return"]),
                             features=x.loc[date].to_dict(),
-                            allow_short=(ticker in {"NQ=F", "QQQ", "SPY"}),
+                            allow_short=False,  # $10k cash-account comparison: no shorting or leverage
                             round_trip_cost=DECISION_COST_FLOOR,
                             strategy_mode=strategy_mode,
                         )
@@ -429,7 +429,7 @@ def main():
         "position_units_are_not_exchange_contracts": True,
         "fractional_units_used": True,
         "cash_account_whole_share_constraint": False,
-        "shorts_enabled_only_for": ["NQ=F", "QQQ", "SPY"],
+        "shorts_enabled": False,
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
         "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
@@ -438,6 +438,7 @@ def main():
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
         "limitations": [
             "This is an experimental historical simulation, not a live trading system.",
+            "Short selling is disabled for the $10,000 cash-account comparison.",
             "Initial capital is USD 10,000, but sizing currently permits fractional normalized units; this is not yet a whole-share cash-account simulation.",
             "OHLCV bars use adjusted prices in this version; cash dividends are not separately ledgered.",
             "Yahoo daily bars do not separate regular, pre-market, after-hours and overnight futures sessions.",
