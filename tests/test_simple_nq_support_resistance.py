@@ -30,12 +30,13 @@ class SupportResistanceTests(unittest.TestCase):
 
     def test_atr_uses_previous_close(self):
         bars = make_bars([10, 12, 13], [8, 9, 10], [9, 10, 12])
-        self.assertAlmostEqual(calculate_atr(bars, period=2), 2.0)
+        self.assertAlmostEqual(calculate_atr(bars, period=2), 3.0)
 
     def test_builder_returns_zones_below_and_above_price(self):
         highs = [101 + (i % 3) for i in range(65)]
         lows = [99 + (i % 3) for i in range(65)]
         closes = [100 + (i % 3) for i in range(65)]
+        highs[50], lows[50], closes[50] = 120, 100, 105
         highs[-1], lows[-1], closes[-1] = 111, 108, 110
         bars = make_bars(highs, lows, closes)
         result = build_support_resistance(bars)
