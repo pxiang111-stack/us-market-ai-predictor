@@ -62,7 +62,7 @@ def atr_series(bars: pd.DataFrame, period: int = 14) -> pd.Series:
     return tr.rolling(period, min_periods=period).mean()
 
 
-def build_benchmark_curve(close: pd.Series, dates, initial_equity: float = 100000.0) -> pd.DataFrame:
+def build_benchmark_curve(close: pd.Series, dates, initial_equity: float = 10_000.0) -> pd.DataFrame:
     """Build a close-to-close benchmark on the strategy's exact evaluation dates."""
     if close is None or close.empty:
         return pd.DataFrame(columns=["date", "equity"])
@@ -181,7 +181,7 @@ def main():
         bh_close = close.dropna()
         if len(bh_close) > 1:
             bh_curve = pd.DataFrame({"date": bh_close.index,
-                                     "equity": 100000.0 * bh_close / float(bh_close.iloc[0])})
+                                     "equity": 10_000.0 * bh_close / float(bh_close.iloc[0])})
             bh_stats = performance_summary(pd.DataFrame(), bh_curve)
             summaries.append({"strategy_id": f"{ticker}_buy_and_hold", "status": "ok",
                               "ticker": ticker, "horizon_sessions": None,
@@ -263,7 +263,7 @@ def main():
                     for cost_bps in COST_CASES_BPS:
                         ledger, curve = simulate_trades(
                             bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
-                            initial_equity=100_000.0, risk_budget_pct=0.005,
+                            initial_equity=10_000.0, risk_budget_pct=0.005,
                             max_gross_exposure=1.0, round_trip_cost_bps=cost_bps,
                             slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE, max_holding_sessions=horizon,
                         )
@@ -309,7 +309,7 @@ def main():
                                 if benchmark_symbol not in prices:
                                     continue
                                 benchmark_curve = build_benchmark_curve(
-                                    prices[benchmark_symbol], curve["date"], initial_equity=100000.0
+                                    prices[benchmark_symbol], curve["date"], initial_equity=10_000.0
                                 )
                                 if benchmark_curve.empty:
                                     continue
@@ -423,9 +423,12 @@ def main():
         "cost_cases_round_trip_bps": list(COST_CASES_BPS),
         "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
         "decision_cost_floor_bps": DECISION_COST_FLOOR * 10000.0,
+        "initial_equity_usd": 10000.0,
         "risk_budget_pct": 0.5,
         "max_gross_exposure": 1.0,
         "position_units_are_not_exchange_contracts": True,
+        "fractional_units_used": True,
+        "cash_account_whole_share_constraint": False,
         "shorts_enabled_only_for": ["NQ=F", "QQQ", "SPY"],
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
@@ -435,6 +438,8 @@ def main():
         "successful_rows": int((summary_df.get("status", pd.Series(index=summary_df.index, dtype=object)) == "ok").sum()),
         "limitations": [
             "This is an experimental historical simulation, not a live trading system.",
+            "Initial capital is USD 10,000, but sizing currently permits fractional normalized units; this is not yet a whole-share cash-account simulation.",
+            "OHLCV bars use adjusted prices in this version; cash dividends are not separately ledgered.",
             "Yahoo daily bars do not separate regular, pre-market, after-hours and overnight futures sessions.",
             "No true bid/ask delta, reliable historical futures OI, options GEX or dealer positioning is connected.",
             "Model probabilities are not calibrated; a probability threshold is not a measured win probability.",
