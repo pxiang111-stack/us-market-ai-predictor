@@ -121,12 +121,18 @@ def evaluate_history(data: pd.DataFrame, initial_state: str = "NEUTRAL") -> pd.D
     """Evaluate rows chronologically and return one auditable result per session."""
     if initial_state not in STATE_CAP:
         raise ValueError(f"Unsupported initial_state: {initial_state}")
-    required = {"date", *CRITICAL_FIELDS}
-    missing_columns = sorted(required - set(data.columns))
-    if missing_columns:
-        raise ValueError(f"Missing required columns: {missing_columns}")
+    if "date" not in data.columns:
+        raise ValueError("Missing required column: date")
 
     z = data.copy()
+    # Missing contract fields are recorded as gaps and halve the risk budget;
+    # they must not crash the daily process or be silently treated as valid.
+    for field in CRITICAL_FIELDS:
+        if field not in z.columns:
+            z[field] = float("nan")
+    for field in ("BBB_spread", "HY_spread", "monitor_hard_veto"):
+        if field not in z.columns:
+            z[field] = False if field == "monitor_hard_veto" else float("nan")
     z["date"] = pd.to_datetime(z["date"], errors="coerce")
     z = z.sort_values("date").reset_index(drop=True)
     if z["date"].isna().any():
@@ -176,11 +182,11 @@ def evaluate_history(data: pd.DataFrame, initial_state: str = "NEUTRAL") -> pd.D
             vol_mult = 0.5
         else:
             vol_mult = 1.0
-        monitor_mult = 1.0  # Set to 0 only for a separately defined hard veto.
+        monitor_mult = 0.0 if bool(row.get("monitor_hard_veto", False)) else 1.0
         cap = STATE_CAP[state]
         budget = cap * vol_mult * data_gap_mult * monitor_mult
 
-        if state == "RISK_OFF":
+        if monitor_mult == 0.0 or state == "RISK_OFF":
             action = "只减仓/对冲"
         elif state == "RISK_ON":
             action = "趋势多"
@@ -192,6 +198,8 @@ def evaluate_history(data: pd.DataFrame, initial_state: str = "NEUTRAL") -> pd.D
             notes.append("CCC同步信用利差触发器不可用")
         if gaps:
             notes.append("关键字段缺失，风险预算减半")
+        if monitor_mult == 0.0:
+            notes.append("监测硬否决生效，禁止新增风险")
         if state == "RISK_OFF":
             notes.append("不生成主动做空方向；保护性对冲须与组合风险合并计算")
         outputs.append(RegimeResult(
