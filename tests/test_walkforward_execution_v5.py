@@ -176,5 +176,71 @@ class WalkForwardExecutionTests(unittest.TestCase):
         self.assertEqual(diag["skipped_total"], 1)
         self.assertEqual(len(ledger), 2)
 
+
+    def test_odd_whole_share_positions_preserve_all_shares_through_two_stage_exit(self):
+        # Three- and five-share positions must split into floor(n/2) and
+        # the exact remainder; odd shares must never disappear.
+        bars = pd.DataFrame({
+            "Open": [100, 101, 101, 101, 101],
+            "High": [101, 104, 102, 102, 102],
+            "Low": [99, 102, 100.5, 100.5, 100.5],
+            "Close": [100, 103, 101, 101, 101],
+        }, index=self.dates)
+        signals = self.signals.copy()
+        signals["stop_loss"] = 100.0
+
+        for expected_units, risk_budget_pct in ((3, 0.003), (5, 0.005)):
+            with self.subTest(expected_units=expected_units):
+                ledger, curve = simulate_trades(
+                    bars, signals, initial_equity=1000.0,
+                    risk_budget_pct=risk_budget_pct, max_gross_exposure=1.0,
+                    round_trip_cost_bps=10.0, slippage_bps_per_side=5.0,
+                    whole_shares_only=True,
+                )
+                self.assertEqual(len(ledger), 1)
+                trade = ledger.iloc[0]
+                self.assertEqual(trade["units"], expected_units)
+                self.assertEqual(trade["partial_units"], expected_units // 2)
+                self.assertEqual(
+                    trade["remaining_units"],
+                    expected_units - expected_units // 2,
+                )
+                self.assertEqual(
+                    trade["partial_units"] + trade["remaining_units"],
+                    trade["units"],
+                )
+                self.assertEqual(trade["exit_reason"], "target_2r")
+
+                rate = 10.0 / 20000.0 + 5.0 / 10000.0
+                expected_partial_cost = trade["partial_units"] * (
+                    trade["entry_price"] + trade["partial_exit_price"]
+                ) * rate
+                expected_remaining_cost = trade["remaining_units"] * (
+                    trade["entry_price"] + trade["exit_price"]
+                ) * rate
+                self.assertAlmostEqual(
+                    trade["partial_estimated_costs"], expected_partial_cost
+                )
+                self.assertAlmostEqual(
+                    trade["remaining_estimated_costs"], expected_remaining_cost
+                )
+                expected_gross = (
+                    trade["partial_units"] * (
+                        trade["partial_exit_price"] - trade["entry_price"]
+                    )
+                    + trade["remaining_units"] * (
+                        trade["exit_price"] - trade["entry_price"]
+                    )
+                )
+                self.assertAlmostEqual(trade["gross_pnl"], expected_gross)
+                self.assertAlmostEqual(
+                    trade["net_pnl"],
+                    expected_gross - expected_partial_cost - expected_remaining_cost,
+                )
+                exit_equity = curve.loc[
+                    curve["date"] == trade["exit_date"], "equity"
+                ].iloc[0]
+                self.assertAlmostEqual(exit_equity, trade["equity_after"])
+
 if __name__ == "__main__":
     unittest.main()
