@@ -207,7 +207,7 @@ def main():
             try:
                 forecasts = generate_walkforward_forecasts(
                     x, close, horizon, min_train_rows=500,
-                    retrain_every=63, max_train_rows=1260,
+                    retrain_every=63, max_train_rows=1260, start_date=scored_start,
                 )
                 forecasts = forecasts.loc[forecasts.index >= scored_start].copy()
                 if forecasts.empty:
