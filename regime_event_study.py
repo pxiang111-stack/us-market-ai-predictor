@@ -37,7 +37,7 @@ def build_event_study(frame: pd.DataFrame) -> pd.DataFrame:
     z = frame.copy().sort_values("date").reset_index(drop=True)
     z["NDX_close"] = pd.to_numeric(z["NDX_close"], errors="coerce")
     z["state"] = z["state"].astype(str)
-    z["is_state_entry"] = z["state"].ne(z["state"].shift(1))
+    z["is_state_entry"] = z["state"].ne(z["state"].shift(1)) & z["state"].shift(1).notna()
     rows = []
     for horizon in (5, 20):
         col = f"forward_{horizon}d"
