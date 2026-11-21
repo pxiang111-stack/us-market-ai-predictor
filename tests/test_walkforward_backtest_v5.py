@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from walkforward_backtest_v5 import (concat_frames, DECISION_COST_FLOOR, build_benchmark_curve, forecast_quality_summary)
+from walkforward_backtest_v5 import (concat_frames, DECISION_COST_FLOOR, decision_cost_floor, build_benchmark_curve, forecast_quality_summary)
 
 
 class WalkForwardBacktestAggregationTests(unittest.TestCase):
@@ -26,6 +26,11 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
 
     def test_signal_filter_covers_worst_case_round_trip_cost_and_slippage(self):
         self.assertAlmostEqual(DECISION_COST_FLOOR, 0.004)
+
+    def test_each_cost_scenario_uses_its_own_edge_floor(self):
+        self.assertAlmostEqual(decision_cost_floor(10), 0.002)
+        self.assertAlmostEqual(decision_cost_floor(20), 0.003)
+        self.assertAlmostEqual(decision_cost_floor(30), 0.004)
 
     def test_forecast_quality_uses_realized_future_returns_only_for_diagnostics(self):
         idx = pd.date_range("2025-01-01", periods=8, freq="B")
