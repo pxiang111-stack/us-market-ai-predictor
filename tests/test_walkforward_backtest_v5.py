@@ -35,13 +35,14 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
     def test_forecast_quality_uses_realized_future_returns_only_for_diagnostics(self):
         idx = pd.date_range("2025-01-01", periods=8, freq="B")
         close = pd.Series([100, 101, 100, 102, 101, 103, 102, 104], index=idx, dtype=float)
-        realized = close.shift(-1).iloc[:-1] / close.iloc[:-1] - 1.0
+        next_open = pd.Series([99, 102, 99, 104, 100, 105, 101, 105], index=idx, dtype=float)
+        realized = close.shift(-1).iloc[:-1] / next_open.shift(-1).iloc[:-1] - 1.0
         forecasts = pd.DataFrame({
             "probability_up": [0.9 if x > 0 else 0.1 for x in realized],
             "expected_return": realized.values * 0.8,
             "train_up_rate": [0.5] * len(realized),
         }, index=idx[:-1])
-        stats = forecast_quality_summary(forecasts, close, 1)
+        stats = forecast_quality_summary(forecasts, close, next_open, 1)
         self.assertEqual(stats["forecast_eval_n"], 7)
         self.assertAlmostEqual(stats["forecast_auc"], 1.0)
         self.assertAlmostEqual(stats["forecast_directional_accuracy_50_pct"], 100.0)
