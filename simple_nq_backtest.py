@@ -294,9 +294,25 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
     )
     buy_hold = run_buy_hold(bars, initial_equity, commission_bps, slippage_bps)
     sma = run_sma_baseline(bars, initial_equity, commission_bps, slippage_bps)
-    cash = _metrics(
+    cash = _metrics("CASH_NO_TRADE", initial_equity,
+                    [initial_equity] * len(bars), [], 0.0)
+
+    # Keep the last 20% untouched. Indicators see earlier history, but every
+    # holdout strategy starts with fresh cash at the split boundary.
+    split = max(205, int(len(bars) * 0.8))
+    holdout_strategy, holdout_trades, _ = run_strategy(
+        bars, initial_equity, commission_bps, slippage_bps,
+        start_index=split, include_warmup=False,
+    )
+    holdout_buy_hold = run_buy_hold(
+        bars, initial_equity, commission_bps, slippage_bps, start_index=split
+    )
+    holdout_sma = run_sma_baseline(
+        bars, initial_equity, commission_bps, slippage_bps, start_index=split
+    )
+    holdout_cash = _metrics(
         "CASH_NO_TRADE", initial_equity,
-        [initial_equity] * len(bars), [], 0.0,
+        [initial_equity] * (len(bars) - split), [], 0.0,
     )
     summary = {
         "data_source": "Yahoo Finance via yfinance; auto_adjust=True",
@@ -308,14 +324,23 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
         "commission_bps_each_side": commission_bps,
         "slippage_bps_each_side": slippage_bps,
         "price_basis": "Adjusted OHLC from yfinance auto_adjust=True",
-        "strategies": [strategy, buy_hold, sma, cash],
+        "full_sample_strategies": [strategy, buy_hold, sma, cash],
+        "holdout": {
+            "start_date": bars[split]["date"],
+            "end_date": bars[-1]["date"],
+            "bars": len(bars) - split,
+            "warmup_bars_available": split,
+            "fresh_starting_equity": initial_equity,
+            "strategies": [holdout_strategy, holdout_buy_hold, holdout_sma, holdout_cash],
+            "trade_count": len(holdout_trades),
+        },
         "limitations": [
-            "Full-sample research run only; final 20% frozen holdout not yet implemented.",
+            "Final 20% is a single frozen holdout, not repeated walk-forward validation.",
             "Daily OHLC cannot reveal intraday ordering; same-day stop and target hits assume stop first.",
             "Historical Yahoo Finance data may be revised; preserve the downloaded CSV with this report.",
-            "No survivorship issue for single ETF history, but distributions and adjusted-price execution assumptions need separate review.",
+            "Adjusted historical prices are not literal executable historical quotes; corporate-action treatment needs independent review.",
         ],
-        "note": "A completed backtest is not evidence of predictive edge; compare net results and drawdowns against all three baselines.",
+        "note": "Full-sample results are diagnostic only. Holdout rules are unchanged and use fresh capital, but a single holdout does not guarantee future performance.",
     }
     (out / "simple_nq_backtest_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
