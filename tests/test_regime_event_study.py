@@ -19,6 +19,19 @@ class RegimeEventStudyTests(unittest.TestCase):
         self.assertEqual(row.status, "RECORD_ONLY")
         self.assertAlmostEqual(row.coverage_pct, 100.0)
 
+
+    def test_first_observation_is_not_counted_as_state_entry(self):
+        dates = pd.bdate_range("2026-01-01", periods=25)
+        frame = pd.DataFrame({
+            "date": dates,
+            "state": ["RISK_OFF"] * 25,
+            "NDX_close": [100.0 + i for i in range(25)],
+        })
+        result = build_event_study(frame)
+        row = result[(result.sample_type == "ENTRY_RISK_OFF") &
+                     (result.horizon_days == 5)].iloc[0]
+        self.assertEqual(row.n, 0)
+
     def test_state_coverage_is_fraction_of_valid_market_days(self):
         dates = pd.bdate_range("2026-01-01", periods=40)
         frame = pd.DataFrame({
