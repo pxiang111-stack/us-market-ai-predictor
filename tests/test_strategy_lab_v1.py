@@ -82,7 +82,7 @@ class CashAccountStrategyLabTests(unittest.TestCase):
         self.assertTrue(signals["QQQ_buy_hold"].all())
         for name in [
             "SMA100_trend", "SMA150_trend", "SMA200_trend", "SMA250_trend",
-            "MOM_12_1_plus_SMA200", "Donchian_20_10", "Donchian_40_20",
+            "SMA150_entry_SMA200_exit", "MOM_12_1_plus_SMA200", "Donchian_20_10", "Donchian_40_20",
             "Donchian_55_20",
         ]:
             self.assertIn(name, signals.columns)
