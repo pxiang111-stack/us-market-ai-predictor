@@ -57,17 +57,17 @@ def _spread_widening_5d(history: pd.DataFrame) -> bool:
 
 
 def _raw_risk_off(history: pd.DataFrame, row: pd.Series) -> bool:
-    required = ("BTC_close", "BTC_20d_low", "ETH_close", "ETH_20d_low",
-                "NQ_close", "NQ_200ma", "VIX_close", "CCC_spread")
-    if _valid(row, required):
-        crypto_break = (row.BTC_close < row.BTC_20d_low or
-                        row.ETH_close < row.ETH_20d_low)
-        nq_vol_break = row.NQ_close < row.NQ_200ma and row.VIX_close > 30
-        credit_break = (row.CCC_spread > 14 and
-                        _spread_widening_5d(history))
-        return bool(crypto_break or nq_vol_break or credit_break)
-    # Incomplete data cannot establish a fresh hard trigger.
-    return False
+    # Evaluate independent triggers independently: missing ETH data must not
+    # mask a confirmed BTC breakdown (or vice versa).
+    btc_break = (_valid(row, ("BTC_close", "BTC_20d_low")) and
+                 row.BTC_close < row.BTC_20d_low)
+    eth_break = (_valid(row, ("ETH_close", "ETH_20d_low")) and
+                 row.ETH_close < row.ETH_20d_low)
+    nq_vol_break = (_valid(row, ("NQ_close", "NQ_200ma", "VIX_close")) and
+                    row.NQ_close < row.NQ_200ma and row.VIX_close > 30)
+    credit_break = (_valid(row, ("CCC_spread",)) and row.CCC_spread > 14 and
+                    _spread_widening_5d(history))
+    return bool(btc_break or eth_break or nq_vol_break or credit_break)
 
 
 def _base_risk_on(row: pd.Series) -> bool:
