@@ -216,11 +216,14 @@ def simulate_cash_account(
 
 def run_research(bars: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     signals = build_strategy_signals(bars)
-    aligned = bars.reindex(signals.index).copy()
-    if len(aligned) < 500:
-        raise RuntimeError("Not enough common post-warmup sessions for a meaningful holdout.")
-    split_pos = int(len(aligned) * (1.0 - HOLDOUT_FRACTION))
-    holdout_start = aligned.index[split_pos]
+    if len(bars) < WARMUP_SESSIONS + 500:
+        raise RuntimeError("Not enough price history for warm-up and a 3-year strategy comparison.")
+    backtest_start = bars.index[-1] - pd.DateOffset(years=BACKTEST_YEARS)
+    scored = bars.loc[bars.index >= backtest_start].copy()
+    if len(scored) < 500:
+        raise RuntimeError("Not enough sessions in the requested 3-year backtest window.")
+    split_pos = int(len(scored) * (1.0 - HOLDOUT_FRACTION))
+    holdout_start = scored.index[split_pos]
     summaries, curves, ledgers = [], [], []
 
     for cost_bps in COST_CASES_BPS:
