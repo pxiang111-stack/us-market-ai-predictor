@@ -2,6 +2,15 @@ name: Simple NQ Trader V1 historical QQQ backtest
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "simple-nq-trader-v1"
+    paths:
+      - "simple_nq_backtest.py"
+      - "download_qqq_history.py"
+      - "simple_nq_*.py"
+      - "tests/test_simple_nq_*.py"
+      - ".github/workflows/simple_nq_historical_backtest.yml"
   pull_request:
     paths:
       - "simple_nq_backtest.py"
