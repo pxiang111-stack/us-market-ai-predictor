@@ -80,6 +80,13 @@ class CashAccountStrategyLabTests(unittest.TestCase):
         self.assertEqual(len(signals), 300)
         self.assertTrue(signals.index[0] == bars.index[0])
         self.assertTrue(signals["QQQ_buy_hold"].all())
+        for name in [
+            "SMA100_trend", "SMA150_trend", "SMA200_trend", "SMA250_trend",
+            "MOM_12_1_plus_SMA200", "Donchian_20_10", "Donchian_40_20",
+            "Donchian_55_20",
+        ]:
+            self.assertIn(name, signals.columns)
+            self.assertEqual(signals[name].dtype, bool)
 
 
 if __name__ == "__main__":
