@@ -58,6 +58,21 @@ class RegimeFirstV2Tests(unittest.TestCase):
         self.assertEqual(result.iloc[-1].flip_count, 4)
         self.assertEqual(result.iloc[-1].state, "RISK_ON")
 
+    def test_btc_break_is_not_hidden_by_missing_eth_feed(self):
+        data = pd.DataFrame([row("2026-11-20", BTC_close=57000)]).drop(
+            columns=["ETH_close", "ETH_20d_low"]
+        )
+        result = evaluate_history(data)
+        self.assertEqual(result.iloc[-1].state, "RISK_OFF")
+        self.assertIn("ETH_close", result.iloc[-1].data_gaps)
+
+    def test_monitor_hard_veto_zeroes_new_risk(self):
+        data = pd.DataFrame([row("2026-11-20", monitor_hard_veto=True)])
+        result = evaluate_history(data)
+        self.assertEqual(result.iloc[-1].monitor_veto_multiplier, 0.0)
+        self.assertEqual(result.iloc[-1].max_risk_pct, 0.0)
+        self.assertEqual(result.iloc[-1].allowed_action, "只减仓/对冲")
+
 
 if __name__ == "__main__":
     unittest.main()
