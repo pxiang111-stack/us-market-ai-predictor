@@ -1,4 +1,5 @@
 import csv
+from datetime import date, timedelta
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -8,6 +9,7 @@ from simple_nq_backtest import (
     _trade_exit,
     load_bars,
     run_strategy,
+    run_backtest,
 )
 
 
@@ -53,6 +55,22 @@ class BacktestExecutionTests(unittest.TestCase):
                     metrics, trades, _ = run_strategy(bars, initial_equity=10_000)
         self.assertEqual(trades, [])
         self.assertEqual(metrics["final_equity"], 10_000)
+
+    def test_backtest_writes_summary_and_trade_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "qqq.csv"
+            output_dir = Path(tmp) / "out"
+            with csv_path.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                writer.writerow(["date", "open", "high", "low", "close", "volume"])
+                for i in range(270):
+                    close = 100 + i * 0.1
+                    writer.writerow([(date(2025, 1, 1) + timedelta(days=i)).isoformat(),
+                                     close, close + 1, close - 1, close, 1000])
+            result = run_backtest(csv_path, output_dir=output_dir)
+            self.assertEqual(result["bars"], 270)
+            self.assertTrue((output_dir / "simple_nq_backtest_summary.json").exists())
+            self.assertTrue((output_dir / "simple_nq_backtest_trades.csv").exists())
 
     def test_strategy_stays_in_cash_when_no_setup(self):
         bars = []
