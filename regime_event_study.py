@@ -10,7 +10,7 @@ import pandas as pd
 
 
 def _summarize(frame: pd.DataFrame, return_col: str, benchmark_mean: float,
-               label: str, horizon: int) -> dict:
+               denominator: int, label: str, horizon: int) -> dict:
     values = pd.to_numeric(frame[return_col], errors="coerce").dropna()
     n = len(values)
     mean = float(values.mean()) if n else float("nan")
@@ -20,7 +20,7 @@ def _summarize(frame: pd.DataFrame, return_col: str, benchmark_mean: float,
         "horizon_days": horizon,
         "n": n,
         "status": "RECORD_ONLY" if n < 30 else "DESCRIPTIVE_ONLY",
-        "coverage_pct": float(n / len(frame) * 100) if len(frame) else 0.0,
+        "coverage_pct": float(n / denominator * 100) if denominator else 0.0,
         "win_rate_pct": float((values > 0).mean() * 100) if n else float("nan"),
         "mean_forward_return_pct": mean * 100,
         "median_forward_return_pct": median * 100,
@@ -47,8 +47,8 @@ def build_event_study(frame: pd.DataFrame) -> pd.DataFrame:
         for state in ("RISK_OFF", "NEUTRAL", "RISK_ON"):
             daily = valid.loc[valid["state"].eq(state)]
             entries = daily.loc[daily["is_state_entry"]]
-            rows.append(_summarize(daily, col, unconditional,
+            rows.append(_summarize(daily, col, unconditional, len(valid),
                                    f"DAILY_{state}", horizon))
-            rows.append(_summarize(entries, col, unconditional,
+            rows.append(_summarize(entries, col, unconditional, len(valid),
                                    f"ENTRY_{state}", horizon))
     return pd.DataFrame(rows)
