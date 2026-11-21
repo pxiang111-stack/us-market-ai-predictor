@@ -47,10 +47,10 @@ class BacktestExecutionTests(unittest.TestCase):
             })
         fake_levels = {"atr": 1.0, "resistances": [{"low": 101.5}]}
         fake_setup = {"action": "LONG_CANDIDATE", "zone": {"low": 99.0}}
-        with patch("simple_nq_backtest.classify_regime", return_value={"regime": "UPTREND"}), \\
-             patch("simple_nq_backtest.build_support_resistance", return_value=fake_levels), \\
-             patch("simple_nq_backtest.evaluate_setups", return_value=fake_setup):
-            metrics, trades, _ = run_strategy(bars, initial_equity=10_000)
+        with patch("simple_nq_backtest.classify_regime", return_value={"regime": "UPTREND"}):
+            with patch("simple_nq_backtest.build_support_resistance", return_value=fake_levels):
+                with patch("simple_nq_backtest.evaluate_setups", return_value=fake_setup):
+                    metrics, trades, _ = run_strategy(bars, initial_equity=10_000)
         self.assertEqual(trades, [])
         self.assertEqual(metrics["final_equity"], 10_000)
 
