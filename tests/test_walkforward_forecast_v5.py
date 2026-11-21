@@ -12,6 +12,18 @@ class WalkForwardForecastTests(unittest.TestCase):
         out = generate_walkforward_forecasts(x, close, 5, min_train_rows=176, retrain_every=10)
         self.assertTrue(out.empty)
 
+    def test_start_date_limits_scored_forecasts_without_losing_training_history(self):
+        idx = pd.date_range("2015-01-01", periods=900, freq="B")
+        rng = np.random.default_rng(11)
+        rets = rng.normal(.0003, .01, len(idx))
+        close = pd.Series(100 * np.exp(np.cumsum(rets)), index=idx)
+        x = pd.DataFrame({"ret1": rets, "mom5": close.pct_change(5), "vol20": pd.Series(rets, index=idx).rolling(20).std()}, index=idx).fillna(0)
+        start = idx[700]
+        out = generate_walkforward_forecasts(x, close, 5, min_train_rows=300, retrain_every=50, start_date=start)
+        self.assertFalse(out.empty)
+        self.assertGreaterEqual(out.index.min(), start)
+        self.assertGreaterEqual(int(out.iloc[0]["n_train"]), 300)
+
     def test_forecast_metadata_marks_probability_uncalibrated(self):
         idx = pd.date_range("2015-01-01", periods=900, freq="B")
         rng = np.random.default_rng(9)
