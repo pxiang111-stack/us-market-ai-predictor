@@ -22,7 +22,7 @@ from qqq_drawdown_diagnostics_v1 import evaluate_drawdown_warnings
 
 OUT = Path("output/walkforward_v5")
 OUT.mkdir(parents=True, exist_ok=True)
-TARGETS = {"NQ=F": "NQ_futures", "SOXL": "SOXL", "QQQ": "QQQ", "SPY": "SPY"}
+TARGETS = {"SOXL": "SOXL", "QQQ": "QQQ", "SPY": "SPY"}
 HORIZONS = (5, 10, 20)
 COST_CASES_BPS = (10.0, 20.0, 30.0)
 SLIPPAGE_BPS_PER_SIDE = 5.0
@@ -179,12 +179,16 @@ def main():
             x, metadata = merge_market_structure_features(x, bars, ticker)
             close = prices[ticker].reindex(x.index)
             atr = atr_series(bars).reindex(x.index)
+            # Train on the longer available history, but score trades only on
+            # the most recent three calendar years requested for this project.
+            scored_start = bars.index[-1] - pd.DateOffset(years=3)
+            eval_bars = bars.loc[bars.index >= scored_start].copy()
         except Exception as exc:
             summaries.append({"ticker": ticker, "status": "data_error", "error": str(exc)})
             continue
 
         # Buy-and-hold benchmarks use the same close history and starting equity.
-        bh_close = close.dropna()
+        bh_close = close.loc[close.index >= scored_start].dropna()
         if len(bh_close) > 1:
             bh_curve = pd.DataFrame({"date": bh_close.index,
                                      "equity": 10_000.0 * bh_close / float(bh_close.iloc[0])})
@@ -205,9 +209,11 @@ def main():
                     x, close, horizon, min_train_rows=500,
                     retrain_every=63, max_train_rows=1260,
                 )
+                forecasts = forecasts.loc[forecasts.index >= scored_start].copy()
                 if forecasts.empty:
                     summaries.append({"ticker": ticker, "horizon": horizon,
-                                      "status": "insufficient_walkforward_history"})
+                                      "status": "insufficient_walkforward_history_in_scored_window",
+                                      "scored_start": str(scored_start.date())})
                     continue
                 strategy_modes = ("confluence", "trend_breakout", "reversal_absorption")
                 plans_by_cost_mode = {}
@@ -276,10 +282,11 @@ def main():
                         plans["decision"] = plans["decision"].fillna("FLAT")
                         all_plans.append(plans.reset_index())
                         ledger, curve = simulate_trades(
-                            bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
+                            eval_bars, plans[["decision", "stop_loss", "take_profit_1r", "take_profit_2r"]],
                             initial_equity=10_000.0, risk_budget_pct=0.005,
                             max_gross_exposure=1.0, round_trip_cost_bps=cost_bps,
                             slippage_bps_per_side=SLIPPAGE_BPS_PER_SIDE, max_holding_sessions=horizon,
+                            whole_shares_only=True,
                         )
                         stats = performance_summary(ledger, curve)
                         tag = f"{ticker}_{horizon}d_{strategy_mode}_cost{int(cost_bps)}bps"
@@ -433,6 +440,9 @@ def main():
     payload = {
         "status": "completed",
         "targets": list(TARGETS),
+        "market_context_only": ["NQ=F"],
+        "scored_backtest_years": 3,
+        "scored_window_start_rule": "latest available bar date minus 3 calendar years",
         "horizons": list(HORIZONS),
         "cost_cases_round_trip_bps": list(COST_CASES_BPS),
         "slippage_bps_per_side": SLIPPAGE_BPS_PER_SIDE,
@@ -441,8 +451,9 @@ def main():
         "risk_budget_pct": 0.5,
         "max_gross_exposure": 1.0,
         "position_units_are_not_exchange_contracts": True,
-        "fractional_units_used": True,
-        "cash_account_whole_share_constraint": False,
+        "fractional_units_used": False,
+        "cash_account_whole_share_constraint": True,
+        "position_sizing": "whole-share floor; entry costs reserved; long-only; max gross exposure 100%; no borrowing",
         "shorts_enabled": False,
         "probabilities_calibrated": False,
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
@@ -453,7 +464,7 @@ def main():
         "limitations": [
             "This is an experimental historical simulation, not a live trading system.",
             "Short selling is disabled for the $10,000 cash-account comparison.",
-            "Initial capital is USD 10,000, but sizing currently permits fractional normalized units; this is not yet a whole-share cash-account simulation.",
+            "Initial capital is USD 10,000; the trade simulator now floors position size to whole shares and reserves estimated entry costs. One-share positions exit fully at 1R because they cannot be split.",
             "OHLCV bars use adjusted prices in this version; cash dividends are not separately ledgered.",
             "Yahoo daily bars do not separate regular, pre-market, after-hours and overnight futures sessions.",
             "No true bid/ask delta, reliable historical futures OI, options GEX or dealer positioning is connected.",
