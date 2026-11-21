@@ -78,6 +78,17 @@ def load_rank_score(path: Path, dates: pd.DatetimeIndex) -> pd.Series:
     return frame.set_index("date")["rank_model_score"].reindex(dates).rename("rank_model_score")
 
 
+def align_fred_to_nq_sessions(series: pd.Series, nq_dates: pd.DatetimeIndex,
+                             max_stale_sessions: int = 3) -> pd.Series:
+    """Forward-fill FRED observations for at most three NQ sessions."""
+    if max_stale_sessions < 0:
+        raise ValueError("max_stale_sessions must be non-negative")
+    x = pd.to_numeric(series, errors="coerce").copy()
+    x.index = pd.to_datetime(x.index).normalize()
+    x = x[~x.index.duplicated(keep="last")].sort_index()
+    return x.reindex(nq_dates).ffill(limit=max_stale_sessions)
+
+
 def align_crypto_to_nq_close(crypto: pd.DataFrame,
                              nq_dates: pd.DatetimeIndex) -> pd.DataFrame:
     """Align UTC daily crypto bars to the NQ session close without look-ahead.
@@ -148,7 +159,7 @@ def build_market_frame(period: str, rank_score_file: Path) -> pd.DataFrame:
     for field, series_id in FRED_SERIES.items():
         try:
             series = fetch_fred_series(series_id)
-            z[field] = series.reindex(z.index).ffill()
+            z[field] = align_fred_to_nq_sessions(series, z.index, max_stale_sessions=3)
             print(f"[DATA] {field} ({series_id}): {series.notna().sum()} observations",
                   flush=True)
         except Exception as exc:
