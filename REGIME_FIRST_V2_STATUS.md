@@ -8,9 +8,10 @@ Date: 2026-11-22
 - Independent BTC, ETH, NQ/VIX and credit stress triggers; a missing feed does not hide another confirmed trigger.
 - Credit trigger follows the written rule: CCC OAS >14% plus five consecutive widening sessions in both BBB and broad HY OAS (CCC itself need not widen).
 - `run_regime_first_v2.py`: daily data adapter for NQ futures, NDX, BTC, ETH and VIX from Yahoo Finance; CCC/BBB/HY OAS from FRED CSV; prior-only NQ and crypto rolling bands; daily CSV and latest Markdown report.
+- `regime_event_study.py`: 5-day/20-day forward NDX returns by daily state and state-entry events; n<30 is marked RECORD_ONLY, with no strategy-performance claim.
 - The adapter refuses to fabricate `rank_model_score`. It reads `output/rank_model_score.csv` with columns `date,rank_model_score`; if unavailable, it records the critical data gap and halves the risk budget.
 - GitHub Actions now runs the Regime-First adapter after the existing V4 research pipeline and uploads both reports under `output/`.
-- Unit tests cover state transitions, missing feeds, hard veto, flip gates and credit widening.
+- Unit tests cover state transitions, missing feeds, hard veto, flip gates, credit widening, and event-study sample gating/coverage.
 
 ## Critical unresolved data interface
 
@@ -22,7 +23,7 @@ The market-wide `rank_model_score` used by v1.6-A is not yet mapped from the leg
 - Eventized break/key-level/time/confirmation clusters are not yet connected to the daily output.
 - GEX, DIX, SPY/QQQ flows and COT are not yet sourced or mapped to explicit hard-veto rules.
 - ATR/stop-distance sizing, option spread/open-interest/volume checks, and portfolio-level risk aggregation remain to be implemented.
-- The 19 historical decisions and 117-day sample have not yet been reconstructed and tested.
+- The source note reports aggregate results for 19 calls and 117 days, but does not contain the complete dated row-level dataset needed to reproduce them; those samples have not yet been reconstructed and tested.
 - A successful GitHub Actions run has not yet been confirmed.
 
 ## Frozen interpretation notes
