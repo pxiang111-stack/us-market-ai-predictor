@@ -94,12 +94,17 @@ def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(nonempty, ignore_index=True, sort=False) if nonempty else pd.DataFrame()
 
 
-def forecast_quality_summary(forecasts: pd.DataFrame, close: pd.Series, horizon: int) -> dict:
-    """Evaluate OOS predictions against realized future returns; never feeds decisions."""
+def forecast_quality_summary(
+    forecasts: pd.DataFrame, close: pd.Series,
+    next_session_open: pd.Series, horizon: int
+) -> dict:
+    """Evaluate forecasts on the same next-open-to-horizon-close return traded."""
     if forecasts is None or forecasts.empty:
         return {"forecast_eval_n": 0, "forecast_auc": None, "forecast_brier": None}
     idx = forecasts.index
-    realized = close.shift(-horizon).reindex(idx) / close.reindex(idx) - 1.0
+    entry = next_session_open.reindex(close.index).shift(-1).reindex(idx)
+    exit_price = close.shift(-horizon).reindex(idx)
+    realized = exit_price / entry - 1.0
     p = pd.to_numeric(forecasts["probability_up"], errors="coerce")
     expected = pd.to_numeric(forecasts["expected_return"], errors="coerce")
     valid = pd.DataFrame({"realized": realized, "p": p, "expected": expected}).replace(
@@ -206,8 +211,10 @@ def main():
             print(f"[INFO] {ticker} {horizon}d walk-forward forecasts...", flush=True)
             try:
                 forecasts = generate_walkforward_forecasts(
-                    x, close, horizon, min_train_rows=500,
-                    retrain_every=63, max_train_rows=1260, start_date=scored_start,
+                    x, close, horizon,
+                    entry_open=bars["Open"].reindex(x.index),
+                    min_train_rows=500, retrain_every=63,
+                    max_train_rows=1260, start_date=scored_start,
                 )
                 forecasts = forecasts.loc[forecasts.index >= scored_start].copy()
                 if forecasts.empty:
@@ -261,14 +268,16 @@ def main():
                 forecasts["ticker"] = ticker
                 forecasts["horizon_sessions"] = horizon
                 # Realized labels are written only for post-hoc evaluation, never used by the signal.
+                entry_open = bars["Open"].reindex(close.index).shift(-1)
                 forecasts["realized_forward_return_eval_only"] = (
-                    close.shift(-horizon).reindex(forecasts.index) / close.reindex(forecasts.index) - 1.0
+                    close.shift(-horizon).reindex(forecasts.index)
+                    / entry_open.reindex(forecasts.index) - 1.0
                 )
                 forecasts["realized_up_eval_only"] = (
                     forecasts["realized_forward_return_eval_only"] > 0
                 ).where(forecasts["realized_forward_return_eval_only"].notna())
                 all_forecasts.append(forecasts.reset_index())
-                quality = forecast_quality_summary(forecasts, close, horizon)
+                quality = forecast_quality_summary(forecasts, close, bars["Open"], horizon)
                 summaries.append({
                     "strategy_id": f"{ticker}_{horizon}d_forecast_quality",
                     "status": "ok", "ticker": ticker, "horizon_sessions": horizon,
@@ -456,6 +465,7 @@ def main():
         "position_sizing": "whole-share floor; entry costs reserved; long-only; max gross exposure 100%; no borrowing",
         "shorts_enabled": False,
         "probabilities_calibrated": False,
+        "forecast_target": "close(t+horizon_sessions) / open(t+1) - 1; signal after close t, enter next session open, exit at the horizon close.",
         "data_scope": "daily OHLCV only; not intraday, overnight-session-separated or order-book data",
         "strategy_modes": ["confluence", "trend_breakout", "reversal_absorption"],
         "outputs": ["oos_forecasts.csv", "qqq_drawdown_warning_detail.csv", "qqq_drawdown_warning_summary.csv", "trade_decisions.csv", "trade_ledger.csv", "daily_equity_curves.csv", "performance_summary.csv", "side_performance_summary.csv", "regime_trade_summary.csv"],
