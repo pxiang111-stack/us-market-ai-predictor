@@ -39,7 +39,8 @@ def fetch_yahoo_close(symbol: str, period: str) -> pd.DataFrame:
     frame = frame.copy()
     idx = pd.to_datetime(frame.index)
     if getattr(idx, "tz", None) is not None:
-        idx = idx.tz_convert("America/New_York").tz_localize(None)
+        target_tz = "UTC" if symbol in {"BTC-USD", "ETH-USD"} else "America/New_York"
+        idx = idx.tz_convert(target_tz).tz_localize(None)
     frame.index = idx.normalize()
     frame = frame[~frame.index.duplicated(keep="last")].sort_index()
     cols = [c for c in ("Close", "High", "Low") if c in frame.columns]
@@ -123,9 +124,17 @@ def build_market_frame(period: str, rank_score_file: Path) -> pd.DataFrame:
 
     for asset in ("BTC", "ETH"):
         close_field = f"{asset}_close"
-        close = z[close_field]
-        z[f"{asset}_20d_high"] = close.shift(1).rolling(20, min_periods=20).max()
-        z[f"{asset}_20d_low"] = close.shift(1).rolling(20, min_periods=20).min()
+        if asset in prices:
+            # Crypto trades 7 days/week: calculate its 20-session bands on the
+            # full UTC daily series, then align those prior-only bands to NQ dates.
+            crypto_close = prices[asset]["Close"]
+            prior_high = crypto_close.shift(1).rolling(20, min_periods=20).max()
+            prior_low = crypto_close.shift(1).rolling(20, min_periods=20).min()
+            z[f"{asset}_20d_high"] = prior_high.reindex(z.index).ffill()
+            z[f"{asset}_20d_low"] = prior_low.reindex(z.index).ffill()
+        else:
+            z[f"{asset}_20d_high"] = np.nan
+            z[f"{asset}_20d_low"] = np.nan
 
     z["rank_model_score"] = load_rank_score(rank_score_file, z.index)
     z = z.reset_index(drop=True)
@@ -144,6 +153,7 @@ def main() -> int:
     OUT.mkdir(exist_ok=True)
     market = build_market_frame(args.period, Path(args.rank_score_file))
     result = evaluate_history(market, initial_state=args.initial_state)
+    result["date"] = pd.to_datetime(result["date"]).dt.normalize()
     combined = market.merge(result, on="date", how="left", validate="one_to_one")
     combined.to_csv(OUT / "regime_first_v2_daily.csv", index=False)
 
