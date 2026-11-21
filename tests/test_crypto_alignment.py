@@ -49,7 +49,7 @@ class VolatilityMultiplierTests(unittest.TestCase):
         }
         result = evaluate_history(pd.DataFrame([row])).iloc[-1]
         self.assertEqual(result.volatility_multiplier, 0.25)
-        self.assertAlmostEqual(result.max_risk_pct, 0.25)
+        self.assertAlmostEqual(result.max_risk_pct, 0.5)  # NEUTRAL cap 2% x VIX multiplier 0.25
 
 
 if __name__ == "__main__":
