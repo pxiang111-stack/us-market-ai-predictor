@@ -46,7 +46,7 @@ class RegimeFirstV2Tests(unittest.TestCase):
 
     def test_flip_gate_requires_all_four_conditions(self):
         rows = []
-        for j, score in enumerate([-1.5, -0.5, 1.0]):
+        for j, score in enumerate([-2.0, -1.0, 0.0]):
             rows.append(row(
                 f"2026-11-{20+j:02d}", NQ_close=28000,
                 NQ_200ma=24000, VIX_close=18,
