@@ -72,6 +72,25 @@ class BacktestExecutionTests(unittest.TestCase):
             self.assertTrue((output_dir / "simple_nq_backtest_summary.json").exists())
             self.assertTrue((output_dir / "simple_nq_backtest_trades.csv").exists())
 
+    def test_holdout_starts_with_fresh_equity_and_keeps_warmup_out_of_curve(self):
+        bars = []
+        for i in range(270):
+            close = 100 + i * 0.01
+            bars.append({
+                "date": (date(2025, 1, 1) + timedelta(days=i)).isoformat(),
+                "open": close, "high": close + 0.5, "low": close - 0.5,
+                "close": close, "volume": 1000,
+            })
+        split = 216
+        metrics, trades, curve = run_strategy(
+            bars, initial_equity=10_000, start_index=split,
+            include_warmup=False,
+        )
+        self.assertEqual(len(curve), len(bars) - split)
+        self.assertEqual(curve[0], 10_000)
+        self.assertEqual(metrics["initial_equity"], 10_000)
+        self.assertTrue(all(t["signal_date"] >= bars[split]["date"] for t in trades))
+
     def test_strategy_stays_in_cash_when_no_setup(self):
         bars = []
         for i in range(270):
