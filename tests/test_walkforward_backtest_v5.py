@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from walkforward_backtest_v5 import (concat_frames, DECISION_COST_FLOOR, build_benchmark_curve, forecast_quality_summary)
+from walkforward_backtest_v5 import (concat_frames, DECISION_COST_FLOOR, decision_cost_floor, build_benchmark_curve, forecast_quality_summary)
 
 
 class WalkForwardBacktestAggregationTests(unittest.TestCase):
@@ -21,22 +21,28 @@ class WalkForwardBacktestAggregationTests(unittest.TestCase):
         close = pd.Series([100.0, 102.0, 101.0, 105.0], index=idx)
         curve = build_benchmark_curve(close, idx[1:])
         self.assertEqual(len(curve), 3)
-        self.assertEqual(curve.iloc[0]["equity"], 100000.0)
-        self.assertAlmostEqual(curve.iloc[-1]["equity"], 100000.0 * 105.0 / 102.0)
+        self.assertEqual(curve.iloc[0]["equity"], 10000.0)
+        self.assertAlmostEqual(curve.iloc[-1]["equity"], 10000.0 * 105.0 / 102.0)
 
     def test_signal_filter_covers_worst_case_round_trip_cost_and_slippage(self):
         self.assertAlmostEqual(DECISION_COST_FLOOR, 0.004)
 
+    def test_each_cost_scenario_uses_its_own_edge_floor(self):
+        self.assertAlmostEqual(decision_cost_floor(10), 0.002)
+        self.assertAlmostEqual(decision_cost_floor(20), 0.003)
+        self.assertAlmostEqual(decision_cost_floor(30), 0.004)
+
     def test_forecast_quality_uses_realized_future_returns_only_for_diagnostics(self):
         idx = pd.date_range("2025-01-01", periods=8, freq="B")
         close = pd.Series([100, 101, 100, 102, 101, 103, 102, 104], index=idx, dtype=float)
-        realized = close.shift(-1).iloc[:-1] / close.iloc[:-1] - 1.0
+        next_open = pd.Series([99, 102, 99, 104, 100, 105, 101, 105], index=idx, dtype=float)
+        realized = close.shift(-1).iloc[:-1] / next_open.shift(-1).iloc[:-1] - 1.0
         forecasts = pd.DataFrame({
             "probability_up": [0.9 if x > 0 else 0.1 for x in realized],
             "expected_return": realized.values * 0.8,
             "train_up_rate": [0.5] * len(realized),
         }, index=idx[:-1])
-        stats = forecast_quality_summary(forecasts, close, 1)
+        stats = forecast_quality_summary(forecasts, close, next_open, 1)
         self.assertEqual(stats["forecast_eval_n"], 7)
         self.assertAlmostEqual(stats["forecast_auc"], 1.0)
         self.assertAlmostEqual(stats["forecast_directional_accuracy_50_pct"], 100.0)
