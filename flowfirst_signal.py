@@ -114,9 +114,27 @@ def analyze_symbol(symbol: str, k15: list[dict], k1h: list[dict],
         result["data_age_minutes"] = round(age15 / 60_000, 1) if age15 is not None else None
         return result
     t15, t1h = trend(k15), trend(k1h)
-    f = flow_stats(flows)
+    # Align flow to the exact four latest completed 15m price bars.
+    # Never let an old flow response silently drive a fresh price signal.
+    latest_bars = k15[-4:]
+    latest_bar_ts = [int(x["timestamp"]) for x in latest_bars]
+    flow_by_ts = {int(x["timestamp"]): x for x in flows}
+    if any(ts not in flow_by_ts for ts in latest_bar_ts):
+        result["reason"].append("最近4根已收盘价格K线缺少对应资金流数据，禁止生成方向信号")
+        return result
+    aligned_flows = [flow_by_ts[ts] for ts in latest_bar_ts]
+    f = flow_stats(flows[:])
     if not f["ready"]:
         result["reason"].append(f["reason"])
+        return result
+    # Use only flow observations no later than the latest completed price bar.
+    eligible_flows = [x for x in flows if int(x["timestamp"]) <= latest_bar_ts[-1]]
+    f = flow_stats(eligible_flows)
+    if not f["ready"]:
+        result["reason"].append(f["reason"])
+        return result
+    if len(aligned_flows) != 4:
+        result["reason"].append("资金流与价格K线对齐失败")
         return result
     volatility = atr(k15)
     if not volatility or volatility <= 0:
