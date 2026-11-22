@@ -32,6 +32,9 @@ jobs:
       - name: Install collector dependency
         run: python -m pip install --upgrade requests
 
+      - name: Compile FlowFirst modules
+        run: python -m py_compile flowfirst_collector.py flowfirst_validate.py flowfirst_signal.py
+
       - name: Collect Binance TradFi market data
         run: python flowfirst_collector.py
 
