@@ -299,6 +299,7 @@ def main() -> None:
             "gross_exposure_cap": "1.0x equity, no leverage",
             "costs": f"{COST_PER_SIDE*10000:.1f} bps per side (fee + slippage assumption)",
             "oi_filter": "4-interval OI value expansion >= 0.1%; participation filter only, not direction",
+            "crowding_filter": "Block same-direction entry when long/short account share >= 80% and >= 1 standard deviation above its prior 48-bar mean",
             "limitations": "Binance TradFi venue data only; short sample and no validated win probability"
         },
         "results": []
