@@ -35,6 +35,9 @@ jobs:
       - name: Collect Binance TradFi market data
         run: python flowfirst_collector.py
 
+      - name: Validate accumulated raw data
+        run: python flowfirst_validate.py
+
       - name: Commit newly collected raw data
         run: |
           git config user.name "github-actions[bot]"
