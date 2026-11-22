@@ -40,3 +40,28 @@ Before treating any FlowFirst result as a signal:
 6. Report sample count, date range, trading costs, slippage, drawdown, and out-of-sample performance.
 
 This is a data-collection foundation, not a validated trading strategy.
+
+## FlowFirst signal layer (v0.1)
+
+The branch now includes `flowfirst_signal.py`. After collection and raw-data validation, the workflow generates:
+
+- `reports/flowfirst_latest.json`
+- `reports/flowfirst_latest.md`
+
+The initial signal layer is deliberately conservative:
+
+1. Requires at least 60 completed 15m price bars and 55 completed 1h price bars.
+2. Uses 15m and 1h EMA20/EMA50 trend alignment.
+3. Uses the average taker buy/sell imbalance of the latest four completed 15m bars and its rolling z-score against the preceding 48 bars.
+4. Requires both price trend and flow to confirm before issuing LONG or SHORT; otherwise it returns WAIT.
+5. Uses 1.5 ATR as the reference stop distance and 3 ATR as the reference target distance (2R). These are research references, not guaranteed fills.
+6. Rejects stale price data. It does not produce a signal when history or timestamps are insufficient.
+
+The market regime is a simple breadth read across QQQ, SPY and SMH 1h trends. OI change is reported as participation context only; OI expansion alone is never treated as a bullish or bearish signal.
+
+The report's entry reference is the signal bar close for analysis only. Backtests must execute at the next bar open and include fees/slippage. The script does not output a win probability because the strategy has not yet been validated.
+
+## CI behavior
+
+The pull-request workflow path compiles the Python modules, collects public data, validates the raw records and generates a report. On pull requests it does not push commits; it uploads the report as a workflow artifact. Scheduled/manual runs can append collected data and reports to the branch where the workflow is enabled.
+
