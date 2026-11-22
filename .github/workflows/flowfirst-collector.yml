@@ -2,6 +2,8 @@ name: FlowFirst Data Collector
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   schedule:
     # 15-minute collection cadence during the broad US trading window (UTC).
     # GitHub may delay scheduled workflows; this is not a guaranteed real-time feed.
@@ -45,6 +47,7 @@ jobs:
         run: python flowfirst_signal.py
 
       - name: Commit newly collected data and signal report
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,3 +58,14 @@ jobs:
             git commit -m "chore(flowfirst): append market data"
             git push
           fi
+
+      - name: Upload FlowFirst PR test report
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowfirst-pr-report
+          path: |
+            reports/flowfirst_latest.json
+            reports/flowfirst_latest.md
+            data/flowfirst/latest_run.json
+          if-no-files-found: ignore
