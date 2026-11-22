@@ -65,3 +65,24 @@ The report's entry reference is the signal bar close for analysis only. Backtest
 
 The pull-request workflow path compiles the Python modules, collects public data, validates the raw records and generates a report. On pull requests it does not push commits; it uploads the report as a workflow artifact. Scheduled/manual runs can append collected data and reports to the branch where the workflow is enabled.
 
+## First backtest harness
+
+The branch also includes `flowfirst_backtest.py`, which compares four variants per symbol:
+
+- `price_only`: 15m and 1h EMA trend alignment
+- `flow_only`: 4-bar taker imbalance plus rolling z-score
+- `combo`: price trend and flow confirmation together
+- `combo_oi`: combo signal plus OI value expansion as a participation filter
+
+Backtest safeguards and assumptions:
+
+- Signal is evaluated only after a completed 15m bar; entry is the next 15m bar open.
+- Uses the most recently completed 1h bar only.
+- Stop = 1.5 ATR; target = 3 ATR; maximum hold = 16 bars.
+- If stop and target are both touched in one bar, stop is assumed first.
+- Starts each symbol/variant with $10,000, risks 0.5% of current equity per trade and caps gross exposure at 1.0x equity.
+- Applies an explicit 7 bps per-side cost assumption (5 bps fee + 2 bps slippage); actual TradFi costs may differ.
+- Reports trade count, win rate, net P&L, return, profit factor, expectancy, maximum drawdown and average R, with buy-and-hold return for comparison.
+
+This is a first diagnostic harness. Results with small samples are not evidence of an edge. It does not yet include walk-forward parameter selection, a portfolio-level capital allocator, financing/funding costs, or a statistically robust out-of-sample validation. Those must be added before any strategy is considered deployable.
+
