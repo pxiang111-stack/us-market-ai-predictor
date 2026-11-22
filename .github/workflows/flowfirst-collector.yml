@@ -4,10 +4,6 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-  schedule:
-    # 15-minute collection cadence during the broad US trading window (UTC).
-    # GitHub may delay scheduled workflows; this is not a guaranteed real-time feed.
-    - cron: "*/15 12-22 * * 1-5"
 
 permissions:
   contents: write
@@ -41,19 +37,23 @@ jobs:
         run: python -m unittest discover -s tests -v
 
       - name: Collect Binance TradFi market data
+        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_collector.py
 
       - name: Validate accumulated raw data
+        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_validate.py
 
       - name: Generate FlowFirst research signals
+        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_signal.py
 
       - name: Run FlowFirst strategy comparison backtest
+        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_backtest.py
 
       - name: Commit newly collected data and signal report
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -65,15 +65,6 @@ jobs:
             git push
           fi
 
-      - name: Upload FlowFirst PR test report
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: flowfirst-pr-report
-          path: |
-            reports/flowfirst_latest.json
-            reports/flowfirst_latest.md
-            reports/flowfirst_backtest.json
-            reports/flowfirst_backtest.md
-            data/flowfirst/latest_run.json
-          if-no-files-found: ignore
+      - name: Explain PR data-ingestion skip
+        if: github.event_name == 'pull_request'
+        run: echo "PR checks run syntax and unit tests only; Binance data ingestion is a manual dispatch because the current hosted runner receives HTTP 451 from Binance."
