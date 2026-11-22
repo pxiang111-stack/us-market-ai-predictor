@@ -198,7 +198,7 @@ def main() -> None:
     (ROOT / "latest_run.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
-    if totals["errors"] == len(SYMBOLS) * len(PERIODS) * 3:
+    if totals["errors"] == len(SYMBOLS) * len(PERIODS) * 4:
         raise SystemExit("All collection requests failed; no data was collected.")
 
 
