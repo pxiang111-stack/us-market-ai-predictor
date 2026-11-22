@@ -25,7 +25,7 @@ RISK_FRACTION = 0.005
 
 
 def load_bars(path: str | Path) -> list[dict[str, Any]]:
-    required = {"date", "open", "high", "low", "close", "volume"}
+    required = {"date", "open", "high", "low", "close", "volume", "dividends", "stock_splits"}
     bars = []
     with open(path, newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
@@ -37,8 +37,8 @@ def load_bars(path: str | Path) -> list[dict[str, Any]]:
                 bar[key] = float(row[key])
                 if not math.isfinite(bar[key]):
                     raise ValueError(f"Non-finite {key} on {bar['date']}")
-            bar["dividends"] = float(row.get("dividends") or 0.0)
-            bar["stock_splits"] = float(row.get("stock_splits") or 0.0)
+            bar["dividends"] = float(row["dividends"] or 0.0)
+            bar["stock_splits"] = float(row["stock_splits"] or 0.0)
             if not math.isfinite(bar["dividends"]) or not math.isfinite(bar["stock_splits"]):
                 raise ValueError(f"Non-finite corporate action on {bar['date']}")
             if bar["dividends"] < 0 or bar["stock_splits"] < 0:
