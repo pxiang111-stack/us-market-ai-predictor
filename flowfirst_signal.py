@@ -240,15 +240,18 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "flowfirst_latest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     lines = [f"# FlowFirst v0.1", "", f"Generated UTC: {report['generated_at_utc']}",
-             f"Market regime: **{regime}**", "", "| Symbol | Signal | 15m trend | 1h trend | Flow imbalance | Flow Z | Entry ref | Stop ref | Target ref |",
-             "|---|---|---|---|---:|---:|---:|---:|---:|"]
+             f"Market regime: **{regime}**", "", "| Symbol | Signal | 15m trend | 1h trend | Flow imbalance | Flow Z | Long accounts | Crowding | Entry ref | Stop ref | Target ref |",
+             "|---|---|---|---|---:|---:|---:|---|---:|---:|---:|"]
     for symbol, item in market.items():
         f = item.get("flow", {})
+        crowd = item.get("crowding", {})
+        crowd_label = "LONG" if crowd.get("crowded_long") else "SHORT" if crowd.get("crowded_short") else "normal"
         lines.append("| " + " | ".join([
             symbol, item.get("signal", "WAIT"),
             item.get("trend_15m", {}).get("direction", "-"),
             item.get("trend_1h", {}).get("direction", "-"),
             str(f.get("recent_4bar_imbalance", "-")), str(f.get("zscore", "-")),
+            str(crowd.get("long_account_pct", "-")), crowd_label,
             str(item.get("entry_reference", "-")), str(item.get("stop_reference", "-")),
             str(item.get("target_reference", "-"))
         ]) + " |")
