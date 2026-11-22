@@ -86,3 +86,18 @@ Backtest safeguards and assumptions:
 
 This is a first diagnostic harness. Results with small samples are not evidence of an edge. It does not yet include walk-forward parameter selection, a portfolio-level capital allocator, financing/funding costs, or a statistically robust out-of-sample validation. Those must be added before any strategy is considered deployable.
 
+## Seeded research dataset and runner restriction
+
+An initial research snapshot was imported through the connected Binance market-data interface into:
+
+- `data/flowfirst/seed_klines_15m.jsonl`
+- `data/flowfirst/seed_klines_1h.jsonl`
+- `data/flowfirst/seed_taker_15m.jsonl`
+- `data/flowfirst/seed_oi_15m.jsonl`
+
+The seed contains the five core symbols and up to 500 completed records per symbol for each dataset. The collector's deduplication now checks all files for a kind/period so later daily files do not duplicate the seed.
+
+The first GitHub-hosted collection attempt compiled successfully but Binance returned HTTP 451 from the hosted runner region (Azure westus3). The collector now stops immediately on this explicit regional restriction instead of retrying. Scheduled collection has been removed until a permitted execution region is available. Pull-request checks still compile, run unit tests, validate the seeded dataset, and generate the research/backtest reports without calling Binance from the runner.
+
+Do not treat this one-time seed as an ongoing real-time feed. It is an initial sample for validating the analysis pipeline. Ongoing data refresh requires a Binance-permitted execution environment; do not use proxies or routing to bypass regional restrictions.
+
