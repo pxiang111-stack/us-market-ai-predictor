@@ -90,6 +90,33 @@ def flow_stats(rows: list[dict]) -> dict:
             "direction": "buy" if recent > 0 else "sell" if recent < 0 else "flat"}
 
 
+def crowding_stats(rows: list[dict]) -> dict:
+    if len(rows) < 49:
+        return {"ready": False, "reason": "多空账户比历史不足49根"}
+    rows = sorted(rows, key=lambda r: int(r["timestamp"]))
+    current_long = float(rows[-1]["longAccount"])
+    current_short = float(rows[-1]["shortAccount"])
+    base_long = [float(x["longAccount"]) for x in rows[-49:-1]]
+    base_short = [float(x["shortAccount"]) for x in rows[-49:-1]]
+    def zscore(current: float, baseline: list[float]) -> float:
+        mean = sum(baseline) / len(baseline)
+        variance = sum((x-mean)**2 for x in baseline) / len(baseline)
+        sd = math.sqrt(variance)
+        return (current-mean)/sd if sd > 1e-9 else 0.0
+    long_z = zscore(current_long, base_long)
+    short_z = zscore(current_short, base_short)
+    return {
+        "ready": True,
+        "long_account_pct": round(current_long * 100, 2),
+        "short_account_pct": round(current_short * 100, 2),
+        "long_account_zscore": round(long_z, 2),
+        "short_account_zscore": round(short_z, 2),
+        "crowded_long": current_long >= 0.80 and long_z >= 1.0,
+        "crowded_short": current_short >= 0.80 and short_z >= 1.0,
+        "interpretation": "账户数量比例，只用于拥挤度过滤，不代表机构持仓或资金金额"
+    }
+
+
 def oi_change(rows: list[dict]) -> float | None:
     if len(rows) < 5:
         return None
@@ -103,7 +130,8 @@ def latest_age_ms(rows: list[dict], now_ms: int) -> int | None:
 
 
 def analyze_symbol(symbol: str, k15: list[dict], k1h: list[dict],
-                   flows: list[dict], oi: list[dict], now_ms: int) -> dict:
+                   flows: list[dict], oi: list[dict],
+                   longshort: list[dict], now_ms: int) -> dict:
     result = {"symbol": symbol, "signal": "WAIT", "reason": []}
     if len(k15) < 60 or len(k1h) < 55:
         result["reason"].append("价格历史不足：需要至少60根15m和55根1h已收盘K线")
@@ -132,16 +160,30 @@ def analyze_symbol(symbol: str, k15: list[dict], k1h: list[dict],
     if not volatility or volatility <= 0:
         result["reason"].append("ATR不可用")
         return result
+    eligible_longshort = [x for x in longshort if int(x["timestamp"]) <= latest_bar_ts[-1]]
+    longshort_by_ts = {int(x["timestamp"]): x for x in eligible_longshort}
+    if latest_bar_ts[-1] not in longshort_by_ts:
+        result["reason"].append("最新价格K线缺少对应多空账户比数据，禁止生成方向信号")
+        return result
+    crowding = crowding_stats(eligible_longshort)
+    if not crowding["ready"]:
+        result["reason"].append(crowding["reason"])
+        return result
     oi_pct = oi_change(oi)
     last_close = float(k15[-1]["close"])
     result.update({"price": last_close, "trend_15m": t15, "trend_1h": t1h,
-                   "flow": f, "oi_value_change_4bars_pct": oi_pct,
+                   "flow": f, "crowding": crowding,
+                   "oi_value_change_4bars_pct": oi_pct,
                    "atr_15m": round(volatility, 5)})
     bullish = (t15["direction"] == "up" and t1h["direction"] == "up"
                and f["recent_4bar_imbalance"] >= 0.06 and f["zscore"] >= 0.75)
     bearish = (t15["direction"] == "down" and t1h["direction"] == "down"
                and f["recent_4bar_imbalance"] <= -0.06 and f["zscore"] <= -0.75)
-    if bullish:
+    if bullish and crowding["crowded_long"]:
+        result["reason"].append("主动买入与价格偏强，但多头账户拥挤度异常，过滤做多")
+    elif bearish and crowding["crowded_short"]:
+        result["reason"].append("主动卖出与价格偏弱，但空头账户拥挤度异常，过滤做空")
+    elif bullish:
         result["signal"] = "LONG"
         result["entry_reference"] = last_close
         result["stop_reference"] = round(last_close - 1.5 * volatility, 5)
@@ -165,11 +207,13 @@ def main() -> None:
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
     k15, k1h = load_rows("klines", "15m"), load_rows("klines", "1h")
     flow15, oi15 = load_rows("taker", "15m"), load_rows("oi", "15m")
+    longshort15 = load_rows("longshort", "15m")
     market = {}
     for symbol in UNIVERSE:
         market[symbol] = analyze_symbol(
             symbol, k15.get(symbol, []), k1h.get(symbol, []),
-            flow15.get(symbol, []), oi15.get(symbol, []), now_ms)
+            flow15.get(symbol, []), oi15.get(symbol, []),
+            longshort15.get(symbol, []), now_ms)
     core = [market.get(s, {}).get("trend_1h", {}).get("direction", "unknown")
             for s in ("QQQUSDT", "SPYUSDT", "SMHUSDT")]
     if all(x == "up" for x in core):
