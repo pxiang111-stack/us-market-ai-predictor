@@ -160,7 +160,8 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
                 longshort_rows: list[dict], variant: str,
                 trade_start_ts: int | None = None,
                 trade_end_ts: int | None = None,
-                cost_per_side: float = COST_PER_SIDE) -> dict:
+                cost_per_side: float = COST_PER_SIDE,
+                max_hold_bars: int = MAX_HOLD_BARS) -> dict:
     if len(bars) < 80 or (variant != "flow_only" and len(hourly) < 55):
         return {"status": "INSUFFICIENT_DATA", "bars_15m": len(bars), "bars_1h": len(hourly)}
     flow_by_ts = {int(x["timestamp"]): x for x in flow_rows}
