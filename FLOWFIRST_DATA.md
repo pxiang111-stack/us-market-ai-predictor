@@ -109,3 +109,11 @@ Each trade also records maximum adverse excursion (MAE) and maximum favorable ex
 
 This is still only a short initial sample (the seed snapshot is approximately five days of 15m flow/price history). A 30% holdout of such a short sample is not statistically sufficient to establish a durable edge. Continue accumulating permitted data before making deployment decisions.
 
+## Account-crowding filter
+
+The collector and seed dataset now include Binance `globalLongShortAccountRatio` as `longshort` records. This reports the proportion of accounts net long and net short on Binance's venue; it is an account-count statistic, not notional exposure, not institutional flow, and not proof of smart-money positioning.
+
+The signal and backtest layer use an adaptive crowding flag: an account side must exceed 80% of accounts and be at least 1 standard deviation above its own preceding 48-bar mean. The filter blocks a new trade in the same crowded direction; it is not itself a contrarian entry signal.
+
+The strategy comparison now includes `combo_crowding` alongside price-only, flow-only, combo, and `combo_oi`. Missing or timestamp-misaligned crowding data causes the crowding-filtered strategy to stand aside rather than assume a neutral reading.
+
