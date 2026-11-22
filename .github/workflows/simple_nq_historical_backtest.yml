@@ -35,15 +35,15 @@ jobs:
         run: python -m pip install --upgrade pip pandas yfinance
       - name: Run V1 unit tests
         run: python -m unittest discover -s tests -p "test_simple_nq_*.py" -v
-      - name: Download adjusted QQQ daily history
-        run: python download_qqq_history.py --start 2010-01-01 --output data/QQQ_daily_adjusted.csv
+      - name: Download split-adjusted QQQ execution OHLC and actions
+        run: python download_qqq_history.py --start 2010-01-01 --output data/QQQ_daily_execution.csv
       - name: Run $10,000 historical backtest
         run: python simple_nq_backtest.py --csv data/QQQ_daily_adjusted.csv --capital 10000 --commission-bps 1 --slippage-bps 5 --output-dir output
       - name: Display backtest summary
         run: cat output/simple_nq_backtest_summary.json
       - uses: actions/upload-artifact@v4
         with:
-          name: simple-nq-qqq-backtest
+          name: simple-nq-qqq-corporate-action-backtest
           path: |
             output/simple_nq_backtest_summary.json
             output/simple_nq_backtest_trades.csv
