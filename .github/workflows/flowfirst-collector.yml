@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: flowfirst-collector
+  group: flowfirst-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
