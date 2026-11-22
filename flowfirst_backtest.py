@@ -125,7 +125,7 @@ def metrics(trades: list[dict], equity_curve: list[float]) -> dict:
 
 def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
                 flow_rows: list[dict], oi_rows: list[dict], variant: str) -> dict:
-    if len(bars) < 80 or len(hourly) < 55:
+    if len(bars) < 80 or (variant != "flow_only" and len(hourly) < 55):
         return {"status": "INSUFFICIENT_DATA", "bars_15m": len(bars), "bars_1h": len(hourly)}
     flow_by_ts = {int(x["timestamp"]): x for x in flow_rows}
     oi_by_ts = {int(x["timestamp"]): x for x in oi_rows}
@@ -138,12 +138,12 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         bar = bars[i]
         ts = int(bar["timestamp"])
         # Only hourly bars fully closed by this 15m signal bar are visible.
-        hrows = [x for close_time, x in hourly_close if close_time <= int(bar.get("close_time", ts+899999))]
-        if len(hrows) < 55:
+        hrows = [x for close_time, x in hourly_close if close_time <= int(bar.get("close_time", ts+899999))] if variant != "flow_only" else []
+        if variant != "flow_only" and len(hrows) < 55:
             i += 1
             continue
-        t15 = trend(bars[:i+1])
-        t1h = trend(hrows)
+        t15 = trend(bars[:i+1]) if variant != "flow_only" else "unknown"
+        t1h = trend(hrows) if variant != "flow_only" else "unknown"
         flow_hist = [x for x in flow_rows if int(x["timestamp"]) <= ts]
         f = flow_direction(flow_hist)
         oi_hist = [x for x in oi_rows if int(x["timestamp"]) <= ts]
