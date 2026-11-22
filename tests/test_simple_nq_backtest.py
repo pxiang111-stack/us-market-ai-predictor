@@ -7,6 +7,8 @@ from pathlib import Path
 
 from simple_nq_backtest import (
     _trade_exit,
+    _trade_exit_with_actions,
+    run_buy_hold,
     load_bars,
     run_strategy,
     run_backtest,
@@ -23,6 +25,38 @@ class BacktestExecutionTests(unittest.TestCase):
         self.assertEqual(idx, 1)
         self.assertEqual(price, 94)
         self.assertEqual(reason, "GAP_STOP")
+
+    def test_split_adjusts_shares_and_orders_and_dividends_credit(self):
+        bars = [
+            {"date": "2026-01-01", "open": 50, "high": 52, "low": 49, "close": 51,
+             "volume": 1, "dividends": 9.0, "stock_splits": 0.0},
+            {"date": "2026-01-02", "open": 25, "high": 26, "low": 24, "close": 25,
+             "volume": 1, "dividends": 1.0, "stock_splits": 2.0},
+            {"date": "2026-01-05", "open": 25, "high": 31, "low": 24, "close": 30,
+             "volume": 1, "dividends": 0.5, "stock_splits": 0.0},
+        ]
+        idx, price, reason, shares, dividends, _ = _trade_exit_with_actions(
+            bars, 0, stop=45, target=60, slippage_bps=0, initial_shares=10
+        )
+        self.assertEqual(idx, 2)
+        self.assertEqual(price, 30)
+        self.assertEqual(reason, "TARGET")
+        self.assertEqual(shares, 20)
+        # Entry-day distribution is excluded; ex-date distributions use post-split shares.
+        self.assertEqual(dividends, 30)
+
+    def test_buy_and_hold_credits_dividends(self):
+        bars = [
+            {"date": "2026-01-01", "open": 100, "high": 101, "low": 99, "close": 100,
+             "volume": 1, "dividends": 5.0, "stock_splits": 0.0},
+            {"date": "2026-01-02", "open": 100, "high": 101, "low": 99, "close": 100,
+             "volume": 1, "dividends": 1.0, "stock_splits": 0.0},
+            {"date": "2026-01-05", "open": 100, "high": 101, "low": 99, "close": 100,
+             "volume": 1, "dividends": 1.0, "stock_splits": 0.0},
+        ]
+        result = run_buy_hold(bars, 1000, commission_bps=0, slippage_bps=0)
+        # 10 shares bought at first open; first-day dividend is not earned.
+        self.assertEqual(result["final_equity"], 1020.0)
 
     def test_same_day_stop_and_target_assumes_stop_first(self):
         bars = [
