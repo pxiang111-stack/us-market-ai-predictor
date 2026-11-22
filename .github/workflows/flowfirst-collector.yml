@@ -52,6 +52,9 @@ jobs:
       - name: Run FlowFirst strategy comparison backtest
         run: python flowfirst_backtest.py
 
+      - name: Generate flow-quality diagnostics
+        run: python flowfirst_quality.py
+
       - name: Commit newly collected data and signal report
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -77,4 +80,6 @@ jobs:
             reports/flowfirst_backtest.md
             reports/flowfirst_data_coverage.json
             reports/flowfirst_data_coverage.md
+            reports/flowfirst_quality.json
+            reports/flowfirst_quality.md
           if-no-files-found: ignore
