@@ -1,6 +1,6 @@
 import unittest
 
-from flowfirst_backtest import flow_direction, oi_expanding, trend
+from flowfirst_backtest import crowding_state, flow_direction, oi_expanding, trend
 
 
 def flow_row(ratio):
@@ -41,6 +41,30 @@ class FlowFirstUnitTests(unittest.TestCase):
     def test_trend_needs_sufficient_history(self):
         rows = [{"close": str(100 + i)} for i in range(30)]
         self.assertEqual(trend(rows), "unknown")
+
+    def test_crowding_filter_flags_abnormal_long_concentration(self):
+        rows = []
+        for i in range(48):
+            long_share = 0.69 if i % 2 else 0.71
+            rows.append({"timestamp": i, "longAccount": str(long_share),
+                         "shortAccount": str(1-long_share)})
+        rows.append({"timestamp": 48, "longAccount": "0.85", "shortAccount": "0.15"})
+        result = crowding_state(rows)
+        self.assertIsNotNone(result)
+        self.assertTrue(result["crowded_long"])
+        self.assertFalse(result["crowded_short"])
+
+    def test_crowding_filter_does_not_flag_normal_high_baseline(self):
+        rows = []
+        for i in range(48):
+            long_share = 0.84 if i % 2 else 0.86
+            rows.append({"timestamp": i, "longAccount": str(long_share),
+                         "shortAccount": str(1-long_share)})
+        rows.append({"timestamp": 48, "longAccount": "0.85", "shortAccount": "0.15"})
+        result = crowding_state(rows)
+        self.assertIsNotNone(result)
+        self.assertFalse(result["crowded_long"])
+        self.assertFalse(result["crowded_short"])
 
 
 if __name__ == "__main__":
