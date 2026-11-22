@@ -116,9 +116,9 @@ def crowding_state(rows: list[dict]) -> dict | None:
     }
 
 
-def holding_window_end(signal_index: int, total_bars: int) -> int:
-    """Last eligible bar index for a trade entered on signal_index + 1."""
-    return min(total_bars - 1, signal_index + MAX_HOLD_BARS)
+def holding_window_end(signal_index: int, total_bars: int, max_hold_bars: int = MAX_HOLD_BARS) -> int:
+    """Last eligible bar index; entry bar is counted as held bar 1."""
+    return min(total_bars - 1, signal_index + max_hold_bars)
 
 
 def oi_expanding(rows: list[dict]) -> bool:
@@ -129,7 +129,8 @@ def oi_expanding(rows: list[dict]) -> bool:
     return old > 0 and (new / old - 1.0) >= 0.001
 
 
-def metrics(trades: list[dict], equity_curve: list[float], cost_per_side: float = COST_PER_SIDE) -> dict:
+def metrics(trades: list[dict], equity_curve: list[float], cost_per_side: float = COST_PER_SIDE,
+                max_hold_bars: int = MAX_HOLD_BARS) -> dict:
     pnl = [x["net_pnl"] for x in trades]
     wins = [x for x in pnl if x > 0]
     losses = [x for x in pnl if x < 0]
@@ -235,7 +236,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         stop = entry-direction*stop_dist
         target = entry+direction*TARGET_ATR*a
         exit_price, exit_index, exit_reason = None, None, "time"
-        last_j = holding_window_end(i, len(bars))
+        last_j = holding_window_end(i, len(bars), max_hold_bars)
         if trade_end_ts is not None:
             while last_j > i+1 and int(bars[last_j]["timestamp"]) >= trade_end_ts:
                 last_j -= 1
@@ -302,14 +303,14 @@ def main() -> None:
         "model": "FlowFirst v0.1 backtest",
         "assumptions": {
             "entry": "next 15m bar open after signal bar close",
-            "exit": "1.5 ATR stop, 3 ATR target, or 16 completed 15m bars maximum (entry bar counts as bar 1)",
+            "exit": "1.5 ATR stop, 3 ATR target, or configured maximum completed 15m bars (entry bar counts as bar 1)",
             "same_bar_stop_target": "stop assumed first (conservative)",
             "risk_per_trade": "0.5% current equity",
             "gross_exposure_cap": "1.0x equity, no leverage",
             "costs": f"{COST_PER_SIDE*10000:.1f} bps per side (fee + slippage assumption)",
             "oi_filter": "4-interval OI value expansion >= 0.1%; participation filter only, not direction",
             "crowding_filter": "Block same-direction entry when long/short account share >= 80% and >= 1 standard deviation above its prior 48-bar mean",
-            "limitations": "Binance TradFi venue data only; short sample and no validated win probability. MAE/MFE use full OHLC extremes of each held bar, whose intrabar sequence is unknown. Cost sensitivity reruns each OOS segment at 7/10/15/20 bps per side; fees and slippage remain assumptions."
+            "limitations": "Binance TradFi venue data only; short sample and no validated win probability. MAE/MFE use full OHLC extremes of each held bar, whose intrabar sequence is unknown. Cost and holding-period sensitivity are research diagnostics; fees and slippage remain assumptions."
         },
         "results": []
     }
@@ -338,13 +339,25 @@ def main() -> None:
                         "cost_per_side_bps": bps,
                         "out_of_sample": sensitivity
                     })
+                holding_sensitivity = []
+                for hold_bars in (8, 12, 16):
+                    horizon_result = run_variant(
+                        symbol, bars, hourly, flow_rows, oi_rows, longshort_rows,
+                        variant, trade_start_ts=split_ts,
+                        cost_per_side=COST_PER_SIDE, max_hold_bars=hold_bars
+                    )
+                    holding_sensitivity.append({
+                        "max_hold_bars": hold_bars,
+                        "out_of_sample": horizon_result
+                    })
                 full["time_split"] = {
                     "train_fraction": 0.70,
                     "test_fraction": 0.30,
                     "split_timestamp": split_ts,
                     "train": train,
                     "out_of_sample_test": test,
-                    "oos_cost_sensitivity": cost_sensitivity
+                    "oos_cost_sensitivity": cost_sensitivity,
+                    "oos_holding_period_sensitivity": holding_sensitivity
                 }
             else:
                 full["time_split"] = {"status": "INSUFFICIENT_DATA",
