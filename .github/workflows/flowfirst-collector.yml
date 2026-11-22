@@ -41,15 +41,12 @@ jobs:
         run: python flowfirst_collector.py
 
       - name: Validate accumulated raw data
-        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_validate.py
 
       - name: Generate FlowFirst research signals
-        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_signal.py
 
       - name: Run FlowFirst strategy comparison backtest
-        if: github.event_name == 'workflow_dispatch'
         run: python flowfirst_backtest.py
 
       - name: Commit newly collected data and signal report
@@ -65,6 +62,14 @@ jobs:
             git push
           fi
 
-      - name: Explain PR data-ingestion skip
-        if: github.event_name == 'pull_request'
-        run: echo "PR checks run syntax and unit tests only; Binance data ingestion is a manual dispatch because the current hosted runner receives HTTP 451 from Binance."
+      - name: Upload FlowFirst research reports
+        if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowfirst-research-reports
+          path: |
+            reports/flowfirst_latest.json
+            reports/flowfirst_latest.md
+            reports/flowfirst_backtest.json
+            reports/flowfirst_backtest.md
+          if-no-files-found: ignore
