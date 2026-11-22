@@ -1,0 +1,29 @@
+name: Simple NQ Trader V1 tests
+
+on:
+  pull_request:
+    paths:
+      - "simple_nq_*.py"
+      - "tests/test_simple_nq_*.py"
+      - ".github/workflows/simple_nq_tests.yml"
+  push:
+    branches:
+      - "simple-nq-trader-v1"
+    paths:
+      - "simple_nq_*.py"
+      - "tests/test_simple_nq_*.py"
+      - ".github/workflows/simple_nq_tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run focused V1 tests
+        run: python -m unittest discover -s tests -p "test_simple_nq_*.py" -v
