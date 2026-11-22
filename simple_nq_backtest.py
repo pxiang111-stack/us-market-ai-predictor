@@ -283,7 +283,7 @@ def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
     fee_out = _commission(shares * exit_price, commission_bps)
     final = cash + shares * exit_price - fee_out
     curve[-1] = final
-    return _metrics("BUY_AND_HOLD_TOTAL_RETURN", initial_equity, curve, [{
+    return _metrics("BUY_AND_HOLD_DIVIDENDS_CASH", initial_equity, curve, [{
         "net_pnl": final - initial_equity
     }], 1.0)
 
@@ -336,7 +336,7 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
         trades.append({"net_pnl": proceeds - entry_cost})
         shares = 0.0
         curve[-1] = cash
-    return _metrics("SMA50_200_LONG_FLAT_TOTAL_RETURN", initial_equity, curve, trades,
+    return _metrics("SMA50_200_LONG_FLAT_DIVIDENDS_CASH", initial_equity, curve, trades,
                     invested_days / max(1, len(bars) - start_index))
 
 
