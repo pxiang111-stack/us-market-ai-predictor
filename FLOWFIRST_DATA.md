@@ -101,3 +101,11 @@ The first GitHub-hosted collection attempt compiled successfully but Binance ret
 
 Do not treat this one-time seed as an ongoing real-time feed. It is an initial sample for validating the analysis pipeline. Ongoing data refresh requires a Binance-permitted execution environment; do not use proxies or routing to bypass regional restrictions.
 
+## Chronological holdout and excursion diagnostics
+
+The backtest now adds a 70% chronological training-window / 30% later holdout split for each symbol and strategy. The holdout uses the same fixed rules and parameters; no tuning is performed on the holdout. The full-period result remains for comparison, but the holdout result is the more relevant early robustness check.
+
+Each trade also records maximum adverse excursion (MAE) and maximum favorable excursion (MFE), expressed in R units. These diagnostics help determine whether stops are too tight or targets are unrealistic.
+
+This is still only a short initial sample (the seed snapshot is approximately five days of 15m flow/price history). A 30% holdout of such a short sample is not statistically sufficient to establish a durable edge. Continue accumulating permitted data before making deployment decisions.
+
