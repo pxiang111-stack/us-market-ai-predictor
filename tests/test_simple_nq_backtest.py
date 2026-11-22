@@ -96,11 +96,11 @@ class BacktestExecutionTests(unittest.TestCase):
             output_dir = Path(tmp) / "out"
             with csv_path.open("w", newline="", encoding="utf-8") as handle:
                 writer = csv.writer(handle)
-                writer.writerow(["date", "open", "high", "low", "close", "volume"])
+                writer.writerow(["date", "open", "high", "low", "close", "volume", "dividends", "stock_splits"])
                 for i in range(270):
                     close = 100 + i * 0.1
                     writer.writerow([(date(2025, 1, 1) + timedelta(days=i)).isoformat(),
-                                     close, close + 1, close - 1, close, 1000])
+                                     close, close + 1, close - 1, close, 1000, 0, 0])
             result = run_backtest(csv_path, output_dir=output_dir)
             self.assertEqual(result["bars"], 270)
             self.assertEqual(result["holdout"]["bars"], 54)
