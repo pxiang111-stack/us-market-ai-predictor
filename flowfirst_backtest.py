@@ -119,12 +119,16 @@ def metrics(trades: list[dict], equity_curve: list[float]) -> dict:
         "expectancy_usd_per_trade": round(sum(pnl)/len(pnl), 2) if pnl else None,
         "max_drawdown_pct": round(max_dd*100, 2),
         "avg_r_multiple": round(sum(x["r_multiple"] for x in trades)/len(trades), 3) if trades else None,
+        "avg_mae_r": round(sum(x["mae_r"] for x in trades)/len(trades), 3) if trades else None,
+        "avg_mfe_r": round(sum(x["mfe_r"] for x in trades)/len(trades), 3) if trades else None,
         "cost_per_side_bps": round(COST_PER_SIDE*10000, 1),
     }
 
 
 def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
-                flow_rows: list[dict], oi_rows: list[dict], variant: str) -> dict:
+                flow_rows: list[dict], oi_rows: list[dict], variant: str,
+                trade_start_ts: int | None = None,
+                trade_end_ts: int | None = None) -> dict:
     if len(bars) < 80 or (variant != "flow_only" and len(hourly) < 55):
         return {"status": "INSUFFICIENT_DATA", "bars_15m": len(bars), "bars_1h": len(hourly)}
     flow_by_ts = {int(x["timestamp"]): x for x in flow_rows}
@@ -137,6 +141,11 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
     while i < len(bars)-1:
         bar = bars[i]
         ts = int(bar["timestamp"])
+        if trade_start_ts is not None and ts < trade_start_ts:
+            i += 1
+            continue
+        if trade_end_ts is not None and ts >= trade_end_ts:
+            break
         # Only hourly bars fully closed by this 15m signal bar are visible.
         hrows = [x for close_time, x in hourly_close if close_time <= int(bar.get("close_time", ts+899999))] if variant != "flow_only" else []
         if variant != "flow_only" and len(hrows) < 55:
@@ -171,6 +180,8 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
             continue
 
         entry_bar = bars[i+1]
+        if trade_end_ts is not None and int(entry_bar["timestamp"]) >= trade_end_ts:
+            break
         entry = float(entry_bar["open"])
         stop_dist = STOP_ATR*a
         risk_budget = equity*RISK_FRACTION
@@ -182,11 +193,19 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         target = entry+direction*TARGET_ATR*a
         exit_price, exit_index, exit_reason = None, None, "time"
         last_j = min(len(bars)-1, i+1+MAX_HOLD_BARS)
+        if trade_end_ts is not None:
+            while last_j > i+1 and int(bars[last_j]["timestamp"]) >= trade_end_ts:
+                last_j -= 1
+        max_adverse, max_favorable = 0.0, 0.0
         for j in range(i+1, last_j+1):
             high, low = float(bars[j]["high"]), float(bars[j]["low"])
             if direction == 1:
+                max_adverse = max(max_adverse, entry-low)
+                max_favorable = max(max_favorable, high-entry)
                 stop_hit, target_hit = low <= stop, high >= target
             else:
+                max_adverse = max(max_adverse, high-entry)
+                max_favorable = max(max_favorable, entry-low)
                 stop_hit, target_hit = high >= stop, low <= target
             # Conservative tie-break: if both levels trade in one bar, assume stop first.
             if stop_hit:
@@ -208,6 +227,8 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
             "direction": direction, "entry": round(entry, 5), "exit": round(exit_price, 5),
             "exit_reason": exit_reason, "qty": round(qty, 6), "net_pnl": round(net, 2),
             "r_multiple": round(net/risk_dollars, 3) if risk_dollars else 0.0,
+            "mae_r": round(max(0.0, max_adverse)/stop_dist, 3),
+            "mfe_r": round(max(0.0, max_favorable)/stop_dist, 3),
         })
         curve.append(equity)
         i = exit_index
@@ -215,8 +236,12 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
     result.update({"status": "OK", "symbol": symbol, "variant": variant,
                    "start_cash_usd": START_CASH, "end_equity_usd": round(equity, 2),
                    "max_gross_exposure": "1.0x"})
-    if len(bars) >= 2:
-        buy_hold = START_CASH*(float(bars[-1]["close"])/float(bars[0]["open"])-1.0)
+    start_index = next((n for n, b in enumerate(bars)
+                        if trade_start_ts is None or int(b["timestamp"]) >= trade_start_ts), 0)
+    end_index = next((n for n, b in enumerate(bars)
+                      if trade_end_ts is not None and int(b["timestamp"]) >= trade_end_ts), len(bars))
+    if end_index - start_index >= 2:
+        buy_hold = START_CASH*(float(bars[end_index-1]["close"])/float(bars[start_index]["open"])-1.0)
         result["buy_hold_pnl_usd"] = round(buy_hold, 2)
         result["buy_hold_return_pct"] = round(100*buy_hold/START_CASH, 2)
     return result
@@ -243,10 +268,30 @@ def main() -> None:
         "results": []
     }
     for symbol in UNIVERSE:
+        bars = k15.get(symbol, [])
+        hourly = k1h.get(symbol, [])
+        flow_rows = flows.get(symbol, [])
+        oi_rows = oi.get(symbol, [])
+        split_index = int(len(bars) * 0.70)
+        split_ts = int(bars[split_index]["timestamp"]) if len(bars) > 120 else None
         for variant in ("price_only", "flow_only", "combo", "combo_oi"):
-            report["results"].append(run_variant(
-                symbol, k15.get(symbol, []), k1h.get(symbol, []),
-                flows.get(symbol, []), oi.get(symbol, []), variant))
+            full = run_variant(symbol, bars, hourly, flow_rows, oi_rows, variant)
+            if split_ts is not None:
+                train = run_variant(symbol, bars, hourly, flow_rows, oi_rows,
+                                    variant, trade_end_ts=split_ts)
+                test = run_variant(symbol, bars, hourly, flow_rows, oi_rows,
+                                   variant, trade_start_ts=split_ts)
+                full["time_split"] = {
+                    "train_fraction": 0.70,
+                    "test_fraction": 0.30,
+                    "split_timestamp": split_ts,
+                    "train": train,
+                    "out_of_sample_test": test
+                }
+            else:
+                full["time_split"] = {"status": "INSUFFICIENT_DATA",
+                                      "reason": "Need at least 120 completed 15m bars"}
+            report["results"].append(full)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "flowfirst_backtest.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")
     lines = ["# FlowFirst v0.1 backtest", "", f"Generated UTC: {report['generated_at_utc']}", "",
