@@ -1,9 +1,9 @@
-"""Daily, cash-only QQQ backtest for Simple NQ Trader V1.
+"""Daily, cash-only QQQ backtest with split-adjusted OHLC and explicit actions.
 
-Input CSV must contain date, open, high, low, close, volume. OHLC prices must be
-consistently split/dividend-adjusted (or consistently raw); do not mix bases.
-Signals are evaluated after a completed close and orders execute no earlier than
-the following session's open. This is a research simulator, not brokerage execution.
+Execution OHLC is split-adjusted but dividend-unadjusted. Dividends are credited
+as cash to positions held through the prior close; split events adjust share counts
+and price-based orders. Signals use completed closes and execute next session.
+This is a research simulator, not brokerage execution.
 """
 from __future__ import annotations
 
@@ -35,6 +35,14 @@ def load_bars(path: str | Path) -> list[dict[str, Any]]:
             bar = {"date": row["date"]}
             for key in ("open", "high", "low", "close", "volume"):
                 bar[key] = float(row[key])
+                if not math.isfinite(bar[key]):
+                    raise ValueError(f"Non-finite {key} on {bar['date']}")
+            bar["dividends"] = float(row.get("dividends") or 0.0)
+            bar["stock_splits"] = float(row.get("stock_splits") or 0.0)
+            if not math.isfinite(bar["dividends"]) or not math.isfinite(bar["stock_splits"]):
+                raise ValueError(f"Non-finite corporate action on {bar['date']}")
+            if bar["dividends"] < 0 or bar["stock_splits"] < 0:
+                raise ValueError(f"Negative corporate action on {bar['date']}")
             if min(bar["open"], bar["high"], bar["low"], bar["close"]) <= 0:
                 raise ValueError(f"Non-positive OHLC value on {bar['date']}")
             if bar["high"] < max(bar["open"], bar["close"], bar["low"]):
@@ -124,6 +132,43 @@ def _trade_exit(bars: list[dict[str, Any]], start: int, stop: float, target: flo
     return len(bars) - 1, _slipped(last["close"], "sell", slippage_bps), "END_OF_DATA"
 
 
+def _trade_exit_with_actions(
+    bars: list[dict[str, Any]], start: int, stop: float, target: float,
+    slippage_bps: float, initial_shares: float,
+) -> tuple[int, float, str, float, float, list[tuple[int, float, float]]]:
+    """Exit a long trade while applying split and dividend events at session open.
+
+    A position entered at this session's open is not entitled to this session's
+    dividend. Positions carried from the prior close are entitled on ex-date.
+    """
+    shares = float(initial_shares)
+    dividend_cash = 0.0
+    marks: list[tuple[int, float, float]] = []
+    for j in range(start, len(bars)):
+        bar = bars[j]
+        if j > start:
+            split = float(bar.get("stock_splits", 0.0))
+            if split > 0:
+                shares *= split
+                stop /= split
+                target /= split
+            dividend_cash += shares * float(bar.get("dividends", 0.0))
+        marks.append((j, shares, dividend_cash))
+        if bar["open"] <= stop:
+            return j, _slipped(bar["open"], "sell", slippage_bps), "GAP_STOP", shares, dividend_cash, marks
+        if bar["open"] >= target:
+            return j, _slipped(target, "sell", slippage_bps), "TARGET_GAP", shares, dividend_cash, marks
+        hit_stop = bar["low"] <= stop
+        hit_target = bar["high"] >= target
+        if hit_stop:
+            reason = "STOP" if not hit_target else "STOP_FIRST_AMBIGUOUS"
+            return j, _slipped(stop, "sell", slippage_bps), reason, shares, dividend_cash, marks
+        if hit_target:
+            return j, _slipped(target, "sell", slippage_bps), "TARGET", shares, dividend_cash, marks
+    last = bars[-1]
+    return len(bars) - 1, _slipped(last["close"], "sell", slippage_bps), "END_OF_DATA", shares, dividend_cash, marks
+
+
 def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
                  commission_bps: float = DEFAULT_COMMISSION_BPS,
                  slippage_bps: float = DEFAULT_SLIPPAGE_BPS,
@@ -171,22 +216,22 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
             i += 1
             continue
 
-        # Signal is known at today's close; entry is next session's open.
         curve.append(cash)
         buy_notional = shares * entry
         buy_fee = _commission(buy_notional, commission_bps)
         cash_after_buy = cash - buy_notional - buy_fee
-        exit_i, exit_price, reason = _trade_exit(
-            bars, i + 1, stop, target, slippage_bps
+        exit_i, exit_price, reason, exit_shares, dividend_cash, marks = _trade_exit_with_actions(
+            bars, i + 1, stop, target, slippage_bps, shares
         )
-        sell_notional = shares * exit_price
+        sell_notional = exit_shares * exit_price
         sell_fee = _commission(sell_notional, commission_bps)
-        cash = cash_after_buy + sell_notional - sell_fee
-        net_pnl = sell_notional - sell_fee - buy_notional - buy_fee
+        cash = cash_after_buy + dividend_cash + sell_notional - sell_fee
+        net_pnl = sell_notional - sell_fee - buy_notional - buy_fee + dividend_cash
 
-        # Mark open risk daily, then record realized equity on the exit date.
+        mark_by_index = {idx: (qty, divs) for idx, qty, divs in marks}
         for mark_i in range(i + 1, exit_i):
-            curve.append(cash_after_buy + shares * float(bars[mark_i]["close"]))
+            qty, divs = mark_by_index[mark_i]
+            curve.append(cash_after_buy + divs + qty * float(bars[mark_i]["close"]))
         curve.append(cash)
         invested_days += exit_i - i
         trades.append({
@@ -194,11 +239,13 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
             "entry_date": next_bar["date"],
             "exit_date": bars[exit_i]["date"],
             "shares": shares,
+            "shares_at_exit": round(exit_shares, 6),
             "entry_price": round(entry, 4),
             "stop": round(stop, 4),
             "target": round(float(target), 4),
             "exit_price": round(exit_price, 4),
             "exit_reason": reason,
+            "dividend_cash": round(dividend_cash, 4),
             "commission_total": round(buy_fee + sell_fee, 4),
             "net_pnl": round(net_pnl, 4),
             "net_return_pct": round(net_pnl / (buy_notional + buy_fee) * 100, 3),
@@ -210,7 +257,7 @@ def run_strategy(bars: list[dict[str, Any]], initial_equity: float = 10_000.0,
         curve.append(cash)
     curve = curve[:expected_length]
     exposure = invested_days / max(1, len(bars) - start_index)
-    return _metrics("SUPPORT_BOUNCE_V1", initial_equity, curve, trades, exposure), trades, curve
+    return _metrics("SUPPORT_BOUNCE_V1_CORPORATE_ACTIONS", initial_equity, curve, trades, exposure), trades, curve
 
 def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
                  commission_bps: float, slippage_bps: float,
@@ -220,18 +267,23 @@ def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
         raise ValueError("Buy-and-hold period must contain at least two bars")
     first = period_bars[0]
     entry = _slipped(first["open"], "buy", slippage_bps)
-    shares = int(initial_equity // (entry * (1 + commission_bps / 10_000)))
+    shares = float(int(initial_equity // (entry * (1 + commission_bps / 10_000))))
     fee_in = _commission(shares * entry, commission_bps)
+    cash = initial_equity - shares * entry - fee_in
+    curve = [initial_equity]
+    for k in range(1, len(period_bars)):
+        bar = period_bars[k]
+        split = float(bar.get("stock_splits", 0.0))
+        if split > 0:
+            shares *= split
+        cash += shares * float(bar.get("dividends", 0.0))
+        curve.append(cash + shares * bar["close"])
     last = period_bars[-1]
     exit_price = _slipped(last["close"], "sell", slippage_bps)
     fee_out = _commission(shares * exit_price, commission_bps)
-    final = initial_equity - shares * entry - fee_in + shares * exit_price - fee_out
-    curve = [initial_equity]
-    for k in range(1, len(period_bars)):
-        marked = initial_equity - shares * entry - fee_in + shares * period_bars[k]["close"]
-        curve.append(marked)
+    final = cash + shares * exit_price - fee_out
     curve[-1] = final
-    return _metrics("BUY_AND_HOLD", initial_equity, curve, [{
+    return _metrics("BUY_AND_HOLD_TOTAL_RETURN", initial_equity, curve, [{
         "net_pnl": final - initial_equity
     }], 1.0)
 
@@ -239,11 +291,18 @@ def run_buy_hold(bars: list[dict[str, Any]], initial_equity: float,
 def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
                      commission_bps: float, slippage_bps: float,
                      start_index: int = 0) -> dict[str, Any]:
-    cash, shares = initial_equity, 0
+    cash, shares = initial_equity, 0.0
     curve, trades = [], []
     entry_cost = 0.0
     invested_days = 0
     for i, bar in enumerate(bars):
+        # Corporate actions occur at the session open; only prior-close holdings
+        # receive the ex-date dividend.
+        if shares:
+            split = float(bar.get("stock_splits", 0.0))
+            if split > 0:
+                shares *= split
+            cash += shares * float(bar.get("dividends", 0.0))
         if i >= max(200, start_index):
             closes = [x["close"] for x in bars[:i]]
             sma50 = sum(closes[-50:]) / 50
@@ -256,14 +315,14 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
                     fee = _commission(qty * price, commission_bps)
                     entry_cost = qty * price + fee
                     cash -= entry_cost
-                    shares = qty
+                    shares = float(qty)
             elif not want_long and shares:
                 price = _slipped(bar["open"], "sell", slippage_bps)
                 fee = _commission(shares * price, commission_bps)
                 proceeds = shares * price - fee
                 cash += proceeds
                 trades.append({"net_pnl": proceeds - entry_cost})
-                shares = 0
+                shares = 0.0
                 entry_cost = 0.0
         if i >= start_index:
             if shares:
@@ -275,9 +334,9 @@ def run_sma_baseline(bars: list[dict[str, Any]], initial_equity: float,
         proceeds = shares * price - fee
         cash += proceeds
         trades.append({"net_pnl": proceeds - entry_cost})
-        shares = 0
+        shares = 0.0
         curve[-1] = cash
-    return _metrics("SMA50_200_LONG_FLAT", initial_equity, curve, trades,
+    return _metrics("SMA50_200_LONG_FLAT_TOTAL_RETURN", initial_equity, curve, trades,
                     invested_days / max(1, len(bars) - start_index))
 
 
@@ -315,7 +374,7 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
         [initial_equity] * (len(bars) - split), [], 0.0,
     )
     summary = {
-        "data_source": "Yahoo Finance via yfinance; auto_adjust=True",
+        "data_source": "Yahoo Finance via yfinance; auto_adjust=False; split-adjusted OHLC plus separate corporate actions",
         "data_file": str(csv_path),
         "first_date": bars[0]["date"],
         "last_date": bars[-1]["date"],
@@ -323,7 +382,7 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
         "initial_equity": initial_equity,
         "commission_bps_each_side": commission_bps,
         "slippage_bps_each_side": slippage_bps,
-        "price_basis": "Adjusted OHLC from yfinance auto_adjust=True",
+        "price_basis": "Split-adjusted, dividend-unadjusted OHLC; dividends credited as cash; splits adjust held share counts and price orders",
         "full_sample_strategies": [strategy, buy_hold, sma, cash],
         "holdout": {
             "start_date": bars[split]["date"],
@@ -338,7 +397,7 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
             "Final 20% is a single frozen holdout, not repeated walk-forward validation.",
             "Daily OHLC cannot reveal intraday ordering; same-day stop and target hits assume stop first.",
             "Historical Yahoo Finance data may be revised; preserve the downloaded CSV with this report.",
-            "Adjusted historical prices are not literal executable historical quotes; corporate-action treatment needs independent review.",
+            "Yahoo historical OHLC is split-adjusted and dividend-unadjusted; corporate actions are handled as cash dividends and split share/order adjustments. Provider data can be revised.",
         ],
         "note": "Full-sample results are diagnostic only. Holdout rules are unchanged and use fresh capital, but a single holdout does not guarantee future performance.",
     }
@@ -362,9 +421,9 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run the Simple NQ / QQQ V1 daily backtest"
+        description="Run the Simple NQ / QQQ V1 daily backtest with corporate actions"
     )
-    parser.add_argument("--csv", required=True, help="Adjusted daily OHLCV CSV")
+    parser.add_argument("--csv", required=True, help="Split-adjusted, dividend-unadjusted daily OHLCV with dividends and stock_splits columns")
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--capital", type=float, default=10_000.0)
     parser.add_argument("--commission-bps", type=float, default=DEFAULT_COMMISSION_BPS)
