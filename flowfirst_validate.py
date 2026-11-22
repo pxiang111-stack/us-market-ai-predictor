@@ -10,6 +10,7 @@ ROOT = Path("data/flowfirst")
 REQUIRED = {
     "taker": {"symbol", "period", "timestamp", "buyVol", "sellVol"},
     "oi": {"symbol", "period", "timestamp", "sumOpenInterest", "sumOpenInterestValue"},
+    "longshort": {"symbol", "period", "timestamp", "longAccount", "shortAccount", "longShortRatio"},
     "klines": {"symbol", "period", "timestamp", "close_time", "open", "high", "low", "close"},
 }
 
