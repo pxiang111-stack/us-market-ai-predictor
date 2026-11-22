@@ -122,19 +122,11 @@ def analyze_symbol(symbol: str, k15: list[dict], k1h: list[dict],
     if any(ts not in flow_by_ts for ts in latest_bar_ts):
         result["reason"].append("最近4根已收盘价格K线缺少对应资金流数据，禁止生成方向信号")
         return result
-    aligned_flows = [flow_by_ts[ts] for ts in latest_bar_ts]
-    f = flow_stats(flows[:])
-    if not f["ready"]:
-        result["reason"].append(f["reason"])
-        return result
     # Use only flow observations no later than the latest completed price bar.
     eligible_flows = [x for x in flows if int(x["timestamp"]) <= latest_bar_ts[-1]]
     f = flow_stats(eligible_flows)
     if not f["ready"]:
         result["reason"].append(f["reason"])
-        return result
-    if len(aligned_flows) != 4:
-        result["reason"].append("资金流与价格K线对齐失败")
         return result
     volatility = atr(k15)
     if not volatility or volatility <= 0:
