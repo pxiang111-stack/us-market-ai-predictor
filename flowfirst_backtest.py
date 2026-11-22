@@ -116,6 +116,11 @@ def crowding_state(rows: list[dict]) -> dict | None:
     }
 
 
+def holding_window_end(signal_index: int, total_bars: int) -> int:
+    """Last eligible bar index for a trade entered on signal_index + 1."""
+    return min(total_bars - 1, signal_index + MAX_HOLD_BARS)
+
+
 def oi_expanding(rows: list[dict]) -> bool:
     if len(rows) < 5:
         return False
@@ -229,7 +234,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         stop = entry-direction*stop_dist
         target = entry+direction*TARGET_ATR*a
         exit_price, exit_index, exit_reason = None, None, "time"
-        last_j = min(len(bars)-1, i+1+MAX_HOLD_BARS)
+        last_j = holding_window_end(i, len(bars))
         if trade_end_ts is not None:
             while last_j > i+1 and int(bars[last_j]["timestamp"]) >= trade_end_ts:
                 last_j -= 1
@@ -262,7 +267,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         trades.append({
             "entry_ts": int(entry_bar["timestamp"]), "exit_ts": int(bars[exit_index]["timestamp"]),
             "direction": direction, "entry": round(entry, 5), "exit": round(exit_price, 5),
-            "exit_reason": exit_reason, "qty": round(qty, 6), "net_pnl": round(net, 2),
+            "exit_reason": exit_reason, "holding_bars": exit_index - i,\n            "qty": round(qty, 6), "net_pnl": round(net, 2),
             "r_multiple": round(net/risk_dollars, 3) if risk_dollars else 0.0,
             "mae_r": round(max(0.0, max_adverse)/stop_dist, 3),
             "mfe_r": round(max(0.0, max_favorable)/stop_dist, 3),
@@ -295,14 +300,14 @@ def main() -> None:
         "model": "FlowFirst v0.1 backtest",
         "assumptions": {
             "entry": "next 15m bar open after signal bar close",
-            "exit": "1.5 ATR stop, 3 ATR target, or 16-bar time exit",
+            "exit": "1.5 ATR stop, 3 ATR target, or 16 completed 15m bars maximum (entry bar counts as bar 1)",
             "same_bar_stop_target": "stop assumed first (conservative)",
             "risk_per_trade": "0.5% current equity",
             "gross_exposure_cap": "1.0x equity, no leverage",
             "costs": f"{COST_PER_SIDE*10000:.1f} bps per side (fee + slippage assumption)",
             "oi_filter": "4-interval OI value expansion >= 0.1%; participation filter only, not direction",
             "crowding_filter": "Block same-direction entry when long/short account share >= 80% and >= 1 standard deviation above its prior 48-bar mean",
-            "limitations": "Binance TradFi venue data only; short sample and no validated win probability"
+            "limitations": "Binance TradFi venue data only; short sample and no validated win probability. MAE/MFE use full OHLC extremes of each held bar, whose intrabar sequence is unknown."
         },
         "results": []
     }
