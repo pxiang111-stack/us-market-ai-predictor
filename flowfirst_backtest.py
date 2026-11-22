@@ -295,16 +295,20 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "flowfirst_backtest.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")
     lines = ["# FlowFirst v0.1 backtest", "", f"Generated UTC: {report['generated_at_utc']}", "",
-             "| Symbol | Variant | Trades | Win rate | Net P&L | Return | Max DD | Profit factor | Buy & hold | Status |",
-             "|---|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+             "| Symbol | Variant | Trades | Win rate | Net P&L | Return | Max DD | OOS trades | OOS return | OOS max DD | Profit factor | Buy & hold | Status |",
+             "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     for x in report["results"]:
         if x.get("status") != "OK":
-            lines.append(f"| {x.get('symbol','-')} | {x.get('variant','-')} | - | - | - | - | - | - | - | {x.get('status')} |")
+            lines.append(f"| {x.get('symbol','-')} | {x.get('variant','-')} | - | - | - | - | - | - | - | - | - | - | {x.get('status')} |")
         else:
+            oos = x.get("time_split", {}).get("out_of_sample_test", {})
             lines.append("| " + " | ".join([
                 x["symbol"], x["variant"], str(x["trades"]),
                 str(x["win_rate_pct"]), f"${x['net_pnl_usd']:.2f}",
                 f"{x['return_pct']:.2f}%", f"{x['max_drawdown_pct']:.2f}%",
+                str(oos.get("trades", "-")),
+                f"{oos['return_pct']:.2f}%" if oos.get("return_pct") is not None else "-",
+                f"{oos['max_drawdown_pct']:.2f}%" if oos.get("max_drawdown_pct") is not None else "-",
                 str(x["profit_factor"]), f"${x.get('buy_hold_pnl_usd', 0):.2f}", x["status"]
             ]) + " |")
     lines += ["", "## Assumptions"] + [f"- **{k}:** {v}" for k,v in report["assumptions"].items()]
