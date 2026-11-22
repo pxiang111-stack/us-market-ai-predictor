@@ -37,6 +37,9 @@ jobs:
       - name: Compile FlowFirst modules
         run: python -m py_compile flowfirst_collector.py flowfirst_validate.py flowfirst_signal.py flowfirst_backtest.py
 
+      - name: Run FlowFirst unit tests
+        run: python -m unittest discover -s tests -v
+
       - name: Collect Binance TradFi market data
         run: python flowfirst_collector.py
 
