@@ -12,6 +12,33 @@ def flow_row(ratio):
 
 
 class FlowFirstUnitTests(unittest.TestCase):
+    def test_quality_flags_single_bar_dominated_flow(self):
+        prices, flows, oi = [], [], []
+        for i in range(8):
+            prices.append({"timestamp": i, "open": "100", "close": "100.1"})
+            ratio = 0.60 if i == 7 else 0.01
+            flows.append({"timestamp": i, "buyVol": str(1+ratio),
+                          "sellVol": str(1-ratio)})
+            oi.append({"timestamp": i, "sumOpenInterestValue": str(100+i*0.1)})
+        result = diagnose_flow_quality(prices, flows, oi)
+        self.assertTrue(result["ready"])
+        self.assertTrue(result["outlier_dominated"])
+        self.assertEqual(result["persistence"], "SINGLE_BAR_DOMINATED")
+
+    def test_quality_detects_buy_absorption(self):
+        prices, flows = [], []
+        for i in range(8):
+            prices.append({"timestamp": i, "open": "100", "close": "99.9"})
+            flows.append({"timestamp": i, "buyVol": "1.4", "sellVol": "0.6"})
+        result = diagnose_flow_quality(prices, flows, [])
+        self.assertEqual(result["price_flow_response"],
+                         "BUY_ABSORPTION_OR_WEAK_UPSIDE_RESPONSE")
+
+    def test_quality_requires_timestamp_aligned_bars(self):
+        prices = [{"timestamp": i, "open": "100", "close": "101"} for i in range(8)]
+        flows = [{"timestamp": i+100, "buyVol": "2", "sellVol": "1"} for i in range(8)]
+        self.assertFalse(diagnose_flow_quality(prices, flows, [])["ready"])
+
     def test_flow_direction_detects_abnormal_buy_imbalance(self):
         baseline = [flow_row(-0.04 if i % 2 else 0.04) for i in range(48)]
         recent = [flow_row(0.20) for _ in range(4)]
