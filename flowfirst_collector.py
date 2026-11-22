@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Incremental public Binance USD-M TradFi flow collector.
 
-Stores raw taker buy/sell volume, open-interest history and OHLCV klines.
+Stores completed taker buy/sell volume, open-interest history and OHLCV klines.
 It does NOT represent the complete US equity market order flow.
 """
 from __future__ import annotations
 
 import json
-import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +19,7 @@ SYMBOLS = [
     "AMDUSDT", "AVGOUSDT", "TSMUSDT", "MUUSDT",
 ]
 PERIODS = ["15m", "1h"]
+INTERVAL_MS = {"15m": 15 * 60 * 1000, "1h": 60 * 60 * 1000}
 LIMIT = 500
 ROOT = Path("data/flowfirst")
 SESSION = requests.Session()
@@ -38,7 +38,6 @@ def get_json(path: str, params: dict) -> list:
             response = SESSION.get(url, params=params, timeout=25)
             if response.status_code in (418, 429):
                 time.sleep(3 * (attempt + 1))
-                response.raise_for_status()
             response.raise_for_status()
             payload = response.json()
             if isinstance(payload, dict) and payload.get("code") is not None:
@@ -53,10 +52,16 @@ def get_json(path: str, params: dict) -> list:
     raise RuntimeError(f"Request failed {path} {params}: {last_error}")
 
 
+def completed_period_start(period: str, now_ms: int | None = None) -> int:
+    """Return the start timestamp of the currently forming interval."""
+    now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
+    width = INTERVAL_MS[period]
+    return now_ms - (now_ms % width)
+
+
 def append_unique(kind: str, symbol: str, period: str, rows: list[dict]) -> int:
     ROOT.mkdir(parents=True, exist_ok=True)
     added = 0
-    # Records are split by UTC date, so Actions commits only append small text files.
     by_date: dict[str, list[dict]] = {}
     for row in rows:
         stamp = int(row["timestamp"])
@@ -89,13 +94,14 @@ def collect_taker(symbol: str, period: str) -> int:
     payload = get_json("/futures/data/takerlongshortRatio",
                        {"symbol": symbol, "period": period, "limit": LIMIT})
     fetched = utc_now()
+    cutoff = completed_period_start(period)
     rows = [{
         "symbol": symbol, "period": period,
         "timestamp": int(x["timestamp"]),
         "buyVol": str(x["buyVol"]), "sellVol": str(x["sellVol"]),
         "buySellRatio": str(x["buySellRatio"]), "fetched_at": fetched,
         "source": "Binance USD-M futures takerlongshortRatio",
-    } for x in payload]
+    } for x in payload if int(x["timestamp"]) < cutoff]
     return append_unique("taker", symbol, period, rows)
 
 
@@ -103,6 +109,7 @@ def collect_oi(symbol: str, period: str) -> int:
     payload = get_json("/futures/data/openInterestHist",
                        {"symbol": symbol, "period": period, "limit": LIMIT})
     fetched = utc_now()
+    cutoff = completed_period_start(period)
     rows = [{
         "symbol": symbol, "period": period,
         "timestamp": int(x["timestamp"]),
@@ -110,7 +117,7 @@ def collect_oi(symbol: str, period: str) -> int:
         "sumOpenInterestValue": str(x["sumOpenInterestValue"]),
         "fetched_at": fetched,
         "source": "Binance USD-M futures openInterestHist",
-    } for x in payload]
+    } for x in payload if int(x["timestamp"]) < cutoff]
     return append_unique("oi", symbol, period, rows)
 
 
@@ -118,6 +125,7 @@ def collect_klines(symbol: str, period: str) -> int:
     payload = get_json("/fapi/v1/klines",
                        {"symbol": symbol, "interval": period, "limit": LIMIT})
     fetched = utc_now()
+    now_ms = int(time.time() * 1000)
     rows = [{
         "symbol": symbol, "period": period,
         "timestamp": int(x[0]), "open": str(x[1]), "high": str(x[2]),
@@ -126,7 +134,7 @@ def collect_klines(symbol: str, period: str) -> int:
         "trade_count": int(x[8]), "taker_buy_base": str(x[9]),
         "taker_buy_quote": str(x[10]), "fetched_at": fetched,
         "source": "Binance USD-M futures klines",
-    } for x in payload]
+    } for x in payload if int(x[6]) < now_ms]
     return append_unique("klines", symbol, period, rows)
 
 
@@ -154,7 +162,6 @@ def main() -> None:
     (ROOT / "latest_run.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
-    # Fail the workflow if all data endpoints failed.
     if totals["errors"] == len(SYMBOLS) * len(PERIODS) * 3:
         raise SystemExit("All collection requests failed; no data was collected.")
 
