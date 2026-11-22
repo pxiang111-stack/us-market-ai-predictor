@@ -30,12 +30,21 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+class RegionalAccessError(RuntimeError):
+    """The provider explicitly blocks the runner region; retries cannot fix this."""
+
+
 def get_json(path: str, params: dict) -> list:
     url = BASE + path
     last_error = None
     for attempt in range(4):
         try:
             response = SESSION.get(url, params=params, timeout=25)
+            if response.status_code == 451:
+                raise RegionalAccessError(
+                    "Binance returned HTTP 451 for this GitHub Actions runner region. "
+                    "Stop collection here; do not retry or route around the regional restriction."
+                )
             if response.status_code in (418, 429):
                 time.sleep(3 * (attempt + 1))
             response.raise_for_status()
@@ -152,6 +161,9 @@ def main() -> None:
                     count = fn(symbol, period)
                     totals[kind] += count
                     print(f"OK {kind:7s} {symbol:10s} {period:3s}: +{count}")
+                except RegionalAccessError as exc:
+                    print(f"FATAL regional access restriction: {exc}")
+                    raise SystemExit(2) from exc
                 except Exception as exc:
                     totals["errors"] += 1
                     print(f"ERROR {kind} {symbol} {period}: {exc}")
