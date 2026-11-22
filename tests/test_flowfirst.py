@@ -34,6 +34,8 @@ class FlowFirstUnitTests(unittest.TestCase):
     def test_max_holding_window_counts_entry_bar_as_first_bar(self):
         # Signal at index 60 enters at 61; 16 held bars end at index 76.
         self.assertEqual(holding_window_end(60, 200), 76)
+        self.assertEqual(holding_window_end(60, 200, 8), 68)
+        self.assertEqual(holding_window_end(60, 200, 12), 72)
 
     def test_max_holding_window_respects_available_history(self):
         self.assertEqual(holding_window_end(60, 70), 69)
