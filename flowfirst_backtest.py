@@ -92,6 +92,30 @@ def flow_direction(rows: list[dict]) -> tuple[int, float, float] | None:
     return 0, recent, z
 
 
+def crowding_state(rows: list[dict]) -> dict | None:
+    if len(rows) < 49:
+        return None
+    rows = sorted(rows, key=lambda r: int(r["timestamp"]))
+    long_now = float(rows[-1]["longAccount"])
+    short_now = float(rows[-1]["shortAccount"])
+    long_base = [float(x["longAccount"]) for x in rows[-49:-1]]
+    short_base = [float(x["shortAccount"]) for x in rows[-49:-1]]
+    def zscore(current: float, baseline: list[float]) -> float:
+        mean = sum(baseline) / len(baseline)
+        variance = sum((x-mean)**2 for x in baseline) / len(baseline)
+        sd = math.sqrt(variance)
+        return (current-mean)/sd if sd > 1e-9 else 0.0
+    long_z, short_z = zscore(long_now, long_base), zscore(short_now, short_base)
+    return {
+        "crowded_long": long_now >= 0.80 and long_z >= 1.0,
+        "crowded_short": short_now >= 0.80 and short_z >= 1.0,
+        "long_account": long_now,
+        "long_z": long_z,
+        "short_account": short_now,
+        "short_z": short_z
+    }
+
+
 def oi_expanding(rows: list[dict]) -> bool:
     if len(rows) < 5:
         return False
@@ -126,7 +150,8 @@ def metrics(trades: list[dict], equity_curve: list[float]) -> dict:
 
 
 def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
-                flow_rows: list[dict], oi_rows: list[dict], variant: str,
+                flow_rows: list[dict], oi_rows: list[dict],
+                longshort_rows: list[dict], variant: str,
                 trade_start_ts: int | None = None,
                 trade_end_ts: int | None = None) -> dict:
     if len(bars) < 80 or (variant != "flow_only" and len(hourly) < 55):
@@ -156,6 +181,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         flow_hist = [x for x in flow_rows if int(x["timestamp"]) <= ts]
         f = flow_direction(flow_hist)
         oi_hist = [x for x in oi_rows if int(x["timestamp"]) <= ts]
+        longshort_hist = [x for x in longshort_rows if int(x["timestamp"]) <= ts]
         a = atr(bars[:i+1])
         if a is None or a <= 0:
             i += 1
@@ -175,6 +201,15 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
                 direction = -1
             if variant == "combo_oi" and direction and not oi_expanding(oi_hist):
                 direction = 0
+            if variant == "combo_crowding" and direction:
+                crowd = crowding_state(longshort_hist)
+                aligned = bool(longshort_hist) and int(longshort_hist[-1]["timestamp"]) == ts
+                if not aligned or crowd is None:
+                    direction = 0
+                elif direction == 1 and crowd["crowded_long"]:
+                    direction = 0
+                elif direction == -1 and crowd["crowded_short"]:
+                    direction = 0
         if direction == 0:
             i += 1
             continue
@@ -252,6 +287,7 @@ def main() -> None:
         raise SystemExit("No accumulated FlowFirst data found.")
     k15, k1h = read_kind("klines", "15m"), read_kind("klines", "1h")
     flows, oi = read_kind("taker", "15m"), read_kind("oi", "15m")
+    longshort = read_kind("longshort", "15m")
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "model": "FlowFirst v0.1 backtest",
@@ -274,12 +310,13 @@ def main() -> None:
         oi_rows = oi.get(symbol, [])
         split_index = int(len(bars) * 0.70)
         split_ts = int(bars[split_index]["timestamp"]) if len(bars) > 120 else None
-        for variant in ("price_only", "flow_only", "combo", "combo_oi"):
-            full = run_variant(symbol, bars, hourly, flow_rows, oi_rows, variant)
+        longshort_rows = longshort.get(symbol, [])
+        for variant in ("price_only", "flow_only", "combo", "combo_crowding", "combo_oi"):
+            full = run_variant(symbol, bars, hourly, flow_rows, oi_rows, longshort_rows, variant)
             if split_ts is not None:
-                train = run_variant(symbol, bars, hourly, flow_rows, oi_rows,
+                train = run_variant(symbol, bars, hourly, flow_rows, oi_rows, longshort_rows,
                                     variant, trade_end_ts=split_ts)
-                test = run_variant(symbol, bars, hourly, flow_rows, oi_rows,
+                test = run_variant(symbol, bars, hourly, flow_rows, oi_rows, longshort_rows,
                                    variant, trade_start_ts=split_ts)
                 full["time_split"] = {
                     "train_fraction": 0.70,
