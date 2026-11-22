@@ -81,9 +81,13 @@ def append_unique(kind: str, symbol: str, period: str, rows: list[dict]) -> int:
 
     for day, day_rows in by_date.items():
         path = ROOT / f"{day}_{kind}_{period}.jsonl"
+        # Deduplicate against all files of this kind/period, including
+        # connector-seeded history files and the regular daily append files.
         seen = set()
-        if path.exists():
-            with path.open("r", encoding="utf-8") as f:
+        for existing in ROOT.glob(f"*_{kind}_{period}.jsonl"):
+            if not existing.exists():
+                continue
+            with existing.open("r", encoding="utf-8") as f:
                 for line in f:
                     try:
                         old = json.loads(line)
