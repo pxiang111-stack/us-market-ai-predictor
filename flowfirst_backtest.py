@@ -384,6 +384,26 @@ def main() -> None:
                 str(x["profit_factor"]), f"${x.get('buy_hold_pnl_usd', 0):.2f}", x["status"]
             ]) + " |")
     lines += ["", "## Assumptions"] + [f"- **{k}:** {v}" for k,v in report["assumptions"].items()]
+    lines += ["", "## Flow-only OOS robustness checks", "",
+              "Exploratory sensitivity only; these settings are compared on the same short holdout and must not be treated as parameter selection.",
+              "", "| Symbol | Cost/side | OOS return | Trades | PF | Max DD |",
+              "|---|---:|---:|---:|---:|---:|"]
+    for x in report["results"]:
+        if x.get("variant") != "flow_only":
+            continue
+        split = x.get("time_split", {})
+        for item in split.get("oos_cost_sensitivity", []):
+            q = item["out_of_sample"]
+            lines.append(f"| {x['symbol']} | {item['cost_per_side_bps']} bps | {q.get('return_pct')}% | {q.get('trades')} | {q.get('profit_factor')} | {q.get('max_drawdown_pct')}% |")
+    lines += ["", "| Symbol | Max hold | OOS return | Trades | PF | Max DD |",
+              "|---|---:|---:|---:|---:|---:|"]
+    for x in report["results"]:
+        if x.get("variant") != "flow_only":
+            continue
+        split = x.get("time_split", {})
+        for item in split.get("oos_holding_period_sensitivity", []):
+            q = item["out_of_sample"]
+            lines.append(f"| {x['symbol']} | {item['max_hold_bars']} bars | {q.get('return_pct')}% | {q.get('trades')} | {q.get('profit_factor')} | {q.get('max_drawdown_pct')}% |")
     (OUT / "flowfirst_backtest.md").write_text("\n".join(lines)+"\n", encoding="utf-8")
     print(json.dumps({"results": report["results"],
                       "report": "reports/flowfirst_backtest.json"}, indent=2))
