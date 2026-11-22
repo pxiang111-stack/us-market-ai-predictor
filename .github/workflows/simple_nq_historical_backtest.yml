@@ -39,13 +39,19 @@ jobs:
         run: python download_qqq_history.py --start 2010-01-01 --output data/QQQ_daily_execution.csv
       - name: Run $10,000 historical backtest
         run: python simple_nq_backtest.py --csv data/QQQ_daily_execution.csv --capital 10000 --commission-bps 1 --slippage-bps 5 --output-dir output
+      - name: Run fixed chronological walk-forward diagnostics
+        run: python simple_nq_walkforward.py --csv data/QQQ_daily_execution.csv --capital 10000 --commission-bps 1 --slippage-bps 5 --output-dir output
       - name: Display backtest summary
-        run: cat output/simple_nq_backtest_summary.json
+        run: |
+          cat output/simple_nq_backtest_summary.json
+          cat output/simple_nq_walkforward_summary.json
       - uses: actions/upload-artifact@v4
         with:
           name: simple-nq-qqq-corporate-action-backtest
           path: |
             output/simple_nq_backtest_summary.json
             output/simple_nq_backtest_trades.csv
+            output/simple_nq_walkforward_summary.json
+            output/simple_nq_walkforward_trades.csv
             data/QQQ_daily_execution.csv
           retention-days: 14
