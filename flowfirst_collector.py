@@ -120,6 +120,23 @@ def collect_taker(symbol: str, period: str) -> int:
     return append_unique("taker", symbol, period, rows)
 
 
+def collect_long_short(symbol: str, period: str) -> int:
+    payload = get_json("/futures/data/globalLongShortAccountRatio",
+                       {"symbol": symbol, "period": period, "limit": LIMIT})
+    fetched = utc_now()
+    cutoff = completed_period_start(period)
+    rows = [{
+        "symbol": symbol, "period": period,
+        "timestamp": int(x["timestamp"]),
+        "longAccount": str(x["longAccount"]),
+        "shortAccount": str(x["shortAccount"]),
+        "longShortRatio": str(x["longShortRatio"]),
+        "fetched_at": fetched,
+        "source": "Binance USD-M futures globalLongShortAccountRatio",
+    } for x in payload if int(x["timestamp"]) < cutoff]
+    return append_unique("longshort", symbol, period, rows)
+
+
 def collect_oi(symbol: str, period: str) -> int:
     payload = get_json("/futures/data/openInterestHist",
                        {"symbol": symbol, "period": period, "limit": LIMIT})
@@ -155,12 +172,13 @@ def collect_klines(symbol: str, period: str) -> int:
 
 def main() -> None:
     ROOT.mkdir(parents=True, exist_ok=True)
-    totals = {"taker": 0, "oi": 0, "klines": 0, "errors": 0}
+    totals = {"taker": 0, "oi": 0, "longshort": 0, "klines": 0, "errors": 0}
     for symbol in SYMBOLS:
         for period in PERIODS:
             for kind, fn in (
                 ("taker", collect_taker),
                 ("oi", collect_oi),
+                ("longshort", collect_long_short),
                 ("klines", collect_klines),
             ):
                 try:
