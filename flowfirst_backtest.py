@@ -179,8 +179,10 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         t15 = trend(bars[:i+1]) if variant != "flow_only" else "unknown"
         t1h = trend(hrows) if variant != "flow_only" else "unknown"
         flow_hist = [x for x in flow_rows if int(x["timestamp"]) <= ts]
-        f = flow_direction(flow_hist)
+        flow_aligned = bool(flow_hist) and int(flow_hist[-1]["timestamp"]) == ts
+        f = flow_direction(flow_hist) if flow_aligned else None
         oi_hist = [x for x in oi_rows if int(x["timestamp"]) <= ts]
+        oi_aligned = bool(oi_hist) and int(oi_hist[-1]["timestamp"]) == ts
         longshort_hist = [x for x in longshort_rows if int(x["timestamp"]) <= ts]
         a = atr(bars[:i+1])
         if a is None or a <= 0:
@@ -199,7 +201,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
                 direction = 1
             elif f and t15 == "down" and t1h == "down" and f[0] == -1:
                 direction = -1
-            if variant == "combo_oi" and direction and not oi_expanding(oi_hist):
+            if variant == "combo_oi" and direction and (not oi_aligned or not oi_expanding(oi_hist)):
                 direction = 0
             if variant == "combo_crowding" and direction:
                 crowd = crowding_state(longshort_hist)
