@@ -31,7 +31,14 @@ class FlowFirstUnitTests(unittest.TestCase):
     def test_flow_direction_requires_full_lookback(self):
         self.assertIsNone(flow_direction([flow_row(0.1) for _ in range(51)]))
 
-    def test_max_holding_window_counts_entry_bar_as_first_bar(self):\n        # Signal at index 60 enters at 61; 16 held bars end at index 76.\n        self.assertEqual(holding_window_end(60, 200), 76)\n\n    def test_max_holding_window_respects_available_history(self):\n        self.assertEqual(holding_window_end(60, 70), 69)\n\n    def test_oi_expansion_is_participation_filter(self):
+    def test_max_holding_window_counts_entry_bar_as_first_bar(self):
+        # Signal at index 60 enters at 61; 16 held bars end at index 76.
+        self.assertEqual(holding_window_end(60, 200), 76)
+
+    def test_max_holding_window_respects_available_history(self):
+        self.assertEqual(holding_window_end(60, 70), 69)
+
+    def test_oi_expansion_is_participation_filter(self):
         rows = [{"sumOpenInterestValue": str(x)} for x in (100, 100.1, 100.2, 100.3, 100.5)]
         self.assertTrue(oi_expanding(rows))
 
