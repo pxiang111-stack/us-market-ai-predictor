@@ -117,3 +117,18 @@ The signal and backtest layer use an adaptive crowding flag: an account side mus
 
 The strategy comparison now includes `combo_crowding` alongside price-only, flow-only, combo, and `combo_oi`. Missing or timestamp-misaligned crowding data causes the crowding-filtered strategy to stand aside rather than assume a neutral reading.
 
+
+
+## Flow-quality diagnostics (v0.1)
+
+The research workflow also runs `flowfirst_quality.py` and publishes:
+- `reports/flowfirst_quality.json`
+- `reports/flowfirst_quality.md`
+
+It uses the latest eight timestamp-aligned completed 15m price/flow bars and reports:
+- persistence of positive/negative taker imbalance;
+- whether one bar dominates the absolute imbalance observations;
+- price response to net aggressive buying/selling (including possible absorption);
+- OI expansion/contraction as participation context.
+
+These labels are descriptive diagnostics, not independent entry rules. "Absorption" cannot be proven from OHLCV and venue-level taker data alone; the label means price did not respond in the direction of net taker flow over the window. The outlier-dominance threshold is a heuristic, not a statistically calibrated cutoff. Do not optimize these thresholds on the short seeded holdout. The quality report must be compared against the existing baseline on longer, chronological out-of-sample data before it can alter trade decisions.
