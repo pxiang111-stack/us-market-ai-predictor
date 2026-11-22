@@ -407,8 +407,8 @@ def run_backtest(csv_path: str | Path, output_dir: str | Path = "output",
 
     trade_fields = [
         "signal_date", "entry_date", "exit_date", "shares", "entry_price",
-        "stop", "target", "exit_price", "exit_reason", "commission_total",
-        "net_pnl", "net_return_pct",
+        "stop", "target", "exit_price", "exit_reason", "shares_at_exit",
+        "dividend_cash", "commission_total", "net_pnl", "net_return_pct",
     ]
     with (out / "simple_nq_backtest_trades.csv").open(
         "w", newline="", encoding="utf-8"
