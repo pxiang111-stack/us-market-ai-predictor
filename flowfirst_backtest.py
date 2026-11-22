@@ -129,7 +129,7 @@ def oi_expanding(rows: list[dict]) -> bool:
     return old > 0 and (new / old - 1.0) >= 0.001
 
 
-def metrics(trades: list[dict], equity_curve: list[float]) -> dict:
+def metrics(trades: list[dict], equity_curve: list[float], cost_per_side: float = COST_PER_SIDE) -> dict:
     pnl = [x["net_pnl"] for x in trades]
     wins = [x for x in pnl if x > 0]
     losses = [x for x in pnl if x < 0]
@@ -150,7 +150,7 @@ def metrics(trades: list[dict], equity_curve: list[float]) -> dict:
         "avg_r_multiple": round(sum(x["r_multiple"] for x in trades)/len(trades), 3) if trades else None,
         "avg_mae_r": round(sum(x["mae_r"] for x in trades)/len(trades), 3) if trades else None,
         "avg_mfe_r": round(sum(x["mfe_r"] for x in trades)/len(trades), 3) if trades else None,
-        "cost_per_side_bps": round(COST_PER_SIDE*10000, 1),
+        "cost_per_side_bps": round(cost_per_side*10000, 1),
     }
 
 
@@ -158,7 +158,8 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
                 flow_rows: list[dict], oi_rows: list[dict],
                 longshort_rows: list[dict], variant: str,
                 trade_start_ts: int | None = None,
-                trade_end_ts: int | None = None) -> dict:
+                trade_end_ts: int | None = None,
+                cost_per_side: float = COST_PER_SIDE) -> dict:
     if len(bars) < 80 or (variant != "flow_only" and len(hourly) < 55):
         return {"status": "INSUFFICIENT_DATA", "bars_15m": len(bars), "bars_1h": len(hourly)}
     flow_by_ts = {int(x["timestamp"]): x for x in flow_rows}
@@ -260,7 +261,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
             exit_index = last_j
             exit_price = float(bars[last_j]["close"])
         gross = qty*direction*(exit_price-entry)
-        costs = qty*(entry+exit_price)*COST_PER_SIDE
+        costs = qty*(entry+exit_price)*cost_per_side
         net = gross-costs
         risk_dollars = qty*stop_dist
         equity += net
@@ -275,7 +276,7 @@ def run_variant(symbol: str, bars: list[dict], hourly: list[dict],
         })
         curve.append(equity)
         i = exit_index
-    result = metrics(trades, curve)
+    result = metrics(trades, curve, cost_per_side)
     result.update({"status": "OK", "symbol": symbol, "variant": variant,
                    "start_cash_usd": START_CASH, "end_equity_usd": round(equity, 2),
                    "max_gross_exposure": "1.0x"})
@@ -308,7 +309,7 @@ def main() -> None:
             "costs": f"{COST_PER_SIDE*10000:.1f} bps per side (fee + slippage assumption)",
             "oi_filter": "4-interval OI value expansion >= 0.1%; participation filter only, not direction",
             "crowding_filter": "Block same-direction entry when long/short account share >= 80% and >= 1 standard deviation above its prior 48-bar mean",
-            "limitations": "Binance TradFi venue data only; short sample and no validated win probability. MAE/MFE use full OHLC extremes of each held bar, whose intrabar sequence is unknown."
+            "limitations": "Binance TradFi venue data only; short sample and no validated win probability. MAE/MFE use full OHLC extremes of each held bar, whose intrabar sequence is unknown. Cost sensitivity reruns each OOS segment at 7/10/15/20 bps per side; fees and slippage remain assumptions."
         },
         "results": []
     }
@@ -327,12 +328,23 @@ def main() -> None:
                                     variant, trade_end_ts=split_ts)
                 test = run_variant(symbol, bars, hourly, flow_rows, oi_rows, longshort_rows,
                                    variant, trade_start_ts=split_ts)
+                cost_sensitivity = []
+                for bps in (7, 10, 15, 20):
+                    sensitivity = run_variant(
+                        symbol, bars, hourly, flow_rows, oi_rows, longshort_rows,
+                        variant, trade_start_ts=split_ts, cost_per_side=bps / 10000.0
+                    )
+                    cost_sensitivity.append({
+                        "cost_per_side_bps": bps,
+                        "out_of_sample": sensitivity
+                    })
                 full["time_split"] = {
                     "train_fraction": 0.70,
                     "test_fraction": 0.30,
                     "split_timestamp": split_ts,
                     "train": train,
-                    "out_of_sample_test": test
+                    "out_of_sample_test": test,
+                    "oos_cost_sensitivity": cost_sensitivity
                 }
             else:
                 full["time_split"] = {"status": "INSUFFICIENT_DATA",
