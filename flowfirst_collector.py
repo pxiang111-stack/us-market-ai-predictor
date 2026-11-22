@@ -54,6 +54,8 @@ def get_json(path: str, params: dict) -> list:
             if not isinstance(payload, list):
                 raise RuntimeError(f"Unexpected response for {path}: {payload}")
             return payload
+        except RegionalAccessError:
+            raise
         except Exception as exc:
             last_error = exc
             if attempt < 3:
