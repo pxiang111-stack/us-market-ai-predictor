@@ -5,7 +5,6 @@ on:
     paths:
       - 'gemini_committee/btc_snapshot_input.json'
       - 'gemini_committee/btc_snapshot_committee.py'
-      - 'gemini_committee/btc_forecast_ledger.json'
       - '.github/workflows/btc_deepseek_snapshot.yml'
 
 permissions:
