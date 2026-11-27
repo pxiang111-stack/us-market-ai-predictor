@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Gemini盘前量化委员会独立程序：8只标的一次批量推理。"""
-import json, math, os, re, sys, time
+import json, math, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal, Optional
@@ -8,15 +8,14 @@ from urllib.parse import quote
 import pandas as pd
 import requests
 import yfinance as yf
-from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field
 
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
 MAX_RISK_PCT=0.01
-GEMINI_MODEL="models/gemini-3.8-flash"
-API_KEY=os.getenv("GEMINI_API_KEY","").strip()
+GITHUB_MODELS_ENDPOINT="https://models.github.ai/inference/chat/completions"
+GITHUB_MODEL="openai/gpt-4o-mini"
+GITHUB_TOKEN=os.getenv("GITHUB_TOKEN","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
 
@@ -70,15 +69,8 @@ def get_market(symbol):
       "high_20d":float(high.tail(20).max()),"low_20d":float(low.tail(20).min()),
       "latest_news_titles":get_news(symbol),"daily_bars":len(close)}
 
-def is_503_error(exc):
-    code=getattr(exc,"code",None) or getattr(exc,"status_code",None)
-    response=getattr(exc,"response",None)
-    code=code or getattr(response,"status_code",None)
-    msg=str(exc).upper()
-    return str(code)=="503" or "503" in msg or "UNAVAILABLE" in msg or "HIGH DEMAND" in msg
-
 def run_committee(data):
-    if not API_KEY: raise RuntimeError("缺少GEMINI_API_KEY Secret")
+    if not GITHUB_TOKEN: raise RuntimeError("缺少GitHub Actions GITHUB_TOKEN")
     prompt=f"""
 你是严格的美股盘前量化委员会。以下包含8只标的的完整行情、技术面和新闻数据。
 必须在这一次回答中逐一完成全部8只股票的分析，不得遗漏、合并或编造数据。
@@ -86,32 +78,34 @@ def run_committee(data):
 证据不足选NO-GO。仅考虑做多；入场区间、止损、第一目标必须合理，止损低于现价、目标高于现价；无法给出合理价格时NO-GO且价格字段为null。
 每个结果必须带ticker，且每个输入ticker恰好出现一次。禁止计算股数、仓位、风险预算，全部由Python硬风控计算。
 pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入场、止损、目标，价格与字段一致，不要代码围栏。
+只输出合法JSON对象，顶层必须为results数组；每个元素包含ticker、bull_case、bear_case_risks、verdict、entry_low、entry_high、stop_price、target_price、judge_reason、pine_script。
+results必须恰好包含这8个ticker：NVDA, MSFT, AAPL, META, AMZN, TSLA, QQQ, SPY。
 数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
-    client=genai.Client(api_key=API_KEY)
-    last_error=None
-    for attempt, delay in enumerate((0,10,20)):
-        if delay:
-            print(f"Gemini 503繁忙，等待{delay}秒后重试（第{attempt}/2次重试）")
-            time.sleep(delay)
-        try:
-            res=client.models.generate_content(model=GEMINI_MODEL,contents=prompt,
-              config=types.GenerateContentConfig(temperature=0.1,max_output_tokens=8192,
-                response_mime_type="application/json",response_schema=CommitteeBatch))
-            if getattr(res,"parsed",None) is not None:
-                batch=res.parsed if isinstance(res.parsed,CommitteeBatch) else CommitteeBatch.model_validate(res.parsed)
-            else:
-                if not res.text: raise RuntimeError("Gemini返回空内容")
-                batch=CommitteeBatch.model_validate_json(res.text)
-            got=[x.ticker for x in batch.results]
-            if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(got):
-                raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
-            return {x.ticker:x for x in batch.results}
-        except Exception as exc:
-            last_error=exc
-            if not is_503_error(exc) or attempt==2:
-                raise RuntimeError(f"Gemini批量委员会调用失败：{type(exc).__name__}: {exc}") from exc
-    raise RuntimeError(f"Gemini批量委员会调用失败：{last_error}")
+    response=requests.post(
+        GITHUB_MODELS_ENDPOINT,
+        headers={"Authorization":f"Bearer {GITHUB_TOKEN}","Content-Type":"application/json"},
+        json={"model":GITHUB_MODEL,
+              "messages":[{"role":"system","content":"你是严谨的美股量化委员会。严格遵循用户要求并只返回合法JSON。"},
+                         {"role":"user","content":prompt}],
+              "temperature":0.1,"max_tokens":8192,
+              "response_format":{"type":"json_object"}},
+        timeout=180)
+    if not response.ok:
+        raise RuntimeError(f"GitHub Models API HTTP {response.status_code}: {response.text[:2000]}")
+    payload=response.json()
+    choices=payload.get("choices") or []
+    if not choices: raise RuntimeError(f"GitHub Models未返回choices：{json.dumps(payload,ensure_ascii=False)[:2000]}")
+    content=(choices[0].get("message") or {}).get("content")
+    if not content or not isinstance(content,str): raise RuntimeError("GitHub Models返回空的message.content")
+    try:
+        batch=CommitteeBatch.model_validate_json(content)
+    except Exception as exc:
+        raise RuntimeError(f"GitHub Models返回的委员会JSON无效：{exc}; 内容片段={content[:1000]}") from exc
+    got=[x.ticker for x in batch.results]
+    if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(got):
+        raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
+    return {x.ticker:x for x in batch.results}
 
 def pine(d):
     if d.verdict=="NO-GO" or any(x is None for x in [d.entry_low,d.entry_high,d.stop_price,d.target_price]):
@@ -147,10 +141,10 @@ def hard_risk(m,d):
 def write_reports(rows):
     stamp=datetime.now(timezone.utc).isoformat()
     report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,
-      "max_risk_pct":MAX_RISK_PCT,"gemini_model":GEMINI_MODEL,"gemini_api_calls":1,"results":rows}
+      "max_risk_pct":MAX_RISK_PCT,"ai_provider":"GitHub Models","model":GITHUB_MODEL,"api_calls":1,"results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     lines=["# Gemini盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
-      "- Gemini批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- Gemini模型：{GEMINI_MODEL}",""]
+      "- GitHub Models批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- GitHub Models模型：{GITHUB_MODEL}",""]
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（{m['as_of']}）",
@@ -173,10 +167,10 @@ def bark(rows):
     response=requests.get(url,timeout=20); response.raise_for_status()
 
 def main():
-    if not API_KEY: raise RuntimeError("请在GitHub Secrets配置GEMINI_API_KEY")
+    if not GITHUB_TOKEN: raise RuntimeError("GitHub Actions未提供GITHUB_TOKEN，请检查permissions: models: read")
     print("正在获取8只标的行情、技术面与新闻数据……")
     market={s:get_market(s) for s in WATCHLIST}
-    print("行情数据齐备，向Gemini 3.8 Flash发送一次批量委员会请求……")
+    print("行情数据齐备，向GitHub Models发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
     rows=[]
     for symbol in WATCHLIST:
