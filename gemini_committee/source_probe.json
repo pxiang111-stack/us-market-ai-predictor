@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-11-27T19:29:51.139178+00:00",
-  "session_et": "2026-11-27T14:29:51.139722-05:00",
+  "generated_utc": "2026-11-27T19:33:26.734746+00:00",
+  "session_et": "2026-11-27T14:33:26.739420-05:00",
   "watchlist": [
     "SPY",
     "QQQ",
@@ -38,264 +38,275 @@
       "name": "Yahoo chart 1m includePrePost",
       "ok": 30,
       "total": 30,
+      "fresh_le_3m": 13,
+      "fresh_le_5m": 17,
+      "nonzero_latest_bar_volume": 0,
       "rows": [
         {
           "ticker": "SPY",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 729.0,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.4,
+          "price": 728.9838,
+          "volume": 0
         },
         {
           "ticker": "QQQ",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
+          "timestamp": "2026-11-27T19:32:00+00:00",
+          "age_min": 1.5,
           "price": 650.3,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "IWM",
-          "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
-          "price": 274.3,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 274.06,
+          "volume": 0
         },
         {
           "ticker": "SMH",
           "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
+          "age_min": 6.5,
           "price": 436.17,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "NVDA",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 149.9393,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:32:00+00:00",
+          "age_min": 1.5,
+          "price": 149.8823,
+          "volume": 0
         },
         {
           "ticker": "AAPL",
           "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
+          "age_min": 5.5,
           "price": 358.54,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "MSFT",
-          "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
-          "price": 494.81,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:30:00+00:00",
+          "age_min": 3.5,
+          "price": 496.06,
+          "volume": 0
         },
         {
           "ticker": "AMZN",
-          "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
-          "price": 254.4,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 254.3,
+          "volume": 0
         },
         {
           "ticker": "META",
-          "timestamp": "2026-11-27T19:25:00+00:00",
-          "age_min": 4.9,
-          "price": 628.1,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:27:00+00:00",
+          "age_min": 6.5,
+          "price": 628.0775,
+          "volume": 0
         },
         {
           "ticker": "GOOGL",
-          "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
-          "price": 275.82,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 275.622,
+          "volume": 0
         },
         {
           "ticker": "TSLA",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 399.05,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:32:00+00:00",
+          "age_min": 1.5,
+          "price": 399.0,
+          "volume": 0
         },
         {
           "ticker": "AMD",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 422.75,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:32:00+00:00",
+          "age_min": 1.5,
+          "price": 422.2501,
+          "volume": 0
         },
         {
           "ticker": "AVGO",
-          "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
-          "price": 312.2873,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:27:00+00:00",
+          "age_min": 6.5,
+          "price": 312.01,
+          "volume": 0
         },
         {
           "ticker": "MU",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 646.1898,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:32:00+00:00",
+          "age_min": 1.5,
+          "price": 646.0,
+          "volume": 0
         },
         {
           "ticker": "ARM",
-          "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
+          "timestamp": "2026-11-27T19:29:00+00:00",
+          "age_min": 4.5,
           "price": 170.7,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "TSM",
-          "timestamp": "2026-11-27T19:23:00+00:00",
-          "age_min": 6.9,
-          "price": 352.96,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:26:00+00:00",
+          "age_min": 7.5,
+          "price": 352.7802,
+          "volume": 0
         },
         {
           "ticker": "PLTR",
-          "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
-          "price": 172.049,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:29:00+00:00",
+          "age_min": 4.5,
+          "price": 172.18,
+          "volume": 0
         },
         {
           "ticker": "SMCI",
           "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
+          "age_min": 5.5,
           "price": 23.7,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "NFLX",
-          "timestamp": "2026-11-27T19:27:00+00:00",
-          "age_min": 2.9,
-          "price": 60.81,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 60.795,
+          "volume": 0
         },
         {
           "ticker": "CRM",
           "timestamp": "2026-11-27T19:24:00+00:00",
-          "age_min": 5.9,
+          "age_min": 9.5,
           "price": 198.2,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "ORCL",
-          "timestamp": "2026-11-27T19:24:00+00:00",
-          "age_min": 5.9,
-          "price": 107.1655,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 107.11,
+          "volume": 0
         },
         {
           "ticker": "APP",
           "timestamp": "2026-11-27T19:24:00+00:00",
-          "age_min": 5.9,
+          "age_min": 9.5,
           "price": 399.39,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "UBER",
           "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
+          "age_min": 7.5,
           "price": 66.76,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "COIN",
-          "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
-          "price": 107.7,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:30:00+00:00",
+          "age_min": 3.5,
+          "price": 107.51,
+          "volume": 0
         },
         {
           "ticker": "MSTR",
-          "timestamp": "2026-11-27T19:26:00+00:00",
-          "age_min": 3.9,
-          "price": 82.01,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:27:00+00:00",
+          "age_min": 6.5,
+          "price": 81.9879,
+          "volume": 0
         },
         {
           "ticker": "HOOD",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 68.0995,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 68.1989,
+          "volume": 0
         },
         {
           "ticker": "GLD",
-          "timestamp": "2026-11-27T19:21:00+00:00",
-          "age_min": 8.9,
-          "price": 333.9482,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:28:00+00:00",
+          "age_min": 5.5,
+          "price": 333.7972,
+          "volume": 0
         },
         {
           "ticker": "SLV",
-          "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
-          "price": 39.28,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "timestamp": "2026-11-27T19:31:00+00:00",
+          "age_min": 2.5,
+          "price": 39.3,
+          "volume": 0
         },
         {
           "ticker": "TLT",
           "timestamp": "2026-11-27T19:28:00+00:00",
-          "age_min": 1.9,
+          "age_min": 5.5,
           "price": 81.34,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         },
         {
           "ticker": "XLE",
           "timestamp": "2026-11-27T19:08:00+00:00",
-          "age_min": 21.9,
+          "age_min": 25.5,
           "price": 61.82,
-          "volume": 0,
-          "source": "Yahoo chart 1m"
+          "volume": 0
         }
       ],
       "errors": [],
-      "note": "Unofficial endpoint; availability and extended-hours data are not guaranteed."
+      "note": "Unofficial endpoint; latest bars can have zero volume, and extended-hours coverage/entitlement are not guaranteed."
     },
     {
       "name": "TradingView scanner",
-      "ok": 23,
+      "ok": 26,
       "total": 30,
+      "symbols_returned": [
+        "AAPL",
+        "AMD",
+        "AMZN",
+        "APP",
+        "ARM",
+        "AVGO",
+        "COIN",
+        "GLD",
+        "GOOGL",
+        "HOOD",
+        "IWM",
+        "META",
+        "MSFT",
+        "MSTR",
+        "MU",
+        "NFLX",
+        "NVDA",
+        "PLTR",
+        "QQQ",
+        "SLV",
+        "SMCI",
+        "SMH",
+        "SPY",
+        "TSLA",
+        "TSM",
+        "XLE"
+      ],
       "rows": [
         {
           "symbol": "AMEX:SPY",
           "values": [
             "SPY",
             728.32,
-            38806872,
+            38822846,
             1.6213199386075072,
             -0.31212121212121213
+          ]
+        },
+        {
+          "symbol": "NASDAQ:QQQ",
+          "values": [
+            "QQQ",
+            650.99,
+            35087207,
+            2.6911488650166517,
+            -0.26666666666666666
           ]
         },
         {
@@ -303,19 +314,9 @@
           "values": [
             "IWM",
             273.79,
-            14209954,
+            14274639,
             1.8298806114479174,
             -0.17878787878787877
-          ]
-        },
-        {
-          "symbol": "NASDAQ:SMH",
-          "values": [
-            "SMH",
-            440.06,
-            7671138,
-            4.166074894664589,
-            -0.4
           ]
         },
         {
@@ -323,7 +324,7 @@
           "values": [
             "NVDA",
             150.49,
-            181171906,
+            181225387,
             0.7970529135967834,
             -0.4666666666666667
           ]
@@ -333,7 +334,7 @@
           "values": [
             "AAPL",
             358.54,
-            21603235,
+            21603853,
             0.8324427695596031,
             0.603030303030303
           ]
@@ -343,7 +344,7 @@
           "values": [
             "MSFT",
             492.85,
-            12427021,
+            12427370,
             0.5960035107056142,
             -0.2
           ]
@@ -353,7 +354,7 @@
           "values": [
             "AMZN",
             254.12,
-            27156730,
+            27158784,
             3.96432516466882,
             -0.15454545454545454
           ]
@@ -363,7 +364,7 @@
           "values": [
             "META",
             628.96,
-            11094978,
+            11095497,
             3.126793356178991,
             0.09090909090909091
           ]
@@ -373,7 +374,7 @@
           "values": [
             "GOOGL",
             274.96,
-            22339897,
+            22347088,
             0.6810692054192445,
             -0.4666666666666667
           ]
@@ -383,7 +384,7 @@
           "values": [
             "TSLA",
             400,
-            25729453,
+            25736956,
             5.224391013837011,
             0.5575757575757576
           ]
@@ -393,7 +394,7 @@
           "values": [
             "AMD",
             424.54,
-            22167687,
+            22172297,
             4.558776445090277,
             -0.4454545454545455
           ]
@@ -403,7 +404,7 @@
           "values": [
             "AVGO",
             312.34,
-            17048741,
+            17049224,
             3.815728245695659,
             -0.49090909090909096
           ]
@@ -413,7 +414,7 @@
           "values": [
             "MU",
             646.95,
-            26587912,
+            26601069,
             7.600831600831609,
             -0.4
           ]
@@ -423,7 +424,7 @@
           "values": [
             "ARM",
             171.55,
-            2929045,
+            2930141,
             6.216333353971903,
             -0.35454545454545455
           ]
@@ -433,7 +434,7 @@
           "values": [
             "PLTR",
             172.17,
-            14993764,
+            14995280,
             5.244819365486878,
             0.35757575757575755
           ]
@@ -443,7 +444,7 @@
           "values": [
             "SMCI",
             23.76,
-            21573761,
+            21581422,
             1.9305019305019429,
             -0.4
           ]
@@ -453,7 +454,7 @@
           "values": [
             "NFLX",
             60.93,
-            21589816,
+            21590521,
             2.5584918363911853,
             -0.17575757575757575
           ]
@@ -463,7 +464,7 @@
           "values": [
             "APP",
             399.21,
-            2409299,
+            2409322,
             5.346351761446099,
             0.4
           ]
@@ -473,7 +474,7 @@
           "values": [
             "COIN",
             107.04,
-            5136663,
+            5137381,
             3.2009255688391893,
             -0.4454545454545455
           ]
@@ -483,7 +484,7 @@
           "values": [
             "MSTR",
             81.62,
-            16382126,
+            16383047,
             2.0760380190095185,
             -0.35454545454545455
           ]
@@ -493,7 +494,7 @@
           "values": [
             "HOOD",
             67.92,
-            10359338,
+            10361435,
             3.253268470659776,
             -0.4454545454545455
           ]
@@ -503,7 +504,7 @@
           "values": [
             "GLD",
             334.4,
-            6547501,
+            6547728,
             2.122461444495339,
             -0.4454545454545455
           ]
@@ -513,1333 +514,1053 @@
           "values": [
             "SLV",
             39.4,
-            21745138,
+            21754136,
             6.199460916442041,
+            -0.4
+          ]
+        },
+        {
+          "symbol": "AMEX:XLE",
+          "values": [
+            "XLE",
+            61.67,
+            20642049,
+            1.2643678160919591,
+            -0.2909090909090909
+          ]
+        },
+        {
+          "symbol": "NASDAQ:SMH",
+          "values": [
+            "SMH",
+            440.06,
+            7672664,
+            4.166074894664589,
+            -0.4
+          ]
+        },
+        {
+          "symbol": "NYSE:TSM",
+          "values": [
+            "TSM",
+            353.34,
+            9442973,
+            3.2131798796518085,
             -0.4
           ]
         }
       ],
-      "note": "Scanner data fields do not prove exchange real-time entitlement or timestamp freshness."
+      "note": "No quote timestamp or exchange entitlement proof in this scanner response."
     },
     {
-      "name": "Nasdaq quote info endpoint",
-      "ok": 22,
+      "name": "Nasdaq quote info (stocks/etf)",
+      "ok": 30,
       "total": 30,
+      "primary_isRealTime_true": 30,
+      "primary_timestamp_present": 30,
       "rows": [
         {
+          "ticker": "SPY",
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$728.9947",
+            "netChange": "+0.3147",
+            "percentageChange": "+0.04%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$728.81",
+            "askPrice": "$729.00",
+            "bidSize": "1",
+            "askSize": "381",
+            "volume": "39,028,894.437816",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$728.68",
+            "netChange": "+11.98",
+            "percentageChange": "+1.67%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
+        },
+        {
+          "ticker": "QQQ",
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$650.30",
+            "netChange": "-0.69",
+            "percentageChange": "-0.11%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$650.10",
+            "askPrice": "$650.30",
+            "bidSize": "600",
+            "askSize": "842",
+            "volume": "35,211,873.307921",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$650.99",
+            "netChange": "+17.06",
+            "percentageChange": "+2.69%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
+        },
+        {
+          "ticker": "IWM",
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$274.40",
+            "netChange": "+0.78",
+            "percentageChange": "+0.29%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$273.88",
+            "askPrice": "$274.50",
+            "bidSize": "1",
+            "askSize": "161",
+            "volume": "15,419,707.269349",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$273.62",
+            "netChange": "+4.75",
+            "percentageChange": "+1.77%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
+        },
+        {
+          "ticker": "SMH",
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$436.40",
+            "netChange": "-3.66",
+            "percentageChange": "-0.83%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:32 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$435.82",
+            "askPrice": "$437.50",
+            "bidSize": "11",
+            "askSize": "100",
+            "volume": "7,678,321.151319",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$440.06",
+            "netChange": "+17.60",
+            "percentageChange": "+4.17%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
+        },
+        {
           "ticker": "NVDA",
-          "data": {
-            "symbol": "NVDA",
-            "companyName": "NVIDIA Corporation Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$149.9369",
-              "netChange": "-0.5531",
-              "percentageChange": "-0.37%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$149.90",
-              "askPrice": "$149.94",
-              "bidSize": "234",
-              "askSize": "103",
-              "volume": "181,345,414.708332",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$150.49",
-              "netChange": "+1.19",
-              "percentageChange": "+0.80%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "124.50 - 243.37"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "145.39 - 151.98"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "UPCOMING EVENTS",
-                "eventTypes": [
-                  {
-                    "message": "Ex-Dividend Date : Dec 2, 2026",
-                    "eventName": "Dividend Date",
-                    "url": {
-                      "label": "NVDA Ex-Dividend Date : Dec 2, 2026",
-                      "value": "/market-activity/stocks/NVDA/dividend-history"
-                    },
-                    "id": "upcoming_events"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$149.8823",
+            "netChange": "-0.6077",
+            "percentageChange": "-0.40%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$149.80",
+            "askPrice": "$149.99",
+            "bidSize": "2",
+            "askSize": "136",
+            "volume": "181,391,267.970240",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$150.49",
+            "netChange": "+1.19",
+            "percentageChange": "+0.80%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "AAPL",
-          "data": {
-            "symbol": "AAPL",
-            "companyName": "Apple Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$358.386",
-              "netChange": "-0.154",
-              "percentageChange": "-0.04%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$358.32",
-              "askPrice": "$358.62",
-              "bidSize": "90",
-              "askSize": "47",
-              "volume": "21,608,887.128942",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$358.54",
-              "netChange": "+2.96",
-              "percentageChange": "+0.83%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "243.42 - 360.83"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "355.64 - 359.50"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "HIGH TECHNICAL ATTRIBUTE",
-                "eventTypes": [
-                  {
-                    "message": "AAPL has a High Technical Rating by Nasdaq Dorsey Wright. Discover why technical analysis matters",
-                    "eventName": "High Technical Attribute",
-                    "url": {
-                      "label": "Discover why technical analysis matters",
-                      "value": "https://www.nasdaq.com/solutions/nasdaq-dorsey-wright/technical-analysis"
-                    },
-                    "id": "tech_attribute"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$358.36",
+            "netChange": "-0.18",
+            "percentageChange": "-0.05%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$358.38",
+            "askPrice": "$358.60",
+            "bidSize": "2",
+            "askSize": "105",
+            "volume": "21,609,198.144648",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$358.54",
+            "netChange": "+2.96",
+            "percentageChange": "+0.83%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "MSFT",
-          "data": {
-            "symbol": "MSFT",
-            "companyName": "Microsoft Corporation Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$496.7059",
-              "netChange": "+3.8559",
-              "percentageChange": "+0.78%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$496.05",
-              "askPrice": "$496.60",
-              "bidSize": "10",
-              "askSize": "20",
-              "volume": "12,442,327.309705",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$492.85",
-              "netChange": "+2.92",
-              "percentageChange": "+0.60%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "349.20 - 559.15"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "488.83 - 500.46"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "HIGH TECHNICAL ATTRIBUTE",
-                "eventTypes": [
-                  {
-                    "message": "MSFT has a High Technical Rating by Nasdaq Dorsey Wright. Discover why technical analysis matters",
-                    "eventName": "High Technical Attribute",
-                    "url": {
-                      "label": "Discover why technical analysis matters",
-                      "value": "https://www.nasdaq.com/solutions/nasdaq-dorsey-wright/technical-analysis"
-                    },
-                    "id": "tech_attribute"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$495.60",
+            "netChange": "+2.75",
+            "percentageChange": "+0.56%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$495.49",
+            "askPrice": "$496.00",
+            "bidSize": "1",
+            "askSize": "3000",
+            "volume": "12,444,576.354965",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$492.85",
+            "netChange": "+2.92",
+            "percentageChange": "+0.60%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "AMZN",
-          "data": {
-            "symbol": "AMZN",
-            "companyName": "Amazon.com, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$254.30",
-              "netChange": "+0.18",
-              "percentageChange": "+0.07%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$254.43",
-              "askPrice": "$254.50",
-              "bidSize": "1",
-              "askSize": "162",
-              "volume": "27,163,143.776586",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$254.12",
-              "netChange": "+9.69",
-              "percentageChange": "+3.96%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "196.00 - 287.20"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "248.45 - 255.27"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$254.4493",
+            "netChange": "+0.3293",
+            "percentageChange": "+0.13%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$254.42",
+            "askPrice": "$254.50",
+            "bidSize": "40",
+            "askSize": "322",
+            "volume": "27,165,105.341712",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$254.12",
+            "netChange": "+9.69",
+            "percentageChange": "+3.96%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "META",
-          "data": {
-            "symbol": "META",
-            "companyName": "Meta Platforms, Inc. Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$628.09",
-              "netChange": "-0.87",
-              "percentageChange": "-0.14%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$627.68",
-              "askPrice": "$628.96",
-              "bidSize": "1",
-              "askSize": "39",
-              "volume": "11,099,958.818374",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$628.96",
-              "netChange": "+19.07",
-              "percentageChange": "+3.13%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "520.26 - 779.82"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "620.80 - 636.62"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$628.71",
+            "netChange": "-0.25",
+            "percentageChange": "-0.04%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$628.10",
+            "askPrice": "$628.96",
+            "bidSize": "425",
+            "askSize": "39",
+            "volume": "11,103,012.887045",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$628.96",
+            "netChange": "+19.07",
+            "percentageChange": "+3.13%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "GOOGL",
-          "data": {
-            "symbol": "GOOGL",
-            "companyName": "Alphabet Inc. Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$275.67",
-              "netChange": "+0.71",
-              "percentageChange": "+0.26%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$275.24",
-              "askPrice": "$275.67",
-              "bidSize": "18",
-              "askSize": "25",
-              "volume": "22,360,732.950766",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$274.96",
-              "netChange": "+1.86",
-              "percentageChange": "+0.68%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "262.73 - 408.61"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "270.03 - 279.52"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "UPCOMING EVENTS",
-                "eventTypes": [
-                  {
-                    "message": "Ex-Dividend Date : Dec 7, 2026",
-                    "eventName": "Dividend Date",
-                    "url": {
-                      "label": "GOOGL Ex-Dividend Date : Dec 7, 2026",
-                      "value": "/market-activity/stocks/GOOGL/dividend-history"
-                    },
-                    "id": "upcoming_events"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$275.31",
+            "netChange": "+0.35",
+            "percentageChange": "+0.13%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$275.27",
+            "askPrice": "$275.33",
+            "bidSize": "65",
+            "askSize": "120",
+            "volume": "22,363,492.448600",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$274.96",
+            "netChange": "+1.86",
+            "percentageChange": "+0.68%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "TSLA",
-          "data": {
-            "symbol": "TSLA",
-            "companyName": "Tesla, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$399.00",
-              "netChange": "-1.00",
-              "percentageChange": "-0.25%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$399.00",
-              "askPrice": "$399.24",
-              "bidSize": "1",
-              "askSize": "1",
-              "volume": "25,751,188.322171",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$400.00",
-              "netChange": "+19.86",
-              "percentageChange": "+5.22%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "297.38 - 498.83"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "384.66 - 401.18"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$399.10",
+            "netChange": "-0.90",
+            "percentageChange": "-0.22%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$398.88",
+            "askPrice": "$399.53",
+            "bidSize": "1",
+            "askSize": "50",
+            "volume": "25,761,982.003450",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$400.00",
+            "netChange": "+19.86",
+            "percentageChange": "+5.22%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "AMD",
-          "data": {
-            "symbol": "AMD",
-            "companyName": "Advanced Micro Devices, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$422.6615",
-              "netChange": "-1.8785",
-              "percentageChange": "-0.44%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$422.50",
-              "askPrice": "$423.00",
-              "bidSize": "15",
-              "askSize": "135",
-              "volume": "22,183,076.585348",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$424.54",
-              "netChange": "+18.51",
-              "percentageChange": "+4.56%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "188.22 - 658.52"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "398.59 - 426.88"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$422.18",
+            "netChange": "-2.36",
+            "percentageChange": "-0.56%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$422.05",
+            "askPrice": "$422.19",
+            "bidSize": "11",
+            "askSize": "100",
+            "volume": "22,187,380.978415",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$424.54",
+            "netChange": "+18.51",
+            "percentageChange": "+4.56%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "AVGO",
-          "data": {
-            "symbol": "AVGO",
-            "companyName": "Broadcom Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$312.0001",
-              "netChange": "-0.3399",
-              "percentageChange": "-0.11%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$311.60",
-              "askPrice": "$312.10",
-              "bidSize": "1",
-              "askSize": "11",
-              "volume": "17,055,983.679666",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$312.34",
-              "netChange": "+11.48",
-              "percentageChange": "+3.82%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "278.00 - 495.00"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "304.75 - 313.12"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "UPCOMING EVENTS",
-                "eventTypes": [
-                  {
-                    "message": "Earnings Date : Dec 9, 2026",
-                    "eventName": "Earnings Date",
-                    "url": {
-                      "label": "AVGO Earnings Date : Dec 9, 2026",
-                      "value": "/market-activity/stocks/AVGO/earnings"
-                    },
-                    "id": "upcoming_events"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$311.5102",
+            "netChange": "-0.8298",
+            "percentageChange": "-0.27%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$311.40",
+            "askPrice": "$311.70",
+            "bidSize": "2",
+            "askSize": "51",
+            "volume": "17,057,295.272094",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$312.34",
+            "netChange": "+11.48",
+            "percentageChange": "+3.82%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "MU",
-          "data": {
-            "symbol": "MU",
-            "companyName": "Micron Technology, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$645.8097",
-              "netChange": "-1.1403",
-              "percentageChange": "-0.18%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$645.11",
-              "askPrice": "$645.81",
-              "bidSize": "26",
-              "askSize": "200",
-              "volume": "26,650,811.647720",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$646.95",
-              "netChange": "+45.70",
-              "percentageChange": "+7.60%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "221.69 - 1,255.00"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "607.27 - 654.44"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$646.10",
+            "netChange": "-0.85",
+            "percentageChange": "-0.13%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$646.02",
+            "askPrice": "$646.50",
+            "bidSize": "29",
+            "askSize": "4",
+            "volume": "26,672,329.572159",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$646.95",
+            "netChange": "+45.70",
+            "percentageChange": "+7.60%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "ARM",
-          "data": {
-            "symbol": "ARM",
-            "companyName": "Arm Holdings plc American Depositary Shares",
-            "stockType": "American Depositary Shares",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$170.77",
-              "netChange": "-0.80",
-              "percentageChange": "-0.47%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$170.50",
-              "askPrice": "$170.74",
-              "bidSize": "10",
-              "askSize": "81",
-              "volume": "2,931,215.089352",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$171.57",
-              "netChange": "+10.06",
-              "percentageChange": "+6.23%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "100.02 - 452.70"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "161.14 - 171.78"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$170.718",
+            "netChange": "-0.852",
+            "percentageChange": "-0.50%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$170.19",
+            "askPrice": "$170.80",
+            "bidSize": "30",
+            "askSize": "4",
+            "volume": "2,931,336.089352",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$171.57",
+            "netChange": "+10.06",
+            "percentageChange": "+6.23%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "TSM",
-          "data": {
-            "symbol": "TSM",
-            "companyName": "Taiwan Semiconductor Manufacturing Company Ltd.",
-            "stockType": "American Depositary Shares",
-            "exchange": "NYSE",
-            "isNasdaqListed": false,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$352.7988",
-              "netChange": "-0.8712",
-              "percentageChange": "-0.25%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$352.50",
-              "askPrice": "$352.97",
-              "bidSize": "3",
-              "askSize": "5",
-              "volume": "9,448,251.039769",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$353.67",
-              "netChange": "+11.33",
-              "percentageChange": "+3.31%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "275.08 - 487.47"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "344.59 - 354.36"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$352.74",
+            "netChange": "-0.93",
+            "percentageChange": "-0.26%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$352.50",
+            "askPrice": "$352.98",
+            "bidSize": "3",
+            "askSize": "167",
+            "volume": "9,449,132.453689",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$353.67",
+            "netChange": "+11.33",
+            "percentageChange": "+3.31%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "PLTR",
-          "data": {
-            "symbol": "PLTR",
-            "companyName": "Palantir Technologies Inc. Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$172.00",
-              "netChange": "-0.17",
-              "percentageChange": "-0.10%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$172.00",
-              "askPrice": "$172.20",
-              "bidSize": "100",
-              "askSize": "1",
-              "volume": "14,998,765.139415",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$172.17",
-              "netChange": "+8.58",
-              "percentageChange": "+5.24%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "106.37 - 212.94"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "164.80 - 173.22"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$171.92",
+            "netChange": "-0.25",
+            "percentageChange": "-0.15%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$171.60",
+            "askPrice": "$172.35",
+            "bidSize": "30",
+            "askSize": "30",
+            "volume": "15,001,863.194272",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$172.17",
+            "netChange": "+8.58",
+            "percentageChange": "+5.24%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "SMCI",
-          "data": {
-            "symbol": "SMCI",
-            "companyName": "Super Micro Computer, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$23.65",
-              "netChange": "-0.11",
-              "percentageChange": "-0.46%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$23.60",
-              "askPrice": "$23.70",
-              "bidSize": "1401",
-              "askSize": "607",
-              "volume": "21,596,412.375951",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$23.76",
-              "netChange": "+0.45",
-              "percentageChange": "+1.93%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "19.48 - 51.40"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "22.91 - 24.19"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$23.65",
+            "netChange": "-0.11",
+            "percentageChange": "-0.46%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$23.62",
+            "askPrice": "$23.69",
+            "bidSize": "200",
+            "askSize": "25",
+            "volume": "21,596,695.375951",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$23.76",
+            "netChange": "+0.45",
+            "percentageChange": "+1.93%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "NFLX",
-          "data": {
-            "symbol": "NFLX",
-            "companyName": "Netflix, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$60.7813",
-              "netChange": "-0.1487",
-              "percentageChange": "-0.24%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$60.76",
-              "askPrice": "$60.81",
-              "bidSize": "100",
-              "askSize": "534",
-              "volume": "21,599,336.313639",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$60.93",
-              "netChange": "+1.52",
-              "percentageChange": "+2.56%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "56.56 - 109.73"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "59.99 - 61.01"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$60.80",
+            "netChange": "-0.13",
+            "percentageChange": "-0.21%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$60.76",
+            "askPrice": "$60.81",
+            "bidSize": "100",
+            "askSize": "534",
+            "volume": "21,601,140.140010",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$60.93",
+            "netChange": "+1.52",
+            "percentageChange": "+2.56%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "CRM",
-          "data": {
-            "symbol": "CRM",
-            "companyName": "Salesforce, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NYSE",
-            "isNasdaqListed": false,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$198.11",
-              "netChange": "-0.315",
-              "percentageChange": "-0.16%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$198.09",
-              "askPrice": "$199.87",
-              "bidSize": "52",
-              "askSize": "22",
-              "volume": "2,510,091.434656",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$198.425",
-              "netChange": "+1.215",
-              "percentageChange": "+0.62%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "146.32 - 269.11"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "196.64 - 200.34"
-              }
-            },
-            "notifications": [
-              {
-                "headline": "UPCOMING EVENTS",
-                "eventTypes": [
-                  {
-                    "message": "Earnings Date : Dec 2, 2026",
-                    "eventName": "Earnings Date",
-                    "url": {
-                      "label": "CRM Earnings Date : Dec 2, 2026",
-                      "value": "/market-activity/stocks/CRM/earnings"
-                    },
-                    "id": "upcoming_events"
-                  }
-                ]
-              }
-            ],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$198.11",
+            "netChange": "-0.315",
+            "percentageChange": "-0.16%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$198.09",
+            "askPrice": "$199.87",
+            "bidSize": "52",
+            "askSize": "22",
+            "volume": "2,510,091.434656",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$198.425",
+            "netChange": "+1.215",
+            "percentageChange": "+0.62%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "ORCL",
-          "data": {
-            "symbol": "ORCL",
-            "companyName": "Oracle Corporation Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NYSE",
-            "isNasdaqListed": false,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$107.13",
-              "netChange": "-0.28",
-              "percentageChange": "-0.26%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$107.13",
-              "askPrice": "$107.40",
-              "bidSize": "20",
-              "askSize": "30",
-              "volume": "14,622,920.318144",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$107.41",
-              "netChange": "+3.53",
-              "percentageChange": "+3.40%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "99.34 - 250.25"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "104.04 - 107.53"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$107.143",
+            "netChange": "-0.267",
+            "percentageChange": "-0.25%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$107.10",
+            "askPrice": "$107.40",
+            "bidSize": "8",
+            "askSize": "30",
+            "volume": "14,623,649.928144",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$107.41",
+            "netChange": "+3.53",
+            "percentageChange": "+3.40%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "APP",
-          "data": {
-            "symbol": "APP",
-            "companyName": "Applovin Corporation Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$399.10",
-              "netChange": "-0.11",
-              "percentageChange": "-0.03%",
-              "deltaIndicator": "down",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$399.35",
-              "askPrice": "$399.97",
-              "bidSize": "25",
-              "askSize": "2",
-              "volume": "2,409,725.046423",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$399.21",
-              "netChange": "+20.26",
-              "percentageChange": "+5.35%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "225.19 - 738.01"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "387.02 - 404.88"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$399.44",
+            "netChange": "+0.23",
+            "percentageChange": "+0.06%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$399.35",
+            "askPrice": "$399.40",
+            "bidSize": "3",
+            "askSize": "300",
+            "volume": "2,409,782.596423",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$399.21",
+            "netChange": "+20.26",
+            "percentageChange": "+5.35%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "UBER",
-          "data": {
-            "symbol": "UBER",
-            "companyName": "Uber Technologies, Inc. Common Stock",
-            "stockType": "Common Stock",
-            "exchange": "NYSE",
-            "isNasdaqListed": false,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$66.9628",
-              "netChange": "+0.1828",
-              "percentageChange": "+0.27%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$66.70",
-              "askPrice": "$67.00",
-              "bidSize": "52",
-              "askSize": "50",
-              "volume": "7,928,251.347643",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$66.78",
-              "netChange": "+0.43",
-              "percentageChange": "+0.65%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "63.29 - 92.78"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "66.45 - 67.74"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$63.6458",
+            "netChange": "-3.1342",
+            "percentageChange": "-4.69%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$66.70",
+            "askPrice": "$67.00",
+            "bidSize": "52",
+            "askSize": "50",
+            "volume": "7,928,381.347643",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$66.78",
+            "netChange": "+0.43",
+            "percentageChange": "+0.65%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "COIN",
-          "data": {
-            "symbol": "COIN",
-            "companyName": "Coinbase Global, Inc. Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$107.75",
-              "netChange": "+0.71",
-              "percentageChange": "+0.66%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$107.75",
-              "askPrice": "$107.94",
-              "bidSize": "10",
-              "askSize": "50",
-              "volume": "5,139,808.448836",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$107.04",
-              "netChange": "+3.32",
-              "percentageChange": "+3.20%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "94.88 - 284.74"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "104.44 - 108.90"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$107.78",
+            "netChange": "+0.74",
+            "percentageChange": "+0.69%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$107.75",
+            "askPrice": "$107.97",
+            "bidSize": "4",
+            "askSize": "20",
+            "volume": "5,147,137.579607",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$107.04",
+            "netChange": "+3.32",
+            "percentageChange": "+3.20%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "MSTR",
-          "data": {
-            "symbol": "MSTR",
-            "companyName": "Strategy Inc Common Stock Class A",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": true,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$82.14",
-              "netChange": "+0.52",
-              "percentageChange": "+0.64%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$81.96",
-              "askPrice": "$82.18",
-              "bidSize": "60",
-              "askSize": "1",
-              "volume": "16,397,209.030456",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$81.62",
-              "netChange": "+1.66",
-              "percentageChange": "+2.08%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "70.37 - 198.40"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "78.84 - 84.67"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$82.14",
+            "netChange": "+0.52",
+            "percentageChange": "+0.64%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$82.00",
+            "askPrice": "$82.20",
+            "bidSize": "61",
+            "askSize": "100",
+            "volume": "16,397,938.030456",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$81.62",
+            "netChange": "+1.66",
+            "percentageChange": "+2.08%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
         },
         {
           "ticker": "HOOD",
-          "data": {
-            "symbol": "HOOD",
-            "companyName": "Robinhood Markets, Inc. Class A Common Stock",
-            "stockType": "Class A Common Stock",
-            "exchange": "NASDAQ-GS",
-            "isNasdaqListed": true,
-            "isNasdaq100": false,
-            "isHeld": false,
-            "primaryData": {
-              "lastSalePrice": "$68.11",
-              "netChange": "+0.19",
-              "percentageChange": "+0.28%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Nov 27, 2026 2:30 PM ET",
-              "isRealTime": true,
-              "bidPrice": "$68.04",
-              "askPrice": "$68.24",
-              "bidSize": "40",
-              "askSize": "80",
-              "volume": "10,369,835.732336",
-              "currency": null
-            },
-            "secondaryData": {
-              "lastSalePrice": "$67.92",
-              "netChange": "+2.14",
-              "percentageChange": "+3.25%",
-              "deltaIndicator": "up",
-              "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
-              "isRealTime": false,
-              "bidPrice": "",
-              "askPrice": "",
-              "bidSize": "",
-              "askSize": "",
-              "volume": "",
-              "currency": null
-            },
-            "marketStatus": "After-Hours",
-            "assetClass": "STOCKS",
-            "keyStats": {
-              "fiftyTwoWeekHighLow": {
-                "label": "52 Week Range:",
-                "value": "61.26 - 139.75"
-              },
-              "dayrange": {
-                "label": "High/Low:",
-                "value": "65.52 - 69.09"
-              }
-            },
-            "notifications": [],
-            "gtEnabled": false
+          "assetclass": "stocks",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$68.20",
+            "netChange": "+0.28",
+            "percentageChange": "+0.41%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$68.15",
+            "askPrice": "$68.20",
+            "bidSize": "30",
+            "askSize": "5",
+            "volume": "10,370,952.732336",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$67.92",
+            "netChange": "+2.14",
+            "percentageChange": "+3.25%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
           }
-        }
-      ],
-      "errors": [
-        {
-          "ticker": "SPY",
-          "error": "empty response"
-        },
-        {
-          "ticker": "QQQ",
-          "error": "empty response"
-        },
-        {
-          "ticker": "IWM",
-          "error": "empty response"
-        },
-        {
-          "ticker": "SMH",
-          "error": "empty response"
         },
         {
           "ticker": "GLD",
-          "error": "empty response"
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$333.85",
+            "netChange": "-0.41",
+            "percentageChange": "-0.12%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$333.60",
+            "askPrice": "$333.96",
+            "bidSize": "110",
+            "askSize": "110",
+            "volume": "6,548,908.063893",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$334.26",
+            "netChange": "+6.81",
+            "percentageChange": "+2.08%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
         },
         {
           "ticker": "SLV",
-          "error": "empty response"
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$39.26",
+            "netChange": "-0.14",
+            "percentageChange": "-0.36%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Nov 27, 2026 2:33 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$39.20",
+            "askPrice": "$39.33",
+            "bidSize": "1200",
+            "askSize": "10",
+            "volume": "21,767,689.777460",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$39.40",
+            "netChange": "+2.30",
+            "percentageChange": "+6.20%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
         },
         {
           "ticker": "TLT",
-          "error": "empty response"
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$81.3283",
+            "netChange": "+0.0583",
+            "percentageChange": "+0.07%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$81.32",
+            "askPrice": "$81.42",
+            "bidSize": "190",
+            "askSize": "900",
+            "volume": "37,181,190.093634",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$81.27",
+            "netChange": "-0.97",
+            "percentageChange": "-1.18%",
+            "deltaIndicator": "down",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
         },
         {
           "ticker": "XLE",
-          "error": "empty response"
+          "assetclass": "etf",
+          "marketStatus": "After-Hours",
+          "primaryData": {
+            "lastSalePrice": "$61.95",
+            "netChange": "+0.27",
+            "percentageChange": "+0.44%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Nov 27, 2026 2:34 PM ET",
+            "isRealTime": true,
+            "bidPrice": "$61.31",
+            "askPrice": "$62.17",
+            "bidSize": "20",
+            "askSize": "5",
+            "volume": "20,642,494.442550",
+            "currency": null
+          },
+          "secondaryData": {
+            "lastSalePrice": "$61.68",
+            "netChange": "+0.78",
+            "percentageChange": "+1.28%",
+            "deltaIndicator": "up",
+            "lastTradeTimestamp": "Closed at Nov 27, 2026 1:00 PM ET",
+            "isRealTime": false,
+            "bidPrice": "",
+            "askPrice": "",
+            "bidSize": "",
+            "askSize": "",
+            "volume": "",
+            "currency": null
+          }
         }
       ],
-      "note": "Public endpoint not a licensed real-time feed; payload timestamp/fields are evaluated but not assumed."
+      "errors": [],
+      "note": "Public quote endpoint; isRealTime is provider metadata, not proof of licensed use or continuous 1-minute bars."
     }
-  ]
+  ],
+  "assessment": {
+    "yahoo_fresh_le_3m": 13,
+    "yahoo_nonzero_volume": 0,
+    "tradingview_coverage": 26,
+    "nasdaq_coverage": 30,
+    "nasdaq_realtime_flag": 30,
+    "trade_signal_ready": false,
+    "reason": "No source has yet passed repeatability, extended-hours and timestamp/volume validation."
+  }
 }
