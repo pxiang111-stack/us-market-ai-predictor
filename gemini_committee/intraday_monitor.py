@@ -1,51 +1,28 @@
 #!/usr/bin/env python3
-"""每5分钟轻量监控；只有显著异动或委员会报告超过60分钟才调用DeepSeek。"""
+"""每5分钟读取Tiger OpenAPI实时行情；仅异动或报告过期时调用DeepSeek。"""
 import json, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
-import pandas as pd
-import yfinance as yf
+from tiger_market_data import get_tiger_quote_snapshot
 
 ROOT=Path(__file__).resolve().parent
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 MOVE_THRESHOLD_PCT=0.75
-MAX_QUOTE_AGE_MIN=15
 MAX_COMMITTEE_AGE_MIN=60
 
 def utc_now():
     return datetime.now(timezone.utc)
 
-def latest_quote(symbol):
-    df=yf.download(symbol,period="1d",interval="1m",prepost=True,auto_adjust=True,progress=False,threads=False)
-    if df is None or df.empty:
-        return None
-    if isinstance(df.columns,pd.MultiIndex):
-        df.columns=[str(x[0]) for x in df.columns]
-    close=pd.to_numeric(df["Close"],errors="coerce").dropna()
-    if close.empty:
-        return None
-    ts=pd.Timestamp(close.index[-1])
-    if ts.tzinfo is None:
-        ts=ts.tz_localize("America/New_York")
-    ts=ts.tz_convert("UTC")
-    age=(pd.Timestamp.now(tz="UTC")-ts).total_seconds()/60
-    return {"price":float(close.iloc[-1]),"timestamp_utc":ts.isoformat(),
-            "age_minutes":round(age,2),"fresh":0<=age<=MAX_QUOTE_AGE_MIN,
-            "source":"Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"}
-
 def main():
-    snapshot={"checked_at_utc":utc_now().isoformat(),"source":"Yahoo Finance 1-minute bars (非保证实时)","quotes":{}}
-    for symbol in WATCHLIST:
-        try:
-            q=latest_quote(symbol)
-            if q: snapshot["quotes"][symbol]=q
-        except Exception as exc:
-            print(f"{symbol}: quote fetch failed: {type(exc).__name__}: {exc}")
-    fresh={s:q for s,q in snapshot["quotes"].items() if q["fresh"]}
-    snapshot["fresh_quote_count"]=len(fresh)
+    snapshot=get_tiger_quote_snapshot(WATCHLIST)
+    snapshot["checked_at_utc"]=utc_now().isoformat()
+    snapshot["change_vs_last_committee_pct"]={}
+    snapshot["committee_trigger_reason"]=None
     (ROOT/"intraday_snapshot.json").write_text(json.dumps(snapshot,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    if not fresh:
-        print("没有足够新鲜的分钟行情；跳过委员会，避免用过期数据生成交易结论。")
+    quotes=snapshot.get("quotes",{})
+    missing=[s for s in WATCHLIST if not quotes.get(s,{}).get("fresh")]
+    if missing:
+        print(f"Tiger OpenAPI行情缺失或过期：{missing}；跳过委员会，避免使用不完整行情。")
         return
     report_path=ROOT/"daily_report.json"
     old={}
@@ -60,18 +37,18 @@ def main():
     except Exception:
         pass
     moves={}
-    for symbol,q in fresh.items():
+    for symbol,q in quotes.items():
         previous=old_prices.get(symbol)
         if isinstance(previous,(int,float)) and previous>0:
             moves[symbol]=round((q["price"]/previous-1)*100,3)
     max_move=max((abs(v) for v in moves.values()),default=0)
     reason=None
-    if not old_prices:
-        reason="首次运行或缺少基准报告"
+    if len(old_prices)!=len(WATCHLIST):
+        reason="首次运行或缺少完整委员会基准报告"
     elif max_move>=MOVE_THRESHOLD_PCT:
         reason=f"至少一只标的相对上次委员会基准异动达到{max_move:.3f}%"
     elif age_min is None or age_min>=MAX_COMMITTEE_AGE_MIN:
-        reason=f"距离上次委员会报告已{round(age_min,1) if age_min is not None else '未知'}分钟"
+        reason=f"距离上次委员会分析已{round(age_min,1) if age_min is not None else '未知'}分钟"
     snapshot["change_vs_last_committee_pct"]=moves
     snapshot["committee_trigger_reason"]=reason
     (ROOT/"intraday_snapshot.json").write_text(json.dumps(snapshot,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
@@ -81,7 +58,7 @@ def main():
         if result.returncode:
             raise SystemExit(result.returncode)
     else:
-        print(f"仅更新分钟行情快照；最大异动{max_move:.3f}%，委员会报告年龄{age_min:.1f}分钟，暂不调用DeepSeek。")
+        print(f"Tiger OpenAPI实时行情正常；最大异动{max_move:.3f}%，委员会报告年龄{age_min:.1f}分钟，暂不调用DeepSeek。")
 
 if __name__=="__main__":
     main()
