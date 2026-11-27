@@ -1,4 +1,4 @@
-name: DeepSeek Quant Committee (30 tickers Yahoo 5m)
+name: DeepSeek Quant Committee (30 tickers Binance TradFi 1m)
 
 on:
   workflow_dispatch:
