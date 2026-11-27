@@ -10,7 +10,7 @@ import requests
 import yfinance as yf
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from tiger_market_data import get_tiger_quote_snapshot
+from alpaca_market_data import get_free_quote_snapshot
 
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
@@ -19,7 +19,7 @@ DEEPSEEK_MODEL="deepseek-flash"
 DEEPSEEK_API_KEY=os.getenv("DEEPSEEK_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
-TIGER_QUOTES={}
+FREE_QUOTES={}
 
 class CommitteeDecision(BaseModel):
     ticker: str
@@ -57,9 +57,9 @@ def get_market(symbol):
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
     daily_close=float(close.iloc[-1])
-    quote=TIGER_QUOTES.get(symbol)
+    quote=FREE_QUOTES.get(symbol)
     if not quote or not quote.get("fresh"):
-        raise RuntimeError(f"{symbol}: Tiger OpenAPI实时行情缺失或过期，拒绝生成交易信号")
+        raise RuntimeError(f"{symbol}: Alpaca免费IEX实时行情缺失或过期，拒绝生成交易信号")
     p=float(quote["price"])
     intraday_timestamp=quote["timestamp_utc"]
     intraday_source=quote["source"]
@@ -72,7 +72,7 @@ def get_market(symbol):
     old5=float(close.iloc[-6]) if len(close)>=6 else None
     return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,
       "daily_close":daily_close,"intraday_timestamp":intraday_timestamp,
-      "quote_source":intraday_source,"intraday_change_vs_daily_close_pct":intraday_change_pct,
+      "quote_source":intraday_source,"quote_price_basis":quote.get("price_basis"),"intraday_change_vs_daily_close_pct":intraday_change_pct,
       "quote_age_minutes":quote["age_minutes"],"session":quote.get("session"),
       "bid":quote.get("bid"),"bid_size":quote.get("bid_size"),"ask":quote.get("ask"),
       "ask_size":quote.get("ask_size"),"intraday_volume":quote.get("volume"),
@@ -185,11 +185,11 @@ def write_reports(rows):
       "max_risk_pct":MAX_RISK_PCT,"ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     lines=["# DeepSeek盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
-      "- DeepSeek API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- DeepSeek模型：{DEEPSEEK_MODEL}",""]
+      "- DeepSeek API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- DeepSeek模型：{DEEPSEEK_MODEL}","- 行情源：Alpaca Basic免费IEX（单一交易所，不代表全市场SIP）",""]
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（日线日期 {m['as_of']}）",
-          f"- 行情来源：{m.get('quote_source','未知')}；行情时间：{m.get('intraday_timestamp')}；数据年龄：{m.get('quote_age_minutes')}分钟；时段：{m.get('session')}",
+          f"- 行情来源：{m.get('quote_source','未知')}；价格口径：{m.get('quote_price_basis')}；行情时间：{m.get('intraday_timestamp')}；数据年龄：{m.get('quote_age_minutes')}分钟；时段：{m.get('session')}",
           f"- 买一/卖一：{m.get('bid')} x {m.get('bid_size')} / {m.get('ask')} x {m.get('ask_size')}；盘中成交量：{m.get('intraday_volume')}",
           f"- 最近日线收盘：{m.get('daily_close',m['current_price']):.4f}；盘中相对日线收盘：{m.get('intraday_change_vs_daily_close_pct')}",
           f"- MA20偏离：{m['ma20_deviation_pct']:.2f}%；MA50偏离：{m['ma50_deviation_pct']}",
@@ -213,13 +213,13 @@ def bark(rows):
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY，请检查Actions Secrets配置")
     print("正在获取8只标的行情、技术面与新闻数据……")
-    global TIGER_QUOTES
-    snapshot=get_tiger_quote_snapshot(WATCHLIST)
-    TIGER_QUOTES=snapshot["quotes"]
-    missing=[s for s in WATCHLIST if not TIGER_QUOTES.get(s,{}).get("fresh")]
+    global FREE_QUOTES
+    snapshot=get_free_quote_snapshot(WATCHLIST)
+    FREE_QUOTES=snapshot["quotes"]
+    missing=[s for s in WATCHLIST if not FREE_QUOTES.get(s,{}).get("fresh")]
     if missing:
-        raise RuntimeError(f"Tiger OpenAPI行情不完整或过期：{missing}；拒绝调用DeepSeek")
-    print(f"Tiger OpenAPI行情权限：{snapshot['permissions']}；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
+        raise RuntimeError(f"Alpaca免费IEX行情不完整或过期：{missing}；拒绝调用DeepSeek")
+    print(f"Alpaca免费IEX行情权限：{snapshot['permissions']}；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
     market={s:get_market(s) for s in WATCHLIST}
     print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
