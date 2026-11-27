@@ -124,7 +124,7 @@ def run_committee(data):
     prompt=f"""
 你是严格的美股盘前/盘中量化委员会。逐一分析全部30只股票，不得遗漏。
 每只股票分别给出多头分析师逻辑、空头风控官反驳（检查放量破位、高位派发、增发、债务、指引下调）、裁判结论。
-强制价格纪律：只有quote_verified_realtime=true且报价时间戳不超过3分钟的1分钟K线，才可用于GO/GO SMALLER。fast_info没有时间戳或回退日线收盘价均不得视为实时现价，必须NO-GO。GO/GO SMALLER入场区间必须覆盖current_price；跳空突破或跌破原区间必须按现价重算，否则NO-GO。止损必须低于现价，目标必须高于现价。
+行情源为Binance USDⓈ-M TradFi perpetual合约代理行情，不是美股交易所现货成交价。只有data_status=OK且quote_verified_realtime=true、报价时间戳不超过3分钟的币安1分钟K线，才可用于GO/GO SMALLER。data_status=UNAVAILABLE必须NO-GO。GO/GO SMALLER入场区间必须覆盖current_price；跳空突破或跌破原区间必须按现价重算，否则NO-GO。止损必须低于现价，目标必须高于现价。
 仅考虑做多。证据不足NO-GO。不要计算股数/仓位，交给Python硬风控。
 pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
 只输出JSON：{{"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}
@@ -221,7 +221,9 @@ def write_reports(rows):
     lines += ["## 二、NO-GO淘汰汇总","","| 代码 | 当前参考现价 | 一句话淘汰原因 |","|---|---:|---|"]
     for x in rejects:
         reason=(x["committee"].get("judge_reason") or x["committee"].get("bear_case_risks") or "未通过风控").replace("|","/").replace("\n"," ")
-        lines.append(f"| {x['ticker']} | {x['market']['current_price']:.4f} | {reason} |")
+        price=x["market"].get("current_price")
+        price_text=f"{price:.4f}" if price is not None else "N/A（币安无合约）"
+        lines.append(f"| {x['ticker']} | {price_text} | {reason} |")
     (OUT/"daily_report.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
 
 def bark(rows):
