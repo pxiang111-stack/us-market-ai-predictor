@@ -183,6 +183,9 @@ market_summary必须包含全市场下周研判；results必须恰好包含以�
     finally: client.close()
     batch=CommitteeBatch.model_validate_json(content)
     got=[x.ticker for x in batch.results]
+    for x in batch.results:
+        if x.weekly_range_low<=0 or x.weekly_range_high<=x.weekly_range_low or x.weekly_support<=0 or x.weekly_resistance<=0:
+            raise RuntimeError(f"{x.ticker}: 周度区间或支撑压力数值无效")
     if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(WATCHLIST): raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
     return batch
 
@@ -226,7 +229,7 @@ def write_reports(rows):
     session=first.get("market_session","UNKNOWN")
     session_label={"PRE":"盘前 PRE","REGULAR":"盘中 REGULAR","POST":"盘后 POST","CLOSED":"休市 CLOSED"}.get(session,session)
     latest=max((x["market"].get("intraday_timestamp") or "" for x in rows),default="")
-    lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- 当前交易时段：**{session_label}**（美东）",f"- 最新15分钟K线时间：**{latest or '无可验证报价'}**",f"- UTC生成时间：{stamp}",
+    lines=["# DeepSeek量化委员会｜31只标的多周期报告","",f"- 当前交易时段：**{session_label}**（美东）",f"- 最新15分钟K线时间：**{latest or '无可验证报价'}**",f"- UTC生成时间：{stamp}",
       "- 行情源：Yahoo Finance 日K + 4小时K（由15分钟聚合）+ 15分钟K历史OHLC（非实时）",
       "- GO/GO SMALLER仅代表条件式交易计划候选，不是实时成交信号；实际下单前必须用券商现价复核",
       "- 账户资金：10,000 USD；单笔风险预算：100 USD（1%）",""]
