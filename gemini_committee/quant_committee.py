@@ -219,7 +219,7 @@ def main():
     missing=[s for s in WATCHLIST if not FREE_QUOTES.get(s,{}).get("fresh")]
     if missing:
         raise RuntimeError(f"Alpaca免费IEX行情不完整或过期：{missing}；拒绝调用DeepSeek")
-    print(f"Alpaca免费IEX行情权限：{snapshot['permissions']}；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
+    print(f"Alpaca免费IEX行情；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
     market={s:get_market(s) for s in WATCHLIST}
     print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
