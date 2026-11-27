@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-28T10:13:02Z",
+  "generated_at_utc": "2026-11-27T20:33:02Z",
   "source": "Binance Spot BTCUSDT klines/ticker + Binance USDⓈ-M Futures BTCUSDT mark/funding/OI/long-short/taker flow, retrieved through ChatGPT Binance connector",
   "symbol": "BTCUSDT",
   "quote_currency": "USDT",
