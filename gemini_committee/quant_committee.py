@@ -10,6 +10,7 @@ import requests
 import yfinance as yf
 from openai import OpenAI
 from pydantic import BaseModel, Field
+from tiger_market_data import get_tiger_quote_snapshot
 
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
@@ -18,6 +19,7 @@ DEEPSEEK_MODEL="deepseek-flash"
 DEEPSEEK_API_KEY=os.getenv("DEEPSEEK_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
+TIGER_QUOTES={}
 
 class CommitteeDecision(BaseModel):
     ticker: str
@@ -55,25 +57,13 @@ def get_market(symbol):
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
     daily_close=float(close.iloc[-1])
-    p=daily_close
-    intraday_timestamp=None
-    intraday_source="Yahoo Finance daily close (非实时)"
-    intraday_change_pct=None
-    try:
-        intra=yf.download(symbol,period="1d",interval="1m",prepost=True,auto_adjust=True,progress=False,threads=False)
-        if intra is not None and not intra.empty:
-            if isinstance(intra.columns,pd.MultiIndex): intra.columns=[str(x[0]) for x in intra.columns]
-            ic=pd.to_numeric(intra["Close"],errors="coerce").dropna()
-            if not ic.empty:
-                ts=ic.index[-1]
-                ts_utc=pd.Timestamp(ts)
-                if ts_utc.tzinfo is None: ts_utc=ts_utc.tz_localize("America/New_York")
-                age=(pd.Timestamp.now(tz="UTC")-ts_utc.tz_convert("UTC")).total_seconds()/60
-                if 0<=age<=20:
-                    p=float(ic.iloc[-1])
-                    intraday_timestamp=ts_utc.isoformat()
-                    intraday_source="Yahoo Finance 1-minute bars, extended hours (非保证实时)"
-                    intraday_change_pct=(p/daily_close-1)*100 if daily_close else None
+    quote=TIGER_QUOTES.get(symbol)
+    if not quote or not quote.get("fresh"):
+        raise RuntimeError(f"{symbol}: Tiger OpenAPI实时行情缺失或过期，拒绝生成交易信号")
+    p=float(quote["price"])
+    intraday_timestamp=quote["timestamp_utc"]
+    intraday_source=quote["source"]
+    intraday_change_pct=(p/daily_close-1)*100 if daily_close else None
     except Exception as exc:
         print(f"{symbol}: 分钟行情不可用，回退日线收盘价：{type(exc).__name__}: {exc}")
     ma20=float(close.tail(20).mean())
@@ -85,6 +75,9 @@ def get_market(symbol):
     return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,
       "daily_close":daily_close,"intraday_timestamp":intraday_timestamp,
       "quote_source":intraday_source,"intraday_change_vs_daily_close_pct":intraday_change_pct,
+      "quote_age_minutes":quote["age_minutes"],"session":quote.get("session"),
+      "bid":quote.get("bid"),"bid_size":quote.get("bid_size"),"ask":quote.get("ask"),
+      "ask_size":quote.get("ask_size"),"intraday_volume":quote.get("volume"),
       "ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
       "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
       "return_5d_pct":(p/old5-1)*100 if old5 else None,
@@ -198,7 +191,8 @@ def write_reports(rows):
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（日线日期 {m['as_of']}）",
-          f"- 行情来源：{m.get('quote_source','未知')}；分钟数据时间：{m.get('intraday_timestamp') or '无，使用日线收盘价'}",
+          f"- 行情来源：{m.get('quote_source','未知')}；行情时间：{m.get('intraday_timestamp')}；数据年龄：{m.get('quote_age_minutes')}分钟；时段：{m.get('session')}",
+          f"- 买一/卖一：{m.get('bid')} x {m.get('bid_size')} / {m.get('ask')} x {m.get('ask_size')}；盘中成交量：{m.get('intraday_volume')}",
           f"- 最近日线收盘：{m.get('daily_close',m['current_price']):.4f}；盘中相对日线收盘：{m.get('intraday_change_vs_daily_close_pct')}",
           f"- MA20偏离：{m['ma20_deviation_pct']:.2f}%；MA50偏离：{m['ma50_deviation_pct']}",
           f"- 5日涨跌幅：{m['return_5d_pct']:.2f}%；20日量比：{m['volume_ratio_20d']}",
@@ -221,6 +215,13 @@ def bark(rows):
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY，请检查Actions Secrets配置")
     print("正在获取8只标的行情、技术面与新闻数据……")
+    global TIGER_QUOTES
+    snapshot=get_tiger_quote_snapshot(WATCHLIST)
+    TIGER_QUOTES=snapshot["quotes"]
+    missing=[s for s in WATCHLIST if not TIGER_QUOTES.get(s,{}).get("fresh")]
+    if missing:
+        raise RuntimeError(f"Tiger OpenAPI行情不完整或过期：{missing}；拒绝调用DeepSeek")
+    print(f"Tiger OpenAPI行情权限：{snapshot['permissions']}；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
     market={s:get_market(s) for s in WATCHLIST}
     print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
