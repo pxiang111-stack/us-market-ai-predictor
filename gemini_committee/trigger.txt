@@ -1,1 +1,1 @@
-Retry Tiger config diagnostics 2026-11-27T13:49:44.265Z
+Tiger config parser diagnostic 2026-11-27T13:49:53.699Z
