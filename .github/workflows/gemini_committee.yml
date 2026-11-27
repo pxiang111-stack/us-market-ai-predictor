@@ -2,6 +2,9 @@ name: Gemini Quant Committee
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'gemini_committee/trigger.txt'
 
 permissions:
   contents: write
