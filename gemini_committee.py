@@ -105,16 +105,15 @@ def call_gemini(prompt: str) -> str:
     url = f"{API_ROOT}/{MODEL}:generateContent"
     response = requests.post(
         url,
-        params={"key": api_key},
         json={
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"maxOutputTokens": 7000},
         },
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         timeout=120,
     )
     if response.status_code != 200:
-        # Never print the request URL: the API key is passed as a query parameter.
+        # Do not print request headers or credentials in logs.
         detail = response.text[:1800].replace(api_key, "[REDACTED]")
         raise RuntimeError(f"Gemini API returned HTTP {response.status_code}: {detail}")
     payload = response.json()
