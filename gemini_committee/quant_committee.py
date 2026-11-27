@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
 MAX_RISK_PCT=0.01
-GEMINI_MODEL="gemini-2.5-flash"
+GEMINI_MODEL="models/gemini-3.8-flash"
 API_KEY=os.getenv("GEMINI_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
@@ -78,7 +78,7 @@ pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入�
 """
     client=genai.Client(api_key=API_KEY)
     res=client.models.generate_content(model=GEMINI_MODEL,contents=prompt,
-      config=types.GenerateContentConfig(temperature=0.1,response_mime_type="application/json",response_schema=CommitteeDecision))
+      config=types.GenerateContentConfig(temperature=0.1,max_output_tokens=4096,response_mime_type="application/json",response_schema=CommitteeDecision))
     if getattr(res,"parsed",None) is not None:
         x=res.parsed
         return x if isinstance(x,CommitteeDecision) else CommitteeDecision.model_validate(x)
