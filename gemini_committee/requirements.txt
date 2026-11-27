@@ -3,3 +3,4 @@ pandas
 requests
 pydantic
 openai>=1.30,<3.0
+tigeropen>=3.8.0
