@@ -41,6 +41,22 @@ jobs:
           chmod 600 "$RUNNER_TEMP/tiger/tiger_openapi_config.properties"
           echo "TIGER_CONFIG_DIR=$RUNNER_TEMP/tiger" >> "$GITHUB_ENV"
           echo "Tiger OpenAPI configuration is present (values hidden)."
+      - name: Diagnose Tiger config fields (never print values)
+        env:
+          TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from jproperties import Properties
+          p=Properties()
+          p.load(os.environ["TIGER_OPENAPI_CONFIG"].encode("utf-8"), "utf-8")
+          print("Tiger config keys:", ", ".join(sorted(p.keys())))
+          for key in ("tiger_id", "account", "license", "private_key", "private_key_pk1", "private_key_pk8"):
+              item=p.get(key)
+              value=getattr(item, "data", "") if item else ""
+              print(f"{key}: {'present' if value else 'MISSING'}; length={len(value or '')}")
+          PY
       - name: Test Tiger market data and run committee
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
