@@ -18,7 +18,7 @@ on:
     - cron: "30 12 * * 1-5"
 
 concurrency:
-  group: daily-us-market-scan-\${{ github.ref }}
+  group: daily-us-market-scan-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: \${{ vars.GEMINI_MODEL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
