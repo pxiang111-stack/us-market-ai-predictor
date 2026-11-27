@@ -54,13 +54,37 @@ def get_market(symbol):
     low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
-    p=float(close.iloc[-1]); ma20=float(close.tail(20).mean())
+    daily_close=float(close.iloc[-1])
+    p=daily_close
+    intraday_timestamp=None
+    intraday_source="Yahoo Finance daily close (非实时)"
+    intraday_change_pct=None
+    try:
+        intra=yf.download(symbol,period="1d",interval="1m",prepost=True,auto_adjust=True,progress=False,threads=False)
+        if intra is not None and not intra.empty:
+            if isinstance(intra.columns,pd.MultiIndex): intra.columns=[str(x[0]) for x in intra.columns]
+            ic=pd.to_numeric(intra["Close"],errors="coerce").dropna()
+            if not ic.empty:
+                ts=ic.index[-1]
+                ts_utc=pd.Timestamp(ts)
+                if ts_utc.tzinfo is None: ts_utc=ts_utc.tz_localize("America/New_York")
+                age=(pd.Timestamp.now(tz="UTC")-ts_utc.tz_convert("UTC")).total_seconds()/60
+                if 0<=age<=20:
+                    p=float(ic.iloc[-1])
+                    intraday_timestamp=ts_utc.isoformat()
+                    intraday_source="Yahoo Finance 1-minute bars, extended hours (非保证实时)"
+                    intraday_change_pct=(p/daily_close-1)*100 if daily_close else None
+    except Exception as exc:
+        print(f"{symbol}: 分钟行情不可用，回退日线收盘价：{type(exc).__name__}: {exc}")
+    ma20=float(close.tail(20).mean())
     ma50=float(close.tail(50).mean()) if len(close)>=50 else None
     prior=vol.iloc[-21:-1].dropna() if len(vol)>=21 else vol.iloc[:-1].dropna()
     avg=float(prior.mean()) if not prior.empty else 0.0
     last=float(vol.iloc[-1]) if pd.notna(vol.iloc[-1]) else 0.0
     old5=float(close.iloc[-6]) if len(close)>=6 else None
     return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,
+      "daily_close":daily_close,"intraday_timestamp":intraday_timestamp,
+      "quote_source":intraday_source,"intraday_change_vs_daily_close_pct":intraday_change_pct,
       "ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
       "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
       "return_5d_pct":(p/old5-1)*100 if old5 else None,
@@ -173,7 +197,9 @@ def write_reports(rows):
       "- DeepSeek API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- DeepSeek模型：{DEEPSEEK_MODEL}",""]
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
-        lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（{m['as_of']}）",
+        lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（日线日期 {m['as_of']}）",
+          f"- 行情来源：{m.get('quote_source','未知')}；分钟数据时间：{m.get('intraday_timestamp') or '无，使用日线收盘价'}",
+          f"- 最近日线收盘：{m.get('daily_close',m['current_price']):.4f}；盘中相对日线收盘：{m.get('intraday_change_vs_daily_close_pct')}",
           f"- MA20偏离：{m['ma20_deviation_pct']:.2f}%；MA50偏离：{m['ma50_deviation_pct']}",
           f"- 5日涨跌幅：{m['return_5d_pct']:.2f}%；20日量比：{m['volume_ratio_20d']}",
           f"- 20日高/低：{m['high_20d']:.4f}/{m['low_20d']:.4f}",
