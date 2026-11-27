@@ -134,7 +134,6 @@ def run_committee(data):
 你是严格的美股盘前/盘中量化委员会。逐一分析全部30只股票，不得遗漏。
 每只股票分别给出多头分析师逻辑、空头风控官反驳（检查放量破位、高位派发、增发、债务、指引下调）、裁判结论。
 强制价格纪律：只有quote_verified_realtime=true且报价时间戳不超过3分钟的1分钟K线，才可用于GO/GO SMALLER。fast_info没有时间戳或回退日线收盘价均不得视为实时现价，必须NO-GO。GO/GO SMALLER入场区间必须覆盖current_price；跳空突破或跌破原区间必须按现价重算，否则NO-GO。止损必须低于现价，目标必须高于现价。
-若quote_fallback_to_daily_close=true，必须说明使用的是最近日线收盘价而非盘前实时成交，不得称为实时成交。
 仅考虑做多。证据不足NO-GO。不要计算股数/仓位，交给Python硬风控。
 pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
 只输出JSON：{{"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}
