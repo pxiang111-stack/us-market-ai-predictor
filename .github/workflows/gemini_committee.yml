@@ -3,7 +3,7 @@ name: DeepSeek Quant Committee (30 tickers Yahoo 5m)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 12-22 * * 1-5'
+    - cron: '*/5 9-22 * * 1-5'
   push:
     paths:
       - 'gemini_committee/trigger.txt'
