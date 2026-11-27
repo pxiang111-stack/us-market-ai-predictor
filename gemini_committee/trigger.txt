@@ -1,1 +1,1 @@
-Run Binance TradFi 1m market data test 2026-11-27T14:30:02.361Z
+Retry Binance access after user switched region 2026-11-27T14:37:46.453Z
