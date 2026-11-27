@@ -1,4 +1,4 @@
-name: DeepSeek Quant Committee (Tiger OpenAPI)
+name: DeepSeek Quant Committee (30 tickers Yahoo 5m)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ permissions:
 jobs:
   run-deepseek-committee:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
@@ -24,76 +24,23 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: gemini_committee/requirements.txt
-      - name: Install committee-only dependencies
+      - name: Install committee dependencies
         run: python -m pip install -r gemini_committee/requirements.txt
       - name: Compile committee Python modules
         run: python -m compileall -q gemini_committee
-      - name: Configure Tiger OpenAPI credentials
-        env:
-          TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
-        run: |
-          if [ -z "$TIGER_OPENAPI_CONFIG" ]; then
-            echo "::error::GitHub Actions Secret TIGER_OPENAPI_CONFIG is missing."
-            exit 1
-          fi
-          mkdir -p "$RUNNER_TEMP/tiger"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          raw=os.environ["TIGER_OPENAPI_CONFIG"].strip()
-          output=Path(os.environ["RUNNER_TEMP"])/"tiger"/"tiger_openapi_config.properties"
-          if raw.startswith("{"):
-              data=json.loads(raw)
-              if isinstance(data.get("config"),dict): data=data["config"]
-              if isinstance(data.get("data"),dict): data=data["data"]
-              aliases={
-                  "tigerId":"tiger_id","accountId":"account","trading_account":"account",
-                  "privateKey":"private_key","privateKeyPk1":"private_key_pk1",
-                  "privateKeyPk8":"private_key_pk8","secretKey":"secret_key"
-              }
-              normalized={}
-              for key,value in data.items():
-                  k=aliases.get(key,key)
-                  if isinstance(value,(str,int,float)): normalized[k]=str(value).strip()
-              lines=[f"{k}={v}" for k,v in normalized.items() if k in {
-                  "tiger_id","account","license","private_key","private_key_pk1",
-                  "private_key_pk8","secret_key","env","token"
-              } and v]
-              output.write_text("\\n".join(lines)+"\\n",encoding="utf-8")
-          else:
-              output.write_text(raw+"\\n",encoding="utf-8")
-          output.chmod(0o600)
-          PY
-          echo "TIGER_CONFIG_DIR=$RUNNER_TEMP/tiger" >> "$GITHUB_ENV"
-          echo "Tiger OpenAPI config prepared (credential values hidden)."
-      - name: Diagnose Tiger config fields (never print values)
-        env:
-          TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
-        run: |
-          python - <<'PY'
-          import os, io
-          from jproperties import Properties
-          p=Properties()
-          p.load(io.BytesIO(os.environ["TIGER_OPENAPI_CONFIG"].encode("utf-8")), "utf-8")
-          print("Tiger config keys:", ", ".join(sorted(p.keys())))
-          for key in ("tiger_id", "account", "license", "private_key", "private_key_pk1", "private_key_pk8"):
-              item=p.get(key)
-              value=getattr(item, "data", "") if item else ""
-              print(f"{key}: {'present' if value else 'MISSING'}; length={len(value or '')}")
-          PY
-      - name: Test Tiger market data and run committee
+      - name: Run 30-ticker DeepSeek committee
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           BARK_KEY: ${{ secrets.BARK_KEY }}
-        run: python gemini_committee/intraday_monitor.py
+        run: python gemini_committee/quant_committee.py
       - name: Commit committee reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add gemini_committee/daily_report.json gemini_committee/daily_report.md gemini_committee/intraday_snapshot.json
+          git add gemini_committee/daily_report.json gemini_committee/daily_report.md
           if git diff --cached --quiet; then
             echo "No report changes."
           else
-            git commit -m "Update DeepSeek Quant Committee report (Tiger OpenAPI)"
+            git commit -m "Update 30-ticker DeepSeek committee report"
             git push
           fi
