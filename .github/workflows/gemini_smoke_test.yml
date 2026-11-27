@@ -44,16 +44,34 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, requests
+          from requests.exceptions import RequestException
           model = (os.getenv("GEMINI_MODEL") or "").strip() or "gemini-3.8-flash"
-          prompt = """你是美股盘前风险审查委员会。请用中文分别以五个席位给出简短意见：1量化筛选，2市场环境，3新闻与基本面，4AI资本开支与融资风险，5风控。然后给出委员会总判断。明确说明这是单个Gemini模型模拟五个视角，不是五个独立模型。不得编造实时行情或新闻。请使用以下测试数据：QQQ测试标记，NQ测试标记，SOXL测试标记。输出必须包含五个席位标题和“委员会结论”。"""
-          url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-          response = requests.post(
-              url,
-              headers={"Content-Type": "application/json", "x-goog-api-key": os.environ["GEMINI_API_KEY"]},
-              json={"contents":[{"role":"user","parts":[{"text":prompt}]}],
-                    "generationConfig":{"maxOutputTokens":1800}},
-              timeout=90,
-          )
+          key = os.environ["GEMINI_API_KEY"]
+          headers = {"Content-Type": "application/json", "x-goog-api-key": key}
+          base = "https://generativelanguage.googleapis.com/v1beta"
+          # First distinguish model/key access from generation latency.
+          try:
+              meta = requests.get(f"{base}/models/{model}", headers={"x-goog-api-key": key}, timeout=(10, 25))
+          except RequestException as exc:
+              raise SystemExit(f"Gemini model metadata request failed: {type(exc).__name__}: {exc}")
+          if meta.status_code != 200:
+              detail = meta.text[:1200].replace(key, "[REDACTED]")
+              raise SystemExit(f"Gemini model metadata HTTP {meta.status_code}: {detail}")
+          prompt = """请模拟美股盘前委员会的五个审查席位，各用一句话回答：量化筛选、市场环境、新闻与基本面、AI资本开支风险、风控。最后给出“委员会结论”。说明这是同一个Gemini模型模拟五种视角，不是五个独立模型。没有实时数据，不得编造行情。"""
+          body = {
+              "contents":[{"role":"user","parts":[{"text":prompt}]}],
+              "generationConfig":{
+                  "maxOutputTokens":512,
+                  "thinkingConfig":{"thinkingLevel":"low"}
+              }
+          }
+          try:
+              response = requests.post(
+                  f"{base}/models/{model}:generateContent",
+                  headers=headers, json=body, timeout=(10, 180)
+              )
+          except RequestException as exc:
+              raise SystemExit(f"Gemini generateContent request failed: {type(exc).__name__}: {exc}")
           if response.status_code != 200:
               detail = response.text[:1500].replace(os.environ["GEMINI_API_KEY"], "[REDACTED]")
               raise SystemExit(f"Gemini API HTTP {response.status_code}: {detail}")
