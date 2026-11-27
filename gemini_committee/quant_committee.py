@@ -162,7 +162,7 @@ def write_reports(rows):
       "max_risk_pct":MAX_RISK_PCT,"ai_provider":"Google Gemini API","model":GEMINI_MODEL,"api_calls":1,"results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     lines=["# Gemini盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
-      "- GitHub Models批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- Gemini模型：{GEMINI_MODEL}",""]
+      "- Gemini API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- Gemini模型：{GEMINI_MODEL}",""]
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（{m['as_of']}）",
