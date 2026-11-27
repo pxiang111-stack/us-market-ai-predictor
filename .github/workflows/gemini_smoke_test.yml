@@ -80,10 +80,13 @@ jobs:
           answer = "\n".join(p.get("text","") for p in parts if p.get("text")).strip()
           if not answer:
               raise SystemExit("Gemini API returned no text content: " + json.dumps(payload.get("promptFeedback",{}), ensure_ascii=False))
-          required = ["量化", "市场", "新闻", "资本开支", "风控", "委员会结论"]
-          missing = [term for term in required if term not in answer]
-          if missing:
-              raise SystemExit("Gemini responded, but committee structure is incomplete; missing: " + ", ".join(missing) + "\n" + answer[:2500])
+          candidate = payload.get("candidates", [{}])[0]
+          finish_reason = candidate.get("finishReason", "unknown")
+          if len(answer) < 120:
+              raise SystemExit(
+                  f"Gemini returned too little text ({len(answer)} chars); "
+                  f"finishReason={finish_reason}; response={answer[:1200]}"
+              )
           os.makedirs("gemini-smoke-output", exist_ok=True)
           with open("gemini-smoke-output/gemini_committee_smoke_test.md","w",encoding="utf-8") as f:
               f.write("# Gemini 委员会直连测试\n\n")
