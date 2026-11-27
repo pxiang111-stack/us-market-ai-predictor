@@ -77,6 +77,28 @@ def build_prompt(data, age_minutes):
 snapshot_time_utc必须与输入 generated_at_utc 完全一致；current_price必须与 spot.last_price一致；三个期限必须齐全。数据新鲜度（分钟）：""" + f"{age_minutes:.1f}" + """
 数据快照：""" + json.dumps(data, ensure_ascii=False)
 
+def parse_model_json(client, content):
+    if not content:
+        raise RuntimeError("DeepSeek returned empty content")
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as first_error:
+        repair = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "你是JSON修复器。只修复语法，不改变数字和结论。只返回有效JSON对象。"},
+                {"role": "user", "content": "修复以下输出为严格有效JSON，不得编造缺失数据：\n" + content}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+            max_tokens=5000
+        )
+        repaired = repair.choices[0].message.content or ""
+        try:
+            return json.loads(repaired)
+        except json.JSONDecodeError as second_error:
+            raise RuntimeError(f"DeepSeek JSON invalid after repair; initial={first_error}; repair={second_error}")
+
 def validate_report(report, data):
     if report.get("snapshot_time_utc") != data["generated_at_utc"]:
         raise RuntimeError("DeepSeek snapshot_time_utc does not match input snapshot")
@@ -100,12 +122,53 @@ def validate_report(report, data):
         if item.get("direction") not in ("偏多", "偏空", "震荡"):
             raise RuntimeError(f"Invalid direction for {horizon}")
 
+def evaluate_existing_forecasts(ledger, data):
+    now = datetime.fromisoformat(data["generated_at_utc"].replace("Z", "+00:00")).astimezone(timezone.utc)
+    price = float(data["spot"]["last_price"])
+    durations = {"4h": 4, "24h": 24, "3d": 72}
+    for entry in ledger:
+        base_time = datetime.fromisoformat(entry["snapshot_time_utc"].replace("Z", "+00:00")).astimezone(timezone.utc)
+        base_price = float(entry["reference_price"])
+        entry.setdefault("evaluations", {})
+        for horizon, hours in durations.items():
+            if horizon in entry["evaluations"] or horizon not in entry.get("horizons", {}):
+                continue
+            expiry = base_time.timestamp() + hours * 3600
+            if now.timestamp() < expiry:
+                continue
+            forecast = entry["horizons"][horizon]
+            move_pct = (price / base_price - 1) * 100 if base_price else 0
+            actual = "震荡" if abs(move_pct) <= 0.20 else ("偏多" if move_pct > 0 else "偏空")
+            entry["evaluations"][horizon] = {
+                "evaluated_at_utc": data["generated_at_utc"],
+                "scheduled_expiry_utc": datetime.fromtimestamp(expiry, timezone.utc).isoformat(),
+                "evaluation_delay_minutes": round((now.timestamp() - expiry) / 60, 1),
+                "observed_price": price,
+                "return_pct": round(move_pct, 4),
+                "predicted_direction": forecast.get("direction"),
+                "actual_direction": actual,
+                "direction_correct": forecast.get("direction") == actual,
+                "target_range_hit": float(forecast["target_low"]) <= price <= float(forecast["target_high"])
+            }
+
+def score_summary(ledger):
+    result = {}
+    for horizon in ("4h", "24h", "3d"):
+        rows = [x["evaluations"][horizon] for x in ledger if horizon in x.get("evaluations", {})]
+        hits = sum(1 for x in rows if x["direction_correct"])
+        result[horizon] = {
+            "sample_count": len(rows),
+            "correct_count": hits,
+            "direction_accuracy_pct": round(100 * hits / len(rows), 1) if rows else None,
+            "target_range_hits": sum(1 for x in rows if x["target_range_hit"])
+        }
+    return result
+
 def append_locked_forecast(report, data):
-    ledger = []
-    if LEDGER.exists():
-        ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8")) if LEDGER.exists() else []
     if not isinstance(ledger, list):
         raise RuntimeError("Forecast ledger must be a JSON array")
+    evaluate_existing_forecasts(ledger, data)
     snapshot_time = data["generated_at_utc"]
     if any(x.get("snapshot_time_utc") == snapshot_time for x in ledger):
         raise RuntimeError(f"Forecast already locked for snapshot {snapshot_time}; refusing overwrite")
@@ -119,9 +182,11 @@ def append_locked_forecast(report, data):
         "overall_bias": report.get("overall_bias"),
         "confidence_pct": report.get("confidence_pct"),
         "market_regime": report.get("market_regime"),
-        "horizons": report["horizons"]
+        "horizons": report["horizons"],
+        "evaluations": {}
     })
     LEDGER.write_text(json.dumps(ledger, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return ledger
 
 def main():
     client = None
@@ -144,7 +209,7 @@ def main():
         content = response.choices[0].message.content
         if not content:
             raise RuntimeError("DeepSeek returned empty content")
-        report = json.loads(content)
+        report = parse_model_json(client, content)
         validate_report(report, data)
         report["model"] = MODEL
         report["snapshot"] = data
@@ -156,7 +221,8 @@ def main():
             "partial_candles_excluded_from_close_confirmation": True,
             "ohlc_consistency_checked": True
         }
-        append_locked_forecast(report, data)
+        ledger = append_locked_forecast(report, data)
+        report["historical_score_summary"] = score_summary(ledger)
         OUT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         lines = [
             "# BTC｜DeepSeek 独立观察报告", "",
@@ -167,6 +233,8 @@ def main():
             f"- 总结：{report['overall_decision']} / {report.get('overall_bias')} / 信心 {report.get('confidence_pct')}%",
             f"- 市场状态：{report.get('market_regime')}",
             "- 说明：信心百分比不是统计胜率；未收盘K线不作为收盘确认。", "",
+            "## 历史预测成绩（样本少时仅供观察）", "",
+            json.dumps(report["historical_score_summary"], ensure_ascii=False), "",
             "## 三个预测期限", ""
         ]
         for horizon in ("4h", "24h", "3d"):
@@ -189,7 +257,7 @@ def main():
             "success": True, "model": MODEL, "decision": report["overall_decision"],
             "bias": report.get("overall_bias"), "confidence_pct": report.get("confidence_pct"),
             "snapshot_time_utc": data["generated_at_utc"], "snapshot_age_minutes": round(age_minutes, 1),
-            "ledger_entries": len(json.loads(LEDGER.read_text(encoding="utf-8")))
+            "ledger_entries": len(ledger), "historical_score_summary": report["historical_score_summary"]
         }, ensure_ascii=False))
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
