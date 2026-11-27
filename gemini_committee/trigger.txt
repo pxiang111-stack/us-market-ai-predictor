@@ -1,1 +1,1 @@
-Trigger isolated Gemini 3.8 Flash committee after provider migration 2026-11-27T12:54:49.594Z
+Trigger isolated DeepSeek Flash committee validation 2026-11-27T13:11:21.254Z
