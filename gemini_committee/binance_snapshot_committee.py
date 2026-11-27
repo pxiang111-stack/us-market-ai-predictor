@@ -35,6 +35,7 @@ results必须恰好包含四个标的且各一次。价格数值必须与输入�
 输入行情：
 __DATA_JSON__
 """
+    prompt=prompt.replace("__DATA_JSON__",json.dumps(data,ensure_ascii=False))
     client=OpenAI(api_key=key,base_url="https://api.deepseek.com",timeout=240,max_retries=1)
     try:
         r=client.chat.completions.create(model=MODEL,messages=[
