@@ -40,6 +40,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      # Repository secrets are read when a run is queued; start a new run after changing them.
       - name: Verify Gemini API key secret is present
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
