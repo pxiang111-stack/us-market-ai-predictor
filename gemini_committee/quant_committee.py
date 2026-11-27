@@ -10,7 +10,7 @@ import requests
 import yfinance as yf
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from alpaca_market_data import get_free_quote_snapshot
+from tiger_market_data import get_tiger_quote_snapshot
 
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
@@ -19,7 +19,7 @@ DEEPSEEK_MODEL="deepseek-flash"
 DEEPSEEK_API_KEY=os.getenv("DEEPSEEK_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
-FREE_QUOTES={}
+TIGER_QUOTES={}
 
 class CommitteeDecision(BaseModel):
     ticker: str
@@ -57,9 +57,9 @@ def get_market(symbol):
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
     daily_close=float(close.iloc[-1])
-    quote=FREE_QUOTES.get(symbol)
+    quote=TIGER_QUOTES.get(symbol)
     if not quote or not quote.get("fresh"):
-        raise RuntimeError(f"{symbol}: Alpaca免费IEX实时行情缺失或过期，拒绝生成交易信号")
+        raise RuntimeError(f"{symbol}: Tiger OpenAPI实时行情缺失或过期，拒绝生成交易信号")
     p=float(quote["price"])
     intraday_timestamp=quote["timestamp_utc"]
     intraday_source=quote["source"]
@@ -213,13 +213,13 @@ def bark(rows):
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY，请检查Actions Secrets配置")
     print("正在获取8只标的行情、技术面与新闻数据……")
-    global FREE_QUOTES
-    snapshot=get_free_quote_snapshot(WATCHLIST)
-    FREE_QUOTES=snapshot["quotes"]
-    missing=[s for s in WATCHLIST if not FREE_QUOTES.get(s,{}).get("fresh")]
+    global TIGER_QUOTES
+    snapshot=get_tiger_quote_snapshot(WATCHLIST)
+    TIGER_QUOTES=snapshot["quotes"]
+    missing=[s for s in WATCHLIST if not TIGER_QUOTES.get(s,{}).get("fresh")]
     if missing:
-        raise RuntimeError(f"Alpaca免费IEX行情不完整或过期：{missing}；拒绝调用DeepSeek")
-    print(f"Alpaca免费IEX行情；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
+        raise RuntimeError(f"Tiger OpenAPI行情不完整或过期：{missing}；拒绝调用DeepSeek")
+    print(f"Tiger OpenAPI行情；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
     market={s:get_market(s) for s in WATCHLIST}
     print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
