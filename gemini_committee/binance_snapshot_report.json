@@ -1,20 +1,24 @@
 {
-  "generated_at_utc": "N/A",
-  "source_note": "输入中的__DATA_JSON__未被替换为实际行情，未收到任何Binance TradFi永续代理的日K、4小时K、15分钟K、成交量、成交额或主动买入量。以下输出为数据缺失下的保护性WAIT；所有价格字段留空，不编造报价，不声称实时可成交，也不代表券商现货/ETF可直接下单价格。最新K线是否未完成无法核验。若后续提供完整数据，应重新计算。",
+  "generated_at_utc": "2026-11-27T20:01:46.140Z",
+  "source_note": "数据来源为Binance ChatGPT connector的USDⓈ-M TradFi永续代理行情，不是美股交易所官方现货/ETF报价；QQQ/NVDA/AMD/SOXL均为代理合约，其中SOXL为杠杆ETF代理。最新日K、4H及15m K线可能未完成：日K 2026-11-27尚未收盘，4H 20:00 K线仅少量成交，15m 20:00 K线在20:01Z仅少量成交；不可将代理报价视为券商可直接成交的现价或实时可成交价格。",
   "market_summary": {
     "bias": "NEUTRAL",
-    "confidence_pct": 0,
-    "summary": "由于输入仅有占位符__DATA_JSON__，没有任何可用于识别趋势、成交量变化、吸筹/放量下跌、支撑阻力或周期共振的行情，无法形成可验证的交易判断。为避免为了给信号而给信号，QQQ、NVDA、AMD、SOXL四个代理标的均判定为WAIT。",
+    "confidence_pct": 55,
+    "summary": "整体中性偏防守：四标的均处于11月中旬大跌后的超跌反弹/区间震荡，QQQ相对抗跌并接近658阻力，NVDA/AMD/SOXL在11/27冲高回落，日线主趋势仍偏空或未确认反转。11/25长下影放量显示吸筹可能，但11/27放量下跌/冲高失败显示抛压，日线与短周期存在冲突。",
     "strength_rank": [
-      "无法排序：四个标的均无行情数据"
+      "QQQUSDT",
+      "AMDUSDT",
+      "NVDAUSDT",
+      "SOXLUSDT"
     ],
-    "next_week_base_case": "无数据基础，不能构建下周基准情景；在获得完整且时间戳明确的日K、4小时K、15分钟K及量能数据前，维持无信号/WAIT。",
+    "next_week_base_case": "基准情景为区间震荡：QQQ 637-658、NVDA 141-157、AMD 400-436、SOXL 32-38；只有放量突破上沿才确认反弹延续，跌破下沿则倾向二次探底。",
     "risks": [
-      "输入行情缺失或仅为占位符，任何方向判断都会是编造",
-      "代理行情非美股交易所官方现货/ETF报价，不可直接当作券商可成交现价",
-      "最新K线可能未完成，但当前无法核验时间和完整性",
-      "SOXL为杠杆ETF代理标的，波动放大",
-      "本输出不构成下单指令，不得据此交易"
+      "Binance TradFi永续为代理报价，非美股官方现货/ETF报价，价格与可成交性可能偏离",
+      "最新日K/4H/15m包含未完成K线，截至2026-11-27T20:01Z信号可能失真",
+      "SOXL为杠杆ETF代理，波动和跳空风险显著放大",
+      "低流动性时段滑点、插针和资金费率风险",
+      "超跌反弹失败导致二次探底",
+      "代理合约流动性不足导致止损/目标触发失真"
     ]
   },
   "results": [
@@ -22,77 +26,117 @@
       "ticker": "QQQUSDT",
       "bias": "NEUTRAL",
       "decision": "WAIT",
-      "confidence_pct": 0,
-      "reference_price": null,
+      "confidence_pct": 55,
+      "reference_price": 650.61,
       "entry_low": null,
       "entry_high": null,
       "stop_loss": null,
       "target_1": null,
       "target_2": null,
-      "support_levels": [],
-      "resistance_levels": [],
-      "bull_case": "无法评估：未提供QQQUSDT任何周期K线、成交量或主动买入量。",
-      "bear_case": "无法评估：未提供QQQUSDT任何周期K线、成交量或主动买入量。",
-      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
-      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+      "support_levels": [
+        "637.85",
+        "635.44",
+        "628.00",
+        "608.95"
+      ],
+      "resistance_levels": [
+        "654.12",
+        "658.38",
+        "676.43",
+        "684.52"
+      ],
+      "bull_case": "11/25长下影放量收回635.44，11/27收650.61并站上短期窄幅区间，15m 17:45放量上攻；若放量突破654.12-658.38，则反弹可延伸至676.43。",
+      "bear_case": "日线自693.12跌至608.95，11/23反弹在658.38受阻，11/27冲654.12回落，650-658为密集阻力；若失守637.85/635.44，则回测628.00/608.95。",
+      "judge_reason": "日线仍属下跌后的修复，4H在635-658区间震荡，15m虽偏强但接近阻力且最新20:00 15m K线仅77手未完成。周期未共振，追多风险回报差，等待突破658.38或回踩637.85/635.44确认。",
+      "invalidation": "若放量跌破635.44并失守628.00，则反弹结构失败；若放量突破658.38并站稳，则观望转多。未完成K线需以收盘确认。"
     },
     {
       "ticker": "NVDAUSDT",
-      "bias": "NEUTRAL",
+      "bias": "BEARISH",
       "decision": "WAIT",
-      "confidence_pct": 0,
-      "reference_price": null,
+      "confidence_pct": 55,
+      "reference_price": 149.73,
       "entry_low": null,
       "entry_high": null,
       "stop_loss": null,
       "target_1": null,
       "target_2": null,
-      "support_levels": [],
-      "resistance_levels": [],
-      "bull_case": "无法评估：未提供NVDAUSDT任何周期K线、成交量或主动买入量。",
-      "bear_case": "无法评估：未提供NVDAUSDT任何周期K线、成交量或主动买入量。",
-      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
-      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+      "support_levels": [
+        "145.62",
+        "141.40",
+        "130.58",
+        "124.95"
+      ],
+      "resistance_levels": [
+        "153.91",
+        "157.37",
+        "165.41",
+        "168.55"
+      ],
+      "bull_case": "11/23巨量长阳至165.41，11/25低141.40长下影收回150.76，若站稳153.91并突破157.37，可反弹测试165.41。",
+      "bear_case": "日线高点从201.43下移至157.37，主趋势仍空；11/23反弹后回吐，11/27冲157.37失败并放量跌回149.73，若跌破145.62/141.40则测试130.58。",
+      "judge_reason": "日线偏空，4H宽幅震荡，15m 14:30放量下跌后仅弱反弹，周期冲突且价格处于区间中部。方向偏空但decision=WAIT，不构成做空建议，也不代表该代理合约可在券商直接交易；等跌破145.62或站上157.37。",
+      "invalidation": "若放量跌破145.62，则区间下沿破位并偏向测试141.40/130.58；若站上157.37，则空头判断失效。"
     },
     {
       "ticker": "AMDUSDT",
-      "bias": "NEUTRAL",
+      "bias": "BEARISH",
       "decision": "WAIT",
-      "confidence_pct": 0,
-      "reference_price": null,
+      "confidence_pct": 55,
+      "reference_price": 422.31,
       "entry_low": null,
       "entry_high": null,
       "stop_loss": null,
       "target_1": null,
       "target_2": null,
-      "support_levels": [],
-      "resistance_levels": [],
-      "bull_case": "无法评估：未提供AMDUSDT任何周期K线、成交量或主动买入量。",
-      "bear_case": "无法评估：未提供AMDUSDT任何周期K线、成交量或主动买入量。",
-      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
-      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+      "support_levels": [
+        "409.00",
+        "400.09",
+        "396.61",
+        "371.02"
+      ],
+      "resistance_levels": [
+        "429.20",
+        "436.17",
+        "450.94",
+        "481.74"
+      ],
+      "bull_case": "11/25低371.02长下影放量收回403.42，11/27放量冲436.17；若突破436.17并站稳，可反弹至450.94/481.74。",
+      "bear_case": "日线自584.86跌至371.02，主趋势仍空；11/23高481.74失败，11/27冲436.17回落收422.31，若跌破409.00/400.09则回测371.02。",
+      "judge_reason": "日线空头未反转，4H反弹在429.20-436.17遇阻，15m 14:30放量下跌后反弹但未过429.20。422处于反弹中位，周期冲突；方向偏空但WAIT，不构成做空建议，代理合约不可在券商直接交易。等突破436.17或跌破409/400.09。",
+      "invalidation": "若跌破400.09，则反弹失败并测试371.02；若放量站上436.17，则空头判断失效。"
     },
     {
       "ticker": "SOXLUSDT",
       "bias": "NEUTRAL",
       "decision": "WAIT",
-      "confidence_pct": 0,
-      "reference_price": null,
+      "confidence_pct": 45,
+      "reference_price": 35.9,
       "entry_low": null,
       "entry_high": null,
       "stop_loss": null,
       "target_1": null,
       "target_2": null,
-      "support_levels": [],
-      "resistance_levels": [],
-      "bull_case": "无法评估：未提供SOXLUSDT任何周期K线、成交量或主动买入量；且该标的为杠杆ETF代理，波动放大。",
-      "bear_case": "无法评估：未提供SOXLUSDT任何周期K线、成交量或主动买入量；且该标的为杠杆ETF代理，波动放大。",
-      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；杠杆代理波动放大但无数据支持方向，按要求必须WAIT。",
-      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+      "support_levels": [
+        "34.49",
+        "32.07",
+        "31.03",
+        "24.66"
+      ],
+      "resistance_levels": [
+        "37.02",
+        "38.01",
+        "42.72",
+        "45.43"
+      ],
+      "bull_case": "11/25低24.66巨量长下影，11/27放量冲38.01，若站稳37.02-38.01，可反弹测试42.72。",
+      "bear_case": "日线自75.65跌至24.66，仍深度空头；11/27冲38.01后回落至35.90，杠杆ETF波动放大，若跌破34.49/32.07则回测31.03/24.66。",
+      "judge_reason": "3倍杠杆代理，日线仍空但出现巨量长下影的capitulation式吸筹迹象，4H/15m波动剧烈，35.90处于32.07-38.01区间中部。方向未确认，杠杆产品不宜追，WAIT；方向判断不代表可在券商交易该代理合约。",
+      "invalidation": "若跌破32.07，则反弹结构破坏并测试31.03/24.66；若放量站上38.01，则观望转多。"
     }
   ],
   "input_snapshot_generated_at_utc": "2026-11-27T20:01:46.140Z",
   "model": "deepseek-flash",
   "data_source": "Binance ChatGPT connector; USDⓈ-M TradFi perpetual proxy, not official US exchange quotes",
-  "report_generated_at_utc": "2026-11-27T20:03:30.858676+00:00"
+  "report_generated_at_utc": "2026-11-27T20:05:20.138765+00:00"
 }
