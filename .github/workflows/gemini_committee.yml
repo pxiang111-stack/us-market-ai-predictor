@@ -37,10 +37,35 @@ jobs:
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/tiger"
-          printf '%s' "$TIGER_OPENAPI_CONFIG" > "$RUNNER_TEMP/tiger/tiger_openapi_config.properties"
-          chmod 600 "$RUNNER_TEMP/tiger/tiger_openapi_config.properties"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          raw=os.environ["TIGER_OPENAPI_CONFIG"].strip()
+          output=Path(os.environ["RUNNER_TEMP"])/"tiger"/"tiger_openapi_config.properties"
+          if raw.startswith("{"):
+              data=json.loads(raw)
+              if isinstance(data.get("config"),dict): data=data["config"]
+              if isinstance(data.get("data"),dict): data=data["data"]
+              aliases={
+                  "tigerId":"tiger_id","accountId":"account","trading_account":"account",
+                  "privateKey":"private_key","privateKeyPk1":"private_key_pk1",
+                  "privateKeyPk8":"private_key_pk8","secretKey":"secret_key"
+              }
+              normalized={}
+              for key,value in data.items():
+                  k=aliases.get(key,key)
+                  if isinstance(value,(str,int,float)): normalized[k]=str(value).strip()
+              lines=[f"{k}={v}" for k,v in normalized.items() if k in {
+                  "tiger_id","account","license","private_key","private_key_pk1",
+                  "private_key_pk8","secret_key","env","token"
+              } and v]
+              output.write_text("\\n".join(lines)+"\\n",encoding="utf-8")
+          else:
+              output.write_text(raw+"\\n",encoding="utf-8")
+          output.chmod(0o600)
+          PY
           echo "TIGER_CONFIG_DIR=$RUNNER_TEMP/tiger" >> "$GITHUB_ENV"
-          echo "Tiger OpenAPI configuration is present (values hidden)."
+          echo "Tiger OpenAPI config prepared (credential values hidden)."
       - name: Diagnose Tiger config fields (never print values)
         env:
           TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
