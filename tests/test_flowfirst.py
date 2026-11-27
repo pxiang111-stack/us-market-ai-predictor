@@ -2,6 +2,7 @@ import unittest
 
 from flowfirst_backtest import (crowding_state, flow_direction, holding_window_end,
                                  oi_expanding, trend)
+from flowfirst_quality import diagnose_flow_quality
 
 
 def flow_row(ratio):
