@@ -32,6 +32,8 @@ The pipeline runs the V3.1 cross-sectional stock scanner, V4 NDX/SOXL and AI-inf
 - Manual run: Actions → Daily US Market AI Scan → Run workflow.
 - Download `daily-market-predictions` from the completed run's Artifacts section.
 
+If a repository secret is added or changed after a workflow run was queued, start a new workflow run so the run can receive the updated secret. The preflight check intentionally fails fast if `GEMINI_API_KEY` is unavailable.
+
 The Gemini committee is one Gemini model instructed to examine five review perspectives; it is not five independent models or a calibrated probability engine. Model scores and estimated returns are research signals, not guaranteed outcomes.
 
 ## Replace files in your repository
