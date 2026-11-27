@@ -1,0 +1,7 @@
+{
+  "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  "intervals": ["1m", "5m", "15m"],
+  "kline_limit": 60,
+  "api_base": "https://api.binance.com",
+  "request_timeout_seconds": 15
+}
