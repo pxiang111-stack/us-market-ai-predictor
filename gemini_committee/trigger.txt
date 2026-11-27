@@ -1,1 +1,1 @@
-Run 30 ticker Yahoo 1m extended-hours committee 2026-11-27T14:17:55.556Z
+Run Binance TradFi 1m market data test 2026-11-27T14:30:02.361Z
