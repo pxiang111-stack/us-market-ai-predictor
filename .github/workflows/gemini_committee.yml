@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  models: read
 
 jobs:
   run-gemini-committee:
@@ -26,7 +27,7 @@ jobs:
         run: python -m pip install -r gemini_committee/requirements.txt
       - name: Run Gemini Quant Committee
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BARK_KEY: ${{ secrets.BARK_KEY }}
         run: python gemini_committee/quant_committee.py
       - name: Commit committee reports
