@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Poll free Alpaca IEX snapshots; invoke DeepSeek only on material moves or stale report."""
+"""Poll Tiger OpenAPI snapshots; invoke DeepSeek on material moves or stale report."""
 import json, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
-from alpaca_market_data import get_free_quote_snapshot
+from tiger_market_data import get_tiger_quote_snapshot
 
 ROOT=Path(__file__).resolve().parent
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
@@ -13,7 +13,7 @@ MAX_COMMITTEE_AGE_MIN=60
 def utc_now(): return datetime.now(timezone.utc)
 
 def main():
-    snapshot=get_free_quote_snapshot(WATCHLIST)
+    snapshot=get_tiger_quote_snapshot(WATCHLIST)
     snapshot["checked_at_utc"]=utc_now().isoformat()
     snapshot["change_vs_last_committee_pct"]={}
     snapshot["committee_trigger_reason"]=None
@@ -21,7 +21,7 @@ def main():
     quotes=snapshot.get("quotes",{})
     missing=[s for s in WATCHLIST if not quotes.get(s,{}).get("fresh")]
     if missing:
-        print(f"Alpaca免费IEX行情缺失或超过10分钟：{missing}；跳过委员会。")
+        print(f"Tiger行情缺失或过期：{missing}；跳过委员会，避免使用不完整数据。")
         return
     report_path=ROOT/"daily_report.json"
     old={}
@@ -52,6 +52,6 @@ def main():
         print("触发DeepSeek委员会："+reason)
         result=subprocess.run([sys.executable,str(ROOT/"quant_committee.py")],cwd=str(ROOT))
         if result.returncode: raise SystemExit(result.returncode)
-    else: print(f"Alpaca免费IEX正常；最大异动{max_move:.3f}%，委员会报告年龄{age_min:.1f}分钟，暂不调用DeepSeek。")
+    else: print(f"Tiger行情正常；最大异动{max_move:.3f}%，委员会报告年龄{age_min:.1f}分钟，暂不调用DeepSeek。")
 
 if __name__=="__main__": main()
