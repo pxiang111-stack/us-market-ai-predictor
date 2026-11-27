@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""DeepSeek盘前量化委员会独立程序：8只标的一次批量推理。"""
 import json, math, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,31 +9,38 @@ import requests
 import yfinance as yf
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from tiger_market_data import get_tiger_quote_snapshot
 
-WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
+WATCHLIST=["SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","META","GOOGL","TSLA","AMD","AVGO","MU","ARM","TSM","PLTR","SMCI","NFLX","CRM","ORCL","APP","UBER","COIN","MSTR","HOOD","GLD","SLV","TLT","XLE"]
 ACCOUNT_SIZE=10000.0
 MAX_RISK_PCT=0.01
 DEEPSEEK_MODEL="deepseek-flash"
 DEEPSEEK_API_KEY=os.getenv("DEEPSEEK_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
-TIGER_QUOTES={}
 
 class CommitteeDecision(BaseModel):
-    ticker: str
-    bull_case: str=Field(description="多头分析师逻辑，1至2句")
-    bear_case_risks: str=Field(description="空头风控官反驳，检查放量破位、高位派发、增发、债务、指引下调")
-    verdict: Literal["GO","GO SMALLER","NO-GO"]
-    entry_low: Optional[float]=None
-    entry_high: Optional[float]=None
-    stop_price: Optional[float]=None
-    target_price: Optional[float]=None
-    judge_reason: str
-    pine_script: str=Field(description="Pine Script v5，最多5行，使用hline画入场、止损、目标")
+    ticker:str
+    bull_case:str=Field(description="多头分析师逻辑")
+    bear_case_risks:str=Field(description="空头风控官反驳")
+    verdict:Literal["GO","GO SMALLER","NO-GO"]
+    entry_low:Optional[float]=None
+    entry_high:Optional[float]=None
+    stop_price:Optional[float]=None
+    target_price:Optional[float]=None
+    judge_reason:str
+    pine_script:str=Field(description="Pine Script v5，最多5行")
 
 class CommitteeBatch(BaseModel):
-    results: list[CommitteeDecision]
+    results:list[CommitteeDecision]
+
+def ticker_frame(frame,symbol):
+    if frame is None or frame.empty: return pd.DataFrame()
+    if not isinstance(frame.columns,pd.MultiIndex): return frame.copy()
+    if symbol in frame.columns.get_level_values(0): out=frame[symbol].copy()
+    elif symbol in frame.columns.get_level_values(-1): out=frame.xs(symbol,axis=1,level=-1).copy()
+    else: return pd.DataFrame()
+    if isinstance(out.columns,pd.MultiIndex): out.columns=[str(c[0]) for c in out.columns]
+    return out
 
 def get_news(symbol):
     try:
@@ -46,199 +52,176 @@ def get_news(symbol):
         return out
     except Exception as e: return [f"新闻获取失败：{type(e).__name__}: {e}"]
 
-def get_market(symbol):
-    df=yf.download(symbol,period="3mo",interval="1d",auto_adjust=True,progress=False,threads=False)
-    if df is None or df.empty: raise RuntimeError(f"{symbol}: 近3个月日线数据为空")
-    if isinstance(df.columns,pd.MultiIndex): df.columns=[str(c[0]) for c in df.columns]
+def get_market(symbol,daily_all,intraday_all):
+    df=ticker_frame(daily_all,symbol)
+    if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 日线为空")
     df=df.dropna(subset=["Close"])
     close=pd.to_numeric(df["Close"],errors="coerce").dropna()
     high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
     low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
-    daily_close=float(close.iloc[-1])
-    quote=TIGER_QUOTES.get(symbol)
-    if not quote or not quote.get("fresh"):
-        raise RuntimeError(f"{symbol}: Tiger OpenAPI实时行情缺失或过期，拒绝生成交易信号")
-    p=float(quote["price"])
-    intraday_timestamp=quote["timestamp_utc"]
-    intraday_source=quote["source"]
-    intraday_change_pct=(p/daily_close-1)*100 if daily_close else None
-    ma20=float(close.tail(20).mean())
-    ma50=float(close.tail(50).mean()) if len(close)>=50 else None
-    prior=vol.iloc[-21:-1].dropna() if len(vol)>=21 else vol.iloc[:-1].dropna()
-    avg=float(prior.mean()) if not prior.empty else 0.0
-    last=float(vol.iloc[-1]) if pd.notna(vol.iloc[-1]) else 0.0
-    old5=float(close.iloc[-6]) if len(close)>=6 else None
-    return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,
-      "daily_close":daily_close,"intraday_timestamp":intraday_timestamp,
-      "quote_source":intraday_source,"quote_price_basis":quote.get("price_basis"),"intraday_change_vs_daily_close_pct":intraday_change_pct,
-      "quote_age_minutes":quote["age_minutes"],"session":quote.get("session"),
-      "bid":quote.get("bid"),"bid_size":quote.get("bid_size"),"ask":quote.get("ask"),
-      "ask_size":quote.get("ask_size"),"intraday_volume":quote.get("volume"),
+    daily_close=float(close.iloc[-1]); p=daily_close
+    qtime=str(close.index[-1]); source="Yahoo日线收盘价（5分钟K线无有效数据，已回退）"; fallback=True
+    intra=ticker_frame(intraday_all,symbol)
+    if not intra.empty and "Close" in intra:
+        ic=pd.to_numeric(intra["Close"],errors="coerce").dropna()
+        if not ic.empty and float(ic.iloc[-1])>0:
+            p=float(ic.iloc[-1]); idx=ic.index[-1]
+            qtime=idx.isoformat() if hasattr(idx,"isoformat") else str(idx)
+            source="Yahoo Finance 5分钟K线（prepost=True）"; fallback=False
+    try:
+        ts=pd.Timestamp(qtime)
+        if ts.tzinfo is None: ts=ts.tz_localize("UTC")
+        age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
+    except Exception: age=None
+    prev=close.shift(1)
+    tr=pd.concat([high-low,(high-prev).abs(),(low-prev).abs()],axis=1).max(axis=1)
+    ma20=float(close.tail(20).mean()); ma50=float(close.tail(50).mean()) if len(close)>=50 else None
+    pv=vol.iloc[-21:-1].dropna() if len(vol)>=21 else vol.iloc[:-1].dropna()
+    avg=float(pv.mean()) if not pv.empty else 0
+    lastvol=float(vol.iloc[-1]) if pd.notna(vol.iloc[-1]) else 0
+    c5=float(close.iloc[-6]) if len(close)>=6 else None
+    return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,"daily_close":daily_close,
+      "intraday_timestamp":qtime,"quote_source":source,"quote_fallback_to_daily_close":fallback,"quote_age_minutes":age,
+      "intraday_change_vs_daily_close_pct":(p/daily_close-1)*100 if daily_close else None,
       "ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
       "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
-      "return_5d_pct":(p/old5-1)*100 if old5 else None,
-      "volume_ratio_20d":last/avg if avg>0 else None,
-      "volume_ratio_definition":"最新日成交量/前20个交易日平均成交量（不含当天）",
+      "return_5d_pct":(p/c5-1)*100 if c5 else None,
+      "volume_ratio_20d":lastvol/avg if avg>0 else None,
       "high_20d":float(high.tail(20).max()),"low_20d":float(low.tail(20).min()),
-      "latest_news_titles":get_news(symbol),"daily_bars":len(close)}
+      "atr14":float(tr.tail(14).mean()),"latest_news_titles":get_news(symbol),"daily_bars":len(close)}
 
 def run_committee(data):
-    if not DEEPSEEK_API_KEY:
-        raise RuntimeError("缺少DEEPSEEK_API_KEY；请在GitHub Actions Secrets中配置")
+    if not DEEPSEEK_API_KEY: raise RuntimeError("缺少DEEPSEEK_API_KEY")
     prompt=f"""
-你是严格的美股盘前量化委员会。以下包含8只标的的完整行情、技术面和新闻数据。
-必须在这一次回答中逐一完成全部8只股票的分析，不得遗漏、合并或编造数据。
-对每只股票分别按三个角色执行：1多头分析师写1至2句逻辑；2空头风控官反驳，检查放量破位、高位派发、新闻中的增发、债务、指引下调（新闻标题只是线索）；3裁判权衡后给唯一裁决GO、GO SMALLER、NO-GO。
-证据不足选NO-GO。仅考虑做多；入场区间、止损、第一目标必须合理，止损低于现价、目标高于现价；无法给出合理价格时NO-GO且价格字段为null。
-禁止计算股数、仓位、风险预算，全部由Python硬风控计算。
-pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入场、止损、目标，价格与字段一致，不要代码围栏。
-必须只输出一个JSON对象，结构严格符合：{{"results":[{{"ticker":"NVDA","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}。
-results必须恰好包含以下8个ticker且每个一次：NVDA, MSFT, AAPL, META, AMZN, TSLA, QQQ, SPY。
-数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
+你是严格的美股盘前/盘中量化委员会。逐一分析全部30只股票，不得遗漏。
+每只股票分别给出多头分析师逻辑、空头风控官反驳（检查放量破位、高位派发、增发、债务、指引下调）、裁判结论。
+强制价格纪律：current_price是本次裁决时的当前参考现价。GO/GO SMALLER的入场区间必须覆盖现价（entry_low <= current_price <= entry_high）。若现价已跳空突破或跌破原计划区间，必须按现价重新评估并重算覆盖现价的新入场区间；无法合理重算就NO-GO。止损必须低于现价，目标必须高于现价。
+若quote_fallback_to_daily_close=true，必须说明使用的是最近日线收盘价而非盘前实时成交，不得称为实时成交。
+仅考虑做多。证据不足NO-GO。不要计算股数/仓位，交给Python硬风控。
+pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
+只输出JSON：{{"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}
+results必须恰好包含以下30只且每只一次：{", ".join(WATCHLIST)}
+行情数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
-    client=OpenAI(api_key=DEEPSEEK_API_KEY,base_url="https://api.deepseek.com",timeout=180.0,max_retries=0)
+    client=OpenAI(api_key=DEEPSEEK_API_KEY,base_url="https://api.deepseek.com",timeout=240.0,max_retries=0)
     content=None
     try:
         for attempt in range(3):
             try:
-                response=client.chat.completions.create(
-                    model=DEEPSEEK_MODEL,
-                    messages=[
-                        {"role":"system","content":"你是严格遵循输出格式的美股量化委员会。只返回有效JSON，不要Markdown代码围栏。"},
-                        {"role":"user","content":prompt},
-                    ],
-                    max_tokens=8192,
-                    temperature=0.1,
-                    response_format={"type":"json_object"},
-                    stream=False,
-                    extra_body={"thinking":{"type":"disabled"}},
-                )
-                if not response.choices:
-                    raise RuntimeError("DeepSeek API未返回任何choices")
-                choice=response.choices[0]
-                if choice.finish_reason=="length":
-                    raise RuntimeError("DeepSeek输出达到8192 token上限并被截断，拒绝生成不完整报告")
-                content=choice.message.content
-                if not content or not content.strip():
-                    raise RuntimeError(f"DeepSeek API返回空文本，finish_reason={choice.finish_reason}")
+                r=client.chat.completions.create(model=DEEPSEEK_MODEL,messages=[
+                  {"role":"system","content":"只返回符合要求的有效JSON，不要Markdown代码围栏。"},
+                  {"role":"user","content":prompt}],max_tokens=16000,temperature=0.1,
+                  response_format={"type":"json_object"},stream=False,
+                  extra_body={"thinking":{"type":"disabled"}})
+                if not r.choices: raise RuntimeError("DeepSeek无choices")
+                ch=r.choices[0]
+                if ch.finish_reason=="length": raise RuntimeError("DeepSeek输出达到token上限并被截断")
+                content=ch.message.content
+                if not content or not content.strip(): raise RuntimeError("DeepSeek返回空文本")
                 break
-            except Exception as exc:
-                status=getattr(exc,"status_code",None)
-                message=str(exc)
-                lower=message.lower()
-                retryable=(status in (408,409,429,500,502,503,504) or any(
-                    token in lower for token in ("408","409","429","500","502","503","504","timeout","temporarily","connection reset","service unavailable")
-                ))
-                if not retryable or attempt==2:
-                    raise RuntimeError(f"DeepSeek API调用失败（模型={DEEPSEEK_MODEL}）：{type(exc).__name__}: {message[:2500]}") from exc
-                import time
-                delay=10*(attempt+1)
-                print(f"DeepSeek API暂时故障，{delay}秒后重试第{attempt+2}次……")
-                time.sleep(delay)
-    finally:
-        client.close()
-    try:
-        batch=CommitteeBatch.model_validate_json(content)
-    except Exception as exc:
-        raise RuntimeError(f"DeepSeek返回的委员会JSON无效：{exc}; 内容片段={content[:1500]}") from exc
+            except Exception as e:
+                status=getattr(e,"status_code",None); msg=str(e).lower()
+                retry=status in (408,409,429,500,502,503,504) or any(x in msg for x in ("timeout","429","500","502","503","504","connection reset"))
+                if not retry or attempt==2: raise
+                import time; time.sleep(10*(attempt+1))
+    finally: client.close()
+    batch=CommitteeBatch.model_validate_json(content)
     got=[x.ticker for x in batch.results]
-    if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(got):
-        raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
+    if len(got)!=30 or set(got)!=set(WATCHLIST) or len(set(got))!=30: raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
     return {x.ticker:x for x in batch.results}
 
 def pine(d):
     if d.verdict=="NO-GO" or any(x is None for x in [d.entry_low,d.entry_high,d.stop_price,d.target_price]):
         return '//@version=5\nindicator("Committee NO-GO", overlay=true)\n// No valid levels'
-    candidate=(d.pine_script or "").strip()
-    if candidate.startswith("//@version=5") and "hline(" in candidate and len(candidate.splitlines())<=5:
-        return candidate
+    s=(d.pine_script or "").strip()
+    if s.startswith("//@version=5") and "hline(" in s and len(s.splitlines())<=5: return s
     mid=(float(d.entry_low)+float(d.entry_high))/2
     return "\n".join(["//@version=5",'indicator("DeepSeek Committee Levels", overlay=true)',
-      f'hline({mid:.4f}, "Entry", color=color.blue)',
-      f'hline({float(d.stop_price):.4f}, "Stop", color=color.red)',
+      f'hline({mid:.4f}, "Entry", color=color.blue)',f'hline({float(d.stop_price):.4f}, "Stop", color=color.red)',
       f'hline({float(d.target_price):.4f}, "Target", color=color.green)'])
 
 def hard_risk(m,d):
-    p=float(m["current_price"])
+    p=float(m["current_price"]); verdict=d.verdict
     valid=(d.entry_low is not None and d.entry_high is not None and d.stop_price is not None and d.target_price is not None
       and 0<d.entry_low<=d.entry_high and 0<d.stop_price<p<d.target_price)
-    verdict=d.verdict
     if verdict!="NO-GO" and not valid:
-        verdict="NO-GO"; d.judge_reason+="；Python风控否决：价格计划缺失或不合理。"
+        verdict="NO-GO"; d.judge_reason+="；Python硬风控否决：价格计划缺失或不合理。"
+    if verdict!="NO-GO" and not (float(d.entry_low)<=p<=float(d.entry_high)):
+        verdict="NO-GO"; d.judge_reason+=f"；Python硬风控否决：现价{p:.4f}不在入场区间{d.entry_low:.4f}-{d.entry_high:.4f}内。"
     budget=ACCOUNT_SIZE*MAX_RISK_PCT; shares=0
     if verdict!="NO-GO":
-        per_share=abs(p-float(d.stop_price))
-        shares=math.floor(budget/per_share) if per_share>0 else 0
+        shares=math.floor(budget/abs(p-float(d.stop_price)))
         if verdict=="GO SMALLER": shares=math.floor(shares/2)
         shares=min(shares,math.floor(ACCOUNT_SIZE/p))
     d.verdict=verdict
     return {"verdict":verdict,"risk_budget_usd":round(budget,2),
       "risk_per_share_usd":round(abs(p-float(d.stop_price)),4) if d.stop_price is not None else None,
-      "max_shares":max(0,shares),"max_position_value_usd":round(max(0,shares)*p,2),
-      "pine_script":pine(d)}
+      "max_shares":max(0,shares),"max_position_value_usd":round(max(0,shares)*p,2),"pine_script":pine(d)}
 
 def write_reports(rows):
     stamp=datetime.now(timezone.utc).isoformat()
-    report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,
-      "max_risk_pct":MAX_RISK_PCT,"ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"results":rows}
+    rows=sorted(rows,key=lambda x:(x["risk"]["verdict"]=="NO-GO",WATCHLIST.index(x["ticker"])))
+    report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,"max_risk_pct":MAX_RISK_PCT,
+      "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Yahoo Finance","results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
-    lines=["# DeepSeek盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
-      "- DeepSeek API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- DeepSeek模型：{DEEPSEEK_MODEL}","- 行情源：Alpaca Basic免费IEX（单一交易所，不代表全市场SIP）",""]
-    for x in rows:
+    lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- UTC生成时间：{stamp}",
+      "- 日线：Yahoo Finance 3mo/1d；盘前盘中：Yahoo Finance 5d/5m，prepost=True",
+      "- 注意：5分钟K线不等于交易所逐笔实时行情；报告逐只标注时间及日线回退状态",
+      "- 账户资金：10,000 USD；单笔风险预算：100 USD（1%）",""]
+    picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
+    rejects=[x for x in rows if x["risk"]["verdict"]=="NO-GO"]
+    lines += ["## 一、通过标的（GO / GO SMALLER）",""]
+    if not picks: lines += ["本次没有通过标的。",""]
+    for x in picks:
         m,c,r=x["market"],x["committee"],x["risk"]
-        lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（日线日期 {m['as_of']}）",
-          f"- 行情来源：{m.get('quote_source','未知')}；价格口径：{m.get('quote_price_basis')}；行情时间：{m.get('intraday_timestamp')}；数据年龄：{m.get('quote_age_minutes')}分钟；时段：{m.get('session')}",
-          f"- 买一/卖一：{m.get('bid')} x {m.get('bid_size')} / {m.get('ask')} x {m.get('ask_size')}；盘中成交量：{m.get('intraday_volume')}",
-          f"- 最近日线收盘：{m.get('daily_close',m['current_price']):.4f}；盘中相对日线收盘：{m.get('intraday_change_vs_daily_close_pct')}",
-          f"- MA20偏离：{m['ma20_deviation_pct']:.2f}%；MA50偏离：{m['ma50_deviation_pct']}",
-          f"- 5日涨跌幅：{m['return_5d_pct']:.2f}%；20日量比：{m['volume_ratio_20d']}",
-          f"- 20日高/低：{m['high_20d']:.4f}/{m['low_20d']:.4f}",
-          f"- 多头分析师：{c['bull_case']}",f"- 空头风控官：{c['bear_case_risks']}",f"- 裁判理由：{c['judge_reason']}",
-          f"- 入场：{c['entry_low']}–{c['entry_high']}；止损：{c['stop_price']}；目标：{c['target_price']}",
-          f"- 风控预算：{r['risk_budget_usd']} USD；每股风险：{r['risk_per_share_usd']}；最大股数：**{r['max_shares']}**",
-          "- 最新新闻："]+[f"  - {n}" for n in m["latest_news_titles"]]
-        lines += ["","Pine Script v5：","\x60\x60\x60pine",r["pine_script"],"\x60\x60\x60",""]
+        lines += [f"### {x['ticker']}｜{r['verdict']}","",f"- 当前参考现价：**{m['current_price']:.4f}**",
+          f"- 行情时间：{m['intraday_timestamp']}；来源：{m['quote_source']}；回退日线收盘：{'是' if m['quote_fallback_to_daily_close'] else '否'}；数据年龄：{m['quote_age_minutes']}分钟",
+          f"- 入场区间：**{c['entry_low']} – {c['entry_high']}**；止损：**{c['stop_price']}**；目标：**{c['target_price']}**",
+          f"- 最大股数：**{r['max_shares']}股**；每股风险：{r['risk_per_share_usd']} USD；风险预算：{r['risk_budget_usd']} USD",
+          f"- 多头分析师：{c['bull_case']}",f"- 空头风控官：{c['bear_case_risks']}",f"- 裁判结论：{c['judge_reason']}",
+          f"- 技术参考：MA20 {m['ma20']:.2f}；MA50 {m['ma50']}；20日支撑/阻力 {m['low_20d']:.2f}/{m['high_20d']:.2f}；ATR14 {m['atr14']:.2f}",
+          f"- 新闻线索：{'；'.join(m['latest_news_titles']) if m['latest_news_titles'] else '暂无'}","",
+          "Pine Script v5：","\\x60\\x60\\x60pine",r["pine_script"],"\\x60\\x60\\x60",""]
+    lines += ["## 二、NO-GO淘汰汇总","","| 代码 | 当前参考现价 | 一句话淘汰原因 |","|---|---:|---|"]
+    for x in rejects:
+        reason=(x["committee"].get("judge_reason") or x["committee"].get("bear_case_risks") or "未通过风控").replace("|","/").replace("\n"," ")
+        lines.append(f"| {x['ticker']} | {x['market']['current_price']:.4f} | {reason} |")
     (OUT/"daily_report.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
 
 def bark(rows):
     if not BARK_KEY: print("BARK_KEY未配置，跳过推送"); return
-    picks=[x for x in rows if x.get("risk",{}).get("verdict") in ("GO","GO SMALLER")]
+    picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
     if not picks: print("今日无GO/GO SMALLER标的"); return
     body="\n".join(f"{x['ticker']} {x['risk']['verdict']} | {x['market']['current_price']:.2f} | 最多{x['risk']['max_shares']}股" for x in picks)
-    url=f"https://api.day.app/{quote(BARK_KEY,safe='')}/{quote('DeepSeek Quant Committee',safe='')}/{quote(body,safe='')}"
-    response=requests.get(url,timeout=20); response.raise_for_status()
+    requests.get(f"https://api.day.app/{quote(BARK_KEY,safe='')}/{quote('DeepSeek Quant Committee',safe='')}/{quote(body,safe='')}",timeout=20).raise_for_status()
 
 def main():
-    if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY，请检查Actions Secrets配置")
-    print("正在获取8只标的行情、技术面与新闻数据……")
-    global TIGER_QUOTES
-    snapshot=get_tiger_quote_snapshot(WATCHLIST)
-    TIGER_QUOTES=snapshot["quotes"]
-    missing=[s for s in WATCHLIST if not TIGER_QUOTES.get(s,{}).get("fresh")]
-    if missing:
-        raise RuntimeError(f"Tiger OpenAPI行情不完整或过期：{missing}；拒绝调用DeepSeek")
-    print(f"Tiger OpenAPI行情；新鲜行情：{snapshot['fresh_quote_count']}/{len(WATCHLIST)}")
-    market={s:get_market(s) for s in WATCHLIST}
-    print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
+    if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY")
+    print(f"批量获取{len(WATCHLIST)}只标的日线及5分钟盘前/盘中K线……")
+    daily=yf.download(WATCHLIST,period="3mo",interval="1d",auto_adjust=True,group_by="ticker",threads=True,progress=False)
+    intra=yf.download(WATCHLIST,period="5d",interval="5m",prepost=True,group_by="ticker",threads=True,progress=False)
+    market={}; failures={}
+    for s in WATCHLIST:
+        try:
+            market[s]=get_market(s,daily,intra); m=market[s]
+            print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp']} | {'回退收盘' if m['quote_fallback_to_daily_close'] else '5分钟K线'}")
+        except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
+    if failures: raise RuntimeError("行情数据不完整，拒绝生成报告："+json.dumps(failures,ensure_ascii=False))
     decisions=run_committee(list(market.values()))
     rows=[]
-    for symbol in WATCHLIST:
-        m=market[symbol]; d=decisions[symbol]; r=hard_risk(m,d)
-        rows.append({"ticker":symbol,"market":m,"committee":d.model_dump(),"risk":r})
-        print(f"{symbol}: {r['verdict']}")
-    # 只有8只股票全部取得有效委员会结论后才写报告，避免空报告/假成功。
-    if len(rows)!=len(WATCHLIST) or any("committee" not in x for x in rows):
-        raise RuntimeError("未取得完整的8只股票委员会报告，拒绝生成报告")
+    for s in WATCHLIST:
+        m,d=market[s],decisions[s]; r=hard_risk(m,d)
+        rows.append({"ticker":s,"market":m,"committee":d.model_dump(),"risk":r})
+        print(f"{s}: {r['verdict']}")
+    if len(rows)!=30: raise RuntimeError("委员会报告不完整")
     write_reports(rows)
     try: bark(rows)
-    except Exception as e: print(f"Bark失败（报告已生成）：{type(e).__name__}: {e}")
-    print("8只股票DeepSeek批量委员会报告已生成")
+    except Exception as e: print(f"Bark失败：{type(e).__name__}: {e}")
+    print("30只标的委员会报告已生成")
 
 if __name__=="__main__":
-    try:
-        main()
-    except Exception as exc:
-        print(f"FATAL：{type(exc).__name__}: {exc}",file=sys.stderr)
-        sys.exit(1)
+    try: main()
+    except Exception as e:
+        print(f"FATAL：{type(e).__name__}: {e}",file=sys.stderr); sys.exit(1)
