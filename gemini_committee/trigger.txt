@@ -1,1 +1,1 @@
-Retry 30 ticker Yahoo data freshness validation 2026-11-27T14:09:00.849Z
+Run 30 ticker Yahoo 1m extended-hours committee 2026-11-27T14:17:55.556Z
