@@ -1,0 +1,3487 @@
+{
+  "generated_at_utc": "2026-11-27T20:01:46.140Z",
+  "source": "Binance ChatGPT connector; USDⓈ-M TradFi perpetual proxy, not official US exchange quotes",
+  "contractType": "TRADIFI_PERPETUAL",
+  "symbols": {
+    "QQQUSDT": {
+      "latest_price": "650.61000",
+      "price_timestamp": 1795809699325,
+      "daily": [
+        {
+          "time": "2026-11-04T00:00:00.000Z",
+          "open": 687.21,
+          "high": 702.62,
+          "low": 670.55,
+          "close": 691.91,
+          "volume": 841518.38,
+          "quote_volume": 578533767.7695,
+          "taker_buy_volume": 406698.31
+        },
+        {
+          "time": "2026-11-05T00:00:00.000Z",
+          "open": 691.89,
+          "high": 692.9,
+          "low": 640.01,
+          "close": 646.19,
+          "volume": 1564312.38,
+          "quote_volume": 1033615308.527,
+          "taker_buy_volume": 781001.39
+        },
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 646.23,
+          "high": 665.69,
+          "low": 646.23,
+          "close": 658.22,
+          "volume": 809295.59,
+          "quote_volume": 532503024.4402,
+          "taker_buy_volume": 398399.76
+        },
+        {
+          "time": "2026-11-07T00:00:00.000Z",
+          "open": 658.23,
+          "high": 659.59,
+          "low": 656.46,
+          "close": 657.34,
+          "volume": 47704.89,
+          "quote_volume": 31383359.5354,
+          "taker_buy_volume": 23862.34
+        },
+        {
+          "time": "2026-11-08T00:00:00.000Z",
+          "open": 657.33,
+          "high": 660.2,
+          "low": 650.01,
+          "close": 654.69,
+          "volume": 234480.54,
+          "quote_volume": 153755882.0519,
+          "taker_buy_volume": 115356.03
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 654.69,
+          "high": 682.66,
+          "low": 649.66,
+          "close": 681.26,
+          "volume": 694761.76,
+          "quote_volume": 463610949.8399,
+          "taker_buy_volume": 356187.4
+        },
+        {
+          "time": "2026-11-10T00:00:00.000Z",
+          "open": 681.22,
+          "high": 682.23,
+          "low": 667.95,
+          "close": 678.68,
+          "volume": 658999.23,
+          "quote_volume": 445430154.3182,
+          "taker_buy_volume": 318176.81
+        },
+        {
+          "time": "2026-11-11T00:00:00.000Z",
+          "open": 678.68,
+          "high": 696.32,
+          "low": 677.98,
+          "close": 684.52,
+          "volume": 539415.21,
+          "quote_volume": 371156669.6868,
+          "taker_buy_volume": 266774.94
+        },
+        {
+          "time": "2026-11-12T00:00:00.000Z",
+          "open": 684.52,
+          "high": 695.62,
+          "low": 680.07,
+          "close": 693.12,
+          "volume": 614737.79,
+          "quote_volume": 422160083.8908,
+          "taker_buy_volume": 303525.27
+        },
+        {
+          "time": "2026-11-13T00:00:00.000Z",
+          "open": 693.14,
+          "high": 694.31,
+          "low": 672.86,
+          "close": 675.82,
+          "volume": 627354.79,
+          "quote_volume": 428318395.6123,
+          "taker_buy_volume": 306317.49
+        },
+        {
+          "time": "2026-11-14T00:00:00.000Z",
+          "open": 675.82,
+          "high": 677.25,
+          "low": 667.2,
+          "close": 670.5,
+          "volume": 145871.56,
+          "quote_volume": 98151595.6466,
+          "taker_buy_volume": 71979.22
+        },
+        {
+          "time": "2026-11-15T00:00:00.000Z",
+          "open": 670.48,
+          "high": 684.75,
+          "low": 668.14,
+          "close": 683.51,
+          "volume": 192065.46,
+          "quote_volume": 130187478.3342,
+          "taker_buy_volume": 99502.46
+        },
+        {
+          "time": "2026-11-16T00:00:00.000Z",
+          "open": 683.5,
+          "high": 684.78,
+          "low": 660.12,
+          "close": 663.47,
+          "volume": 667359.03,
+          "quote_volume": 447634269.003,
+          "taker_buy_volume": 325322.05
+        },
+        {
+          "time": "2026-11-17T00:00:00.000Z",
+          "open": 663.46,
+          "high": 670.45,
+          "low": 647.5,
+          "close": 666.48,
+          "volume": 823501.51,
+          "quote_volume": 543497984.2615,
+          "taker_buy_volume": 422028.38
+        },
+        {
+          "time": "2026-11-18T00:00:00.000Z",
+          "open": 666.48,
+          "high": 667.94,
+          "low": 654.27,
+          "close": 666.24,
+          "volume": 733988.51,
+          "quote_volume": 485057822.0263,
+          "taker_buy_volume": 377408.71
+        },
+        {
+          "time": "2026-11-19T00:00:00.000Z",
+          "open": 666.25,
+          "high": 676.43,
+          "low": 642.03,
+          "close": 644.6,
+          "volume": 1128441.02,
+          "quote_volume": 743718936.2037,
+          "taker_buy_volume": 554195.1
+        },
+        {
+          "time": "2026-11-20T00:00:00.000Z",
+          "open": 644.65,
+          "high": 645.78,
+          "low": 607.76,
+          "close": 618.49,
+          "volume": 1664111.31,
+          "quote_volume": 1048423185.9211,
+          "taker_buy_volume": 824135.33
+        },
+        {
+          "time": "2026-11-21T00:00:00.000Z",
+          "open": 618.5,
+          "high": 625.9,
+          "low": 611.09,
+          "close": 623.75,
+          "volume": 310855.97,
+          "quote_volume": 192272368.0199,
+          "taker_buy_volume": 153721.29
+        },
+        {
+          "time": "2026-11-22T00:00:00.000Z",
+          "open": 623.74,
+          "high": 630.44,
+          "low": 620.29,
+          "close": 630.39,
+          "volume": 329920.33,
+          "quote_volume": 206580288.5001,
+          "taker_buy_volume": 160254.39
+        },
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 630.4,
+          "high": 658.38,
+          "low": 623.13,
+          "close": 650.31,
+          "volume": 1764692.52,
+          "quote_volume": 1138590671.7635,
+          "taker_buy_volume": 870431.54
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 650.31,
+          "high": 657.22,
+          "low": 632.25,
+          "close": 637.17,
+          "volume": 1210111.85,
+          "quote_volume": 775576044.1359,
+          "taker_buy_volume": 604578.09
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 637.16,
+          "high": 638.46,
+          "low": 608.95,
+          "close": 635.44,
+          "volume": 1604673.23,
+          "quote_volume": 1000109872.3604,
+          "taker_buy_volume": 792612.96
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 635.44,
+          "high": 642.13,
+          "low": 634.86,
+          "close": 637.86,
+          "volume": 488725.9,
+          "quote_volume": 311904889.6439,
+          "taker_buy_volume": 240484.27
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 637.85,
+          "high": 654.12,
+          "low": 637.6,
+          "close": 650.61,
+          "volume": 915995.55,
+          "quote_volume": 593121159.3275,
+          "taker_buy_volume": 467033.61
+        }
+      ],
+      "four_hour": [
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 630.4,
+          "high": 631.06,
+          "low": 623.13,
+          "close": 628.58,
+          "volume": 195323.82,
+          "quote_volume": 122765764.1393,
+          "taker_buy_volume": 102189.46
+        },
+        {
+          "time": "2026-11-23T04:00:00.000Z",
+          "open": 628.58,
+          "high": 631.07,
+          "low": 627.74,
+          "close": 629.35,
+          "volume": 64981.19,
+          "quote_volume": 40898365.3841,
+          "taker_buy_volume": 34662.98
+        },
+        {
+          "time": "2026-11-23T08:00:00.000Z",
+          "open": 629.34,
+          "high": 634.65,
+          "low": 629.21,
+          "close": 632.13,
+          "volume": 92632.12,
+          "quote_volume": 58544916.8091,
+          "taker_buy_volume": 50936.94
+        },
+        {
+          "time": "2026-11-23T12:00:00.000Z",
+          "open": 632.16,
+          "high": 658.38,
+          "low": 627.91,
+          "close": 653.28,
+          "volume": 1103391.22,
+          "quote_volume": 715450883.7883,
+          "taker_buy_volume": 540338.62
+        },
+        {
+          "time": "2026-11-23T16:00:00.000Z",
+          "open": 653.27,
+          "high": 654.68,
+          "low": 647.45,
+          "close": 651.1,
+          "volume": 200622.36,
+          "quote_volume": 130725248.011,
+          "taker_buy_volume": 94349.25
+        },
+        {
+          "time": "2026-11-23T20:00:00.000Z",
+          "open": 651.12,
+          "high": 654.94,
+          "low": 648.7,
+          "close": 650.31,
+          "volume": 107741.81,
+          "quote_volume": 70205493.6317,
+          "taker_buy_volume": 47954.29
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 650.31,
+          "high": 657.22,
+          "low": 649.22,
+          "close": 652.47,
+          "volume": 92770.07,
+          "quote_volume": 60519529.7627,
+          "taker_buy_volume": 49219.5
+        },
+        {
+          "time": "2026-11-24T04:00:00.000Z",
+          "open": 652.47,
+          "high": 655.01,
+          "low": 651.5,
+          "close": 652.75,
+          "volume": 43265.94,
+          "quote_volume": 28246686.626,
+          "taker_buy_volume": 23525.31
+        },
+        {
+          "time": "2026-11-24T08:00:00.000Z",
+          "open": 652.76,
+          "high": 653.14,
+          "low": 638.5,
+          "close": 643.15,
+          "volume": 233640.55,
+          "quote_volume": 150534705.6487,
+          "taker_buy_volume": 108651.21
+        },
+        {
+          "time": "2026-11-24T12:00:00.000Z",
+          "open": 643.16,
+          "high": 644.58,
+          "low": 633.35,
+          "close": 635.1,
+          "volume": 454468.3,
+          "quote_volume": 290372482.8443,
+          "taker_buy_volume": 221382.89
+        },
+        {
+          "time": "2026-11-24T16:00:00.000Z",
+          "open": 635.07,
+          "high": 642.01,
+          "low": 632.25,
+          "close": 636.72,
+          "volume": 265847.08,
+          "quote_volume": 169266863.4539,
+          "taker_buy_volume": 142028.92
+        },
+        {
+          "time": "2026-11-24T20:00:00.000Z",
+          "open": 636.79,
+          "high": 641.06,
+          "low": 635.56,
+          "close": 637.17,
+          "volume": 120119.91,
+          "quote_volume": 76635775.8003,
+          "taker_buy_volume": 59770.26
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 637.16,
+          "high": 638.46,
+          "low": 630.29,
+          "close": 633.19,
+          "volume": 143951.64,
+          "quote_volume": 91357276.8226,
+          "taker_buy_volume": 68590.53
+        },
+        {
+          "time": "2026-11-25T04:00:00.000Z",
+          "open": 633.18,
+          "high": 634.17,
+          "low": 623.75,
+          "close": 627.16,
+          "volume": 133040.93,
+          "quote_volume": 83652965.6957,
+          "taker_buy_volume": 65322.88
+        },
+        {
+          "time": "2026-11-25T08:00:00.000Z",
+          "open": 627.17,
+          "high": 630.33,
+          "low": 620.75,
+          "close": 621.12,
+          "volume": 192188.37,
+          "quote_volume": 120135868.1597,
+          "taker_buy_volume": 95019.77
+        },
+        {
+          "time": "2026-11-25T12:00:00.000Z",
+          "open": 621.13,
+          "high": 622.31,
+          "low": 608.95,
+          "close": 611.62,
+          "volume": 572904.56,
+          "quote_volume": 352945093.2703,
+          "taker_buy_volume": 279473.61
+        },
+        {
+          "time": "2026-11-25T16:00:00.000Z",
+          "open": 611.61,
+          "high": 635.92,
+          "low": 609.92,
+          "close": 632.95,
+          "volume": 438792.19,
+          "quote_volume": 273531811.8451,
+          "taker_buy_volume": 226404.7
+        },
+        {
+          "time": "2026-11-25T20:00:00.000Z",
+          "open": 632.95,
+          "high": 636.65,
+          "low": 630.1,
+          "close": 635.44,
+          "volume": 123795.54,
+          "quote_volume": 78486856.567,
+          "taker_buy_volume": 57801.47
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 635.44,
+          "high": 641.06,
+          "low": 635.13,
+          "close": 639.83,
+          "volume": 127603.33,
+          "quote_volume": 81513025.9013,
+          "taker_buy_volume": 61524.87
+        },
+        {
+          "time": "2026-11-26T04:00:00.000Z",
+          "open": 639.83,
+          "high": 642.13,
+          "low": 635.95,
+          "close": 637.3,
+          "volume": 133687.57,
+          "quote_volume": 85372913.3465,
+          "taker_buy_volume": 64985.59
+        },
+        {
+          "time": "2026-11-26T08:00:00.000Z",
+          "open": 637.29,
+          "high": 639.37,
+          "low": 634.86,
+          "close": 637.12,
+          "volume": 79556.98,
+          "quote_volume": 50673637.1333,
+          "taker_buy_volume": 37587.51
+        },
+        {
+          "time": "2026-11-26T12:00:00.000Z",
+          "open": 637.12,
+          "high": 639.43,
+          "low": 636.86,
+          "close": 638.68,
+          "volume": 75887.89,
+          "quote_volume": 48428066.4273,
+          "taker_buy_volume": 38226.19
+        },
+        {
+          "time": "2026-11-26T16:00:00.000Z",
+          "open": 638.68,
+          "high": 639.05,
+          "low": 636.52,
+          "close": 638.48,
+          "volume": 40095.55,
+          "quote_volume": 25570260.2761,
+          "taker_buy_volume": 20740.45
+        },
+        {
+          "time": "2026-11-26T20:00:00.000Z",
+          "open": 638.48,
+          "high": 639.55,
+          "low": 637.17,
+          "close": 637.86,
+          "volume": 31894.58,
+          "quote_volume": 20346986.5594,
+          "taker_buy_volume": 17419.66
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 637.85,
+          "high": 651.37,
+          "low": 637.6,
+          "close": 650.73,
+          "volume": 176033.32,
+          "quote_volume": 113582280.4643,
+          "taker_buy_volume": 94680.22
+        },
+        {
+          "time": "2026-11-27T04:00:00.000Z",
+          "open": 650.74,
+          "high": 654.12,
+          "low": 648.35,
+          "close": 649.54,
+          "volume": 156746.03,
+          "quote_volume": 102130355.0071,
+          "taker_buy_volume": 82653.2
+        },
+        {
+          "time": "2026-11-27T08:00:00.000Z",
+          "open": 649.54,
+          "high": 653.49,
+          "low": 647.04,
+          "close": 648.47,
+          "volume": 172284.75,
+          "quote_volume": 112245194.6916,
+          "taker_buy_volume": 86015.08
+        },
+        {
+          "time": "2026-11-27T12:00:00.000Z",
+          "open": 648.46,
+          "high": 650.89,
+          "low": 637.85,
+          "close": 645.84,
+          "volume": 284813.73,
+          "quote_volume": 183319635.4443,
+          "taker_buy_volume": 141955.31
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 645.83,
+          "high": 652.61,
+          "low": 645.02,
+          "close": 650.78,
+          "volume": 126040.44,
+          "quote_volume": 81793407.0877,
+          "taker_buy_volume": 61728.32
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 650.78,
+          "high": 650.78,
+          "low": 650.6,
+          "close": 650.61,
+          "volume": 77.28,
+          "quote_volume": 50286.6325,
+          "taker_buy_volume": 1.48
+        }
+      ],
+      "fifteen_minute": [
+        {
+          "time": "2026-11-27T12:15:00.000Z",
+          "open": 648.35,
+          "high": 649.62,
+          "low": 648.34,
+          "close": 648.88,
+          "volume": 4580.98,
+          "quote_volume": 2973824.5129,
+          "taker_buy_volume": 3019.33
+        },
+        {
+          "time": "2026-11-27T12:30:00.000Z",
+          "open": 648.91,
+          "high": 649.38,
+          "low": 648.44,
+          "close": 649.03,
+          "volume": 2623.57,
+          "quote_volume": 1702285.4799,
+          "taker_buy_volume": 1203.48
+        },
+        {
+          "time": "2026-11-27T12:45:00.000Z",
+          "open": 649.03,
+          "high": 650.64,
+          "low": 648.8,
+          "close": 650.52,
+          "volume": 4892.07,
+          "quote_volume": 3179638.3239,
+          "taker_buy_volume": 2372.6
+        },
+        {
+          "time": "2026-11-27T13:00:00.000Z",
+          "open": 650.53,
+          "high": 650.89,
+          "low": 650.14,
+          "close": 650.53,
+          "volume": 4343.37,
+          "quote_volume": 2825721.5443,
+          "taker_buy_volume": 1587.77
+        },
+        {
+          "time": "2026-11-27T13:15:00.000Z",
+          "open": 650.54,
+          "high": 650.55,
+          "low": 649.33,
+          "close": 649.58,
+          "volume": 8128.7,
+          "quote_volume": 5282745.0205,
+          "taker_buy_volume": 3838.95
+        },
+        {
+          "time": "2026-11-27T13:30:00.000Z",
+          "open": 649.58,
+          "high": 650.33,
+          "low": 648.92,
+          "close": 649.65,
+          "volume": 6459.99,
+          "quote_volume": 4196654.5003,
+          "taker_buy_volume": 2577.54
+        },
+        {
+          "time": "2026-11-27T13:45:00.000Z",
+          "open": 649.64,
+          "high": 650.14,
+          "low": 649.16,
+          "close": 649.33,
+          "volume": 5769.86,
+          "quote_volume": 3748173.2635,
+          "taker_buy_volume": 4092.07
+        },
+        {
+          "time": "2026-11-27T14:00:00.000Z",
+          "open": 649.32,
+          "high": 649.32,
+          "low": 648.27,
+          "close": 648.76,
+          "volume": 3857.82,
+          "quote_volume": 2502648.6586,
+          "taker_buy_volume": 1487.96
+        },
+        {
+          "time": "2026-11-27T14:15:00.000Z",
+          "open": 648.77,
+          "high": 648.82,
+          "low": 646.85,
+          "close": 646.95,
+          "volume": 10128.72,
+          "quote_volume": 6559314.9938,
+          "taker_buy_volume": 4681.94
+        },
+        {
+          "time": "2026-11-27T14:30:00.000Z",
+          "open": 646.97,
+          "high": 647.14,
+          "low": 639.11,
+          "close": 641.16,
+          "volume": 78386.02,
+          "quote_volume": 50332766.5963,
+          "taker_buy_volume": 35009.3
+        },
+        {
+          "time": "2026-11-27T14:45:00.000Z",
+          "open": 641.18,
+          "high": 641.61,
+          "low": 638.26,
+          "close": 638.96,
+          "volume": 42496.84,
+          "quote_volume": 27202170.5696,
+          "taker_buy_volume": 23327.17
+        },
+        {
+          "time": "2026-11-27T15:00:00.000Z",
+          "open": 638.96,
+          "high": 642.43,
+          "low": 637.85,
+          "close": 642.05,
+          "volume": 32908.06,
+          "quote_volume": 21053326.9218,
+          "taker_buy_volume": 15478.31
+        },
+        {
+          "time": "2026-11-27T15:15:00.000Z",
+          "open": 642.05,
+          "high": 643.65,
+          "low": 641.02,
+          "close": 642.77,
+          "volume": 23224.99,
+          "quote_volume": 14922259.8253,
+          "taker_buy_volume": 13044.07
+        },
+        {
+          "time": "2026-11-27T15:30:00.000Z",
+          "open": 642.79,
+          "high": 647.02,
+          "low": 642.46,
+          "close": 646.4,
+          "volume": 33851.13,
+          "quote_volume": 21852405.2074,
+          "taker_buy_volume": 18989.56
+        },
+        {
+          "time": "2026-11-27T15:45:00.000Z",
+          "open": 646.41,
+          "high": 647.63,
+          "low": 645.03,
+          "close": 645.84,
+          "volume": 12139.48,
+          "quote_volume": 7844402.1964,
+          "taker_buy_volume": 5588.83
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 645.83,
+          "high": 646.82,
+          "low": 645.3,
+          "close": 645.45,
+          "volume": 12441.48,
+          "quote_volume": 8037747.7912,
+          "taker_buy_volume": 6510.46
+        },
+        {
+          "time": "2026-11-27T16:15:00.000Z",
+          "open": 645.47,
+          "high": 646.75,
+          "low": 645.02,
+          "close": 646.49,
+          "volume": 10856.58,
+          "quote_volume": 7010965.8829,
+          "taker_buy_volume": 5322.9
+        },
+        {
+          "time": "2026-11-27T16:30:00.000Z",
+          "open": 646.5,
+          "high": 648.2,
+          "low": 646.39,
+          "close": 647.59,
+          "volume": 9002.61,
+          "quote_volume": 5828197.4276,
+          "taker_buy_volume": 4910.45
+        },
+        {
+          "time": "2026-11-27T16:45:00.000Z",
+          "open": 647.62,
+          "high": 649.63,
+          "low": 647.55,
+          "close": 647.59,
+          "volume": 10844.63,
+          "quote_volume": 7034319.1225,
+          "taker_buy_volume": 4935.27
+        },
+        {
+          "time": "2026-11-27T17:00:00.000Z",
+          "open": 647.58,
+          "high": 648.29,
+          "low": 646.62,
+          "close": 647.6,
+          "volume": 5674.8,
+          "quote_volume": 3672464.6839,
+          "taker_buy_volume": 2317.67
+        },
+        {
+          "time": "2026-11-27T17:15:00.000Z",
+          "open": 647.55,
+          "high": 648.65,
+          "low": 647.31,
+          "close": 648.03,
+          "volume": 4972.31,
+          "quote_volume": 3222051.8653,
+          "taker_buy_volume": 3018.51
+        },
+        {
+          "time": "2026-11-27T17:30:00.000Z",
+          "open": 648.06,
+          "high": 648.35,
+          "low": 646.66,
+          "close": 647.66,
+          "volume": 5156.71,
+          "quote_volume": 3339973.3416,
+          "taker_buy_volume": 2623.82
+        },
+        {
+          "time": "2026-11-27T17:45:00.000Z",
+          "open": 647.66,
+          "high": 652.4,
+          "low": 646.84,
+          "close": 651.88,
+          "volume": 21514.67,
+          "quote_volume": 13965801.7191,
+          "taker_buy_volume": 13297.62
+        },
+        {
+          "time": "2026-11-27T18:00:00.000Z",
+          "open": 651.87,
+          "high": 652.61,
+          "low": 650.5,
+          "close": 650.92,
+          "volume": 26511.85,
+          "quote_volume": 17273489.8275,
+          "taker_buy_volume": 10194.66
+        },
+        {
+          "time": "2026-11-27T18:15:00.000Z",
+          "open": 650.94,
+          "high": 651.48,
+          "low": 650.33,
+          "close": 650.36,
+          "volume": 7880.72,
+          "quote_volume": 5131938.9302,
+          "taker_buy_volume": 3700.83
+        },
+        {
+          "time": "2026-11-27T18:30:00.000Z",
+          "open": 650.35,
+          "high": 650.46,
+          "low": 650.25,
+          "close": 650.3,
+          "volume": 3258.43,
+          "quote_volume": 2119134.6759,
+          "taker_buy_volume": 1339.3
+        },
+        {
+          "time": "2026-11-27T18:45:00.000Z",
+          "open": 650.3,
+          "high": 650.51,
+          "low": 650.3,
+          "close": 650.48,
+          "volume": 1990.36,
+          "quote_volume": 1294607.2411,
+          "taker_buy_volume": 729.38
+        },
+        {
+          "time": "2026-11-27T19:00:00.000Z",
+          "open": 650.48,
+          "high": 650.74,
+          "low": 650.47,
+          "close": 650.62,
+          "volume": 2103.38,
+          "quote_volume": 1368337.561,
+          "taker_buy_volume": 1035.96
+        },
+        {
+          "time": "2026-11-27T19:15:00.000Z",
+          "open": 650.63,
+          "high": 651.32,
+          "low": 650.62,
+          "close": 651.18,
+          "volume": 1571.78,
+          "quote_volume": 1023393.5415,
+          "taker_buy_volume": 845.3
+        },
+        {
+          "time": "2026-11-27T19:30:00.000Z",
+          "open": 651.18,
+          "high": 651.19,
+          "low": 650.66,
+          "close": 650.88,
+          "volume": 1212.04,
+          "quote_volume": 788959.9592,
+          "taker_buy_volume": 513.12
+        },
+        {
+          "time": "2026-11-27T19:45:00.000Z",
+          "open": 650.89,
+          "high": 650.91,
+          "low": 650.64,
+          "close": 650.78,
+          "volume": 1048.09,
+          "quote_volume": 682023.5172,
+          "taker_buy_volume": 433.07
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 650.78,
+          "high": 650.78,
+          "low": 650.6,
+          "close": 650.61,
+          "volume": 77.28,
+          "quote_volume": 50286.6325,
+          "taker_buy_volume": 1.48
+        }
+      ]
+    },
+    "NVDAUSDT": {
+      "latest_price": "149.73000",
+      "price_timestamp": 1795809702794,
+      "daily": [
+        {
+          "time": "2026-11-04T00:00:00.000Z",
+          "open": 208.46,
+          "high": 211.37,
+          "low": 200.08,
+          "close": 201.43,
+          "volume": 2038475.22,
+          "quote_volume": 417676887.2895,
+          "taker_buy_volume": 1005998.32
+        },
+        {
+          "time": "2026-11-05T00:00:00.000Z",
+          "open": 201.42,
+          "high": 201.61,
+          "low": 179.06,
+          "close": 181.02,
+          "volume": 3829799.1,
+          "quote_volume": 721845934.0164,
+          "taker_buy_volume": 1851923.62
+        },
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 181.03,
+          "high": 195.24,
+          "low": 180.98,
+          "close": 188.4,
+          "volume": 2495563.07,
+          "quote_volume": 470614099.9149,
+          "taker_buy_volume": 1250557.66
+        },
+        {
+          "time": "2026-11-07T00:00:00.000Z",
+          "open": 188.4,
+          "high": 189.24,
+          "low": 187.16,
+          "close": 187.67,
+          "volume": 178270.68,
+          "quote_volume": 33533709.3271,
+          "taker_buy_volume": 85753.95
+        },
+        {
+          "time": "2026-11-08T00:00:00.000Z",
+          "open": 187.66,
+          "high": 188.21,
+          "low": 179.46,
+          "close": 179.92,
+          "volume": 1058664.36,
+          "quote_volume": 194274554.7172,
+          "taker_buy_volume": 558694.94
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 179.92,
+          "high": 183.34,
+          "low": 170.88,
+          "close": 180.35,
+          "volume": 9393712.43,
+          "quote_volume": 1667182349.2663,
+          "taker_buy_volume": 4549829.12
+        },
+        {
+          "time": "2026-11-10T00:00:00.000Z",
+          "open": 180.35,
+          "high": 183.57,
+          "low": 166.21,
+          "close": 170.41,
+          "volume": 7922373.35,
+          "quote_volume": 1372983880.1812,
+          "taker_buy_volume": 3699259.62
+        },
+        {
+          "time": "2026-11-11T00:00:00.000Z",
+          "open": 170.41,
+          "high": 178.61,
+          "low": 153.71,
+          "close": 160.68,
+          "volume": 11361678.12,
+          "quote_volume": 1926194554.8016,
+          "taker_buy_volume": 5231547.88
+        },
+        {
+          "time": "2026-11-12T00:00:00.000Z",
+          "open": 160.68,
+          "high": 168.73,
+          "low": 149.22,
+          "close": 168.28,
+          "volume": 29083821.05,
+          "quote_volume": 4678274925.9889,
+          "taker_buy_volume": 14654608.08
+        },
+        {
+          "time": "2026-11-13T00:00:00.000Z",
+          "open": 168.28,
+          "high": 171.88,
+          "low": 158.69,
+          "close": 161.17,
+          "volume": 13815897.01,
+          "quote_volume": 2272294853.3775,
+          "taker_buy_volume": 6706155.44
+        },
+        {
+          "time": "2026-11-14T00:00:00.000Z",
+          "open": 161.16,
+          "high": 163.01,
+          "low": 156.13,
+          "close": 159.98,
+          "volume": 2745361.08,
+          "quote_volume": 441061870.4334,
+          "taker_buy_volume": 1264956.6
+        },
+        {
+          "time": "2026-11-15T00:00:00.000Z",
+          "open": 159.97,
+          "high": 166.79,
+          "low": 157.65,
+          "close": 165.58,
+          "volume": 3061514.56,
+          "quote_volume": 498693573.9664,
+          "taker_buy_volume": 1503705.54
+        },
+        {
+          "time": "2026-11-16T00:00:00.000Z",
+          "open": 165.59,
+          "high": 166.95,
+          "low": 155.19,
+          "close": 156.37,
+          "volume": 12448396.08,
+          "quote_volume": 1982899605.6926,
+          "taker_buy_volume": 5937457.32
+        },
+        {
+          "time": "2026-11-17T00:00:00.000Z",
+          "open": 156.37,
+          "high": 164,
+          "low": 150.48,
+          "close": 161.57,
+          "volume": 21686256.4,
+          "quote_volume": 3395062833.7054,
+          "taker_buy_volume": 10640829.81
+        },
+        {
+          "time": "2026-11-18T00:00:00.000Z",
+          "open": 161.57,
+          "high": 163.23,
+          "low": 150.12,
+          "close": 152.15,
+          "volume": 13172760,
+          "quote_volume": 2059741648.952,
+          "taker_buy_volume": 6416221.3
+        },
+        {
+          "time": "2026-11-19T00:00:00.000Z",
+          "open": 152.15,
+          "high": 158.37,
+          "low": 144.27,
+          "close": 146.18,
+          "volume": 13263776.72,
+          "quote_volume": 2010657452.9067,
+          "taker_buy_volume": 6342638.56
+        },
+        {
+          "time": "2026-11-20T00:00:00.000Z",
+          "open": 146.17,
+          "high": 146.93,
+          "low": 124.95,
+          "close": 129.75,
+          "volume": 17759019.8,
+          "quote_volume": 2421839687.3976,
+          "taker_buy_volume": 8217026.59
+        },
+        {
+          "time": "2026-11-21T00:00:00.000Z",
+          "open": 129.75,
+          "high": 131.63,
+          "low": 127.55,
+          "close": 130.9,
+          "volume": 3200980.31,
+          "quote_volume": 414351865.0607,
+          "taker_buy_volume": 1594600.38
+        },
+        {
+          "time": "2026-11-22T00:00:00.000Z",
+          "open": 130.9,
+          "high": 135.79,
+          "low": 129.42,
+          "close": 135.74,
+          "volume": 2469670.62,
+          "quote_volume": 327901307.6894,
+          "taker_buy_volume": 1280387.95
+        },
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 135.73,
+          "high": 171.6,
+          "low": 130.58,
+          "close": 165.41,
+          "volume": 37420401.35,
+          "quote_volume": 5954554046.9779,
+          "taker_buy_volume": 18352528.61
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 165.41,
+          "high": 169.21,
+          "low": 150.75,
+          "close": 152.97,
+          "volume": 17317940.91,
+          "quote_volume": 2723258993.2098,
+          "taker_buy_volume": 8389672.99
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 152.96,
+          "high": 153.39,
+          "low": 141.4,
+          "close": 150.76,
+          "volume": 17493638.58,
+          "quote_volume": 2572606490.6046,
+          "taker_buy_volume": 8627407.26
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 150.76,
+          "high": 153.91,
+          "low": 148.1,
+          "close": 150.73,
+          "volume": 5177155.42,
+          "quote_volume": 781446121.83,
+          "taker_buy_volume": 2510417.88
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 150.73,
+          "high": 157.37,
+          "low": 145.62,
+          "close": 149.73,
+          "volume": 12304587.17,
+          "quote_volume": 1863156148.0258,
+          "taker_buy_volume": 5924432.83
+        }
+      ],
+      "four_hour": [
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 135.73,
+          "high": 136.04,
+          "low": 130.58,
+          "close": 134.37,
+          "volume": 2202885.46,
+          "quote_volume": 293550871.7202,
+          "taker_buy_volume": 1060428.84
+        },
+        {
+          "time": "2026-11-23T04:00:00.000Z",
+          "open": 134.37,
+          "high": 135.64,
+          "low": 133.6,
+          "close": 134.91,
+          "volume": 1078042.45,
+          "quote_volume": 145232051.5748,
+          "taker_buy_volume": 552252.58
+        },
+        {
+          "time": "2026-11-23T08:00:00.000Z",
+          "open": 134.9,
+          "high": 138.32,
+          "low": 134.71,
+          "close": 136.65,
+          "volume": 1495710.83,
+          "quote_volume": 204266445.9286,
+          "taker_buy_volume": 761614.75
+        },
+        {
+          "time": "2026-11-23T12:00:00.000Z",
+          "open": 136.66,
+          "high": 171.6,
+          "low": 134.02,
+          "close": 168.55,
+          "volume": 22221995.85,
+          "quote_volume": 3586151427.2897,
+          "taker_buy_volume": 11003044.41
+        },
+        {
+          "time": "2026-11-23T16:00:00.000Z",
+          "open": 168.55,
+          "high": 169.03,
+          "low": 163.32,
+          "close": 165.9,
+          "volume": 7991244.2,
+          "quote_volume": 1323237012.8018,
+          "taker_buy_volume": 3721020.83
+        },
+        {
+          "time": "2026-11-23T20:00:00.000Z",
+          "open": 165.9,
+          "high": 167.11,
+          "low": 164.02,
+          "close": 165.41,
+          "volume": 2430522.56,
+          "quote_volume": 402116237.6628,
+          "taker_buy_volume": 1254167.2
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 165.41,
+          "high": 169.21,
+          "low": 162.9,
+          "close": 164.36,
+          "volume": 2020582.1,
+          "quote_volume": 335035039.2848,
+          "taker_buy_volume": 1026013.99
+        },
+        {
+          "time": "2026-11-24T04:00:00.000Z",
+          "open": 164.37,
+          "high": 164.77,
+          "low": 162.08,
+          "close": 163.68,
+          "volume": 928687.84,
+          "quote_volume": 152042433.1515,
+          "taker_buy_volume": 472619.42
+        },
+        {
+          "time": "2026-11-24T08:00:00.000Z",
+          "open": 163.68,
+          "high": 163.94,
+          "low": 155.04,
+          "close": 158,
+          "volume": 3933833.58,
+          "quote_volume": 622483972.5317,
+          "taker_buy_volume": 1862879.28
+        },
+        {
+          "time": "2026-11-24T12:00:00.000Z",
+          "open": 158,
+          "high": 160.11,
+          "low": 151.43,
+          "close": 152.41,
+          "volume": 5947391.92,
+          "quote_volume": 926264726.0873,
+          "taker_buy_volume": 2839370.74
+        },
+        {
+          "time": "2026-11-24T16:00:00.000Z",
+          "open": 152.41,
+          "high": 154.57,
+          "low": 150.75,
+          "close": 152.82,
+          "volume": 2968962.12,
+          "quote_volume": 453153264.675,
+          "taker_buy_volume": 1444645.6
+        },
+        {
+          "time": "2026-11-24T20:00:00.000Z",
+          "open": 152.82,
+          "high": 155.87,
+          "low": 152.19,
+          "close": 152.97,
+          "volume": 1518483.35,
+          "quote_volume": 234279557.4795,
+          "taker_buy_volume": 744143.96
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 152.96,
+          "high": 153.39,
+          "low": 150.88,
+          "close": 152.65,
+          "volume": 1298057.97,
+          "quote_volume": 197593382.3698,
+          "taker_buy_volume": 647926.41
+        },
+        {
+          "time": "2026-11-25T04:00:00.000Z",
+          "open": 152.64,
+          "high": 153.14,
+          "low": 148.1,
+          "close": 150.07,
+          "volume": 1277205.69,
+          "quote_volume": 192778598.99,
+          "taker_buy_volume": 606291.22
+        },
+        {
+          "time": "2026-11-25T08:00:00.000Z",
+          "open": 150.08,
+          "high": 151.21,
+          "low": 146.52,
+          "close": 147.7,
+          "volume": 2313332.44,
+          "quote_volume": 343228211.7749,
+          "taker_buy_volume": 1112933.62
+        },
+        {
+          "time": "2026-11-25T12:00:00.000Z",
+          "open": 147.7,
+          "high": 148.31,
+          "low": 141.4,
+          "close": 142.78,
+          "volume": 5036817.14,
+          "quote_volume": 730157062.871,
+          "taker_buy_volume": 2471328.5
+        },
+        {
+          "time": "2026-11-25T16:00:00.000Z",
+          "open": 142.77,
+          "high": 149.14,
+          "low": 141.64,
+          "close": 148.12,
+          "volume": 5684721.13,
+          "quote_volume": 828000189.0227,
+          "taker_buy_volume": 2843037.39
+        },
+        {
+          "time": "2026-11-25T20:00:00.000Z",
+          "open": 148.12,
+          "high": 150.83,
+          "low": 147.31,
+          "close": 150.76,
+          "volume": 1883504.21,
+          "quote_volume": 280849045.5762,
+          "taker_buy_volume": 945890.12
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 150.76,
+          "high": 153.41,
+          "low": 150.49,
+          "close": 152.57,
+          "volume": 1139528.98,
+          "quote_volume": 173272943.0972,
+          "taker_buy_volume": 560958.91
+        },
+        {
+          "time": "2026-11-26T04:00:00.000Z",
+          "open": 152.58,
+          "high": 153.91,
+          "low": 148.1,
+          "close": 150.56,
+          "volume": 1466391.67,
+          "quote_volume": 221060902.7927,
+          "taker_buy_volume": 670694.79
+        },
+        {
+          "time": "2026-11-26T08:00:00.000Z",
+          "open": 150.56,
+          "high": 151.07,
+          "low": 149.4,
+          "close": 150.65,
+          "volume": 780132.85,
+          "quote_volume": 117168149.0846,
+          "taker_buy_volume": 393364.6
+        },
+        {
+          "time": "2026-11-26T12:00:00.000Z",
+          "open": 150.65,
+          "high": 151.85,
+          "low": 149.03,
+          "close": 150.61,
+          "volume": 978131.82,
+          "quote_volume": 147288741.2093,
+          "taker_buy_volume": 494467.95
+        },
+        {
+          "time": "2026-11-26T16:00:00.000Z",
+          "open": 150.61,
+          "high": 151.38,
+          "low": 149.7,
+          "close": 151.19,
+          "volume": 402010.48,
+          "quote_volume": 60478050.6869,
+          "taker_buy_volume": 190565.79
+        },
+        {
+          "time": "2026-11-26T20:00:00.000Z",
+          "open": 151.18,
+          "high": 152.36,
+          "low": 150.33,
+          "close": 150.73,
+          "volume": 410959.62,
+          "quote_volume": 62177334.9593,
+          "taker_buy_volume": 200365.84
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 150.73,
+          "high": 155.85,
+          "low": 150.19,
+          "close": 154.76,
+          "volume": 1363586.61,
+          "quote_volume": 209093707.8194,
+          "taker_buy_volume": 652533.06
+        },
+        {
+          "time": "2026-11-27T04:00:00.000Z",
+          "open": 154.76,
+          "high": 157.37,
+          "low": 154.09,
+          "close": 155.27,
+          "volume": 1428956.86,
+          "quote_volume": 222756292.6121,
+          "taker_buy_volume": 677001.92
+        },
+        {
+          "time": "2026-11-27T08:00:00.000Z",
+          "open": 155.27,
+          "high": 157.31,
+          "low": 151.42,
+          "close": 153.11,
+          "volume": 2143127.46,
+          "quote_volume": 332125571.2953,
+          "taker_buy_volume": 1037699.05
+        },
+        {
+          "time": "2026-11-27T12:00:00.000Z",
+          "open": 153.11,
+          "high": 154.65,
+          "low": 145.62,
+          "close": 147.7,
+          "volume": 5233976.98,
+          "quote_volume": 780204980.9079,
+          "taker_buy_volume": 2479357.55
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 147.7,
+          "high": 151.1,
+          "low": 147.56,
+          "close": 149.87,
+          "volume": 2130492.74,
+          "quote_volume": 318309607.0998,
+          "taker_buy_volume": 1076739.02
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 149.86,
+          "high": 149.87,
+          "low": 149.72,
+          "close": 149.73,
+          "volume": 4446.52,
+          "quote_volume": 665988.2913,
+          "taker_buy_volume": 1102.23
+        }
+      ],
+      "fifteen_minute": [
+        {
+          "time": "2026-11-27T12:15:00.000Z",
+          "open": 152.66,
+          "high": 153.42,
+          "low": 152.64,
+          "close": 152.97,
+          "volume": 123559.46,
+          "quote_volume": 18917738.1308,
+          "taker_buy_volume": 67564.58
+        },
+        {
+          "time": "2026-11-27T12:30:00.000Z",
+          "open": 152.96,
+          "high": 153.91,
+          "low": 152.74,
+          "close": 153.65,
+          "volume": 104800.34,
+          "quote_volume": 16086071.4203,
+          "taker_buy_volume": 58228.66
+        },
+        {
+          "time": "2026-11-27T12:45:00.000Z",
+          "open": 153.64,
+          "high": 154.33,
+          "low": 153.39,
+          "close": 154.25,
+          "volume": 87873.48,
+          "quote_volume": 13534520.0715,
+          "taker_buy_volume": 46376.78
+        },
+        {
+          "time": "2026-11-27T13:00:00.000Z",
+          "open": 154.25,
+          "high": 154.65,
+          "low": 153.67,
+          "close": 154.01,
+          "volume": 140212.91,
+          "quote_volume": 21621967.0916,
+          "taker_buy_volume": 62080.26
+        },
+        {
+          "time": "2026-11-27T13:15:00.000Z",
+          "open": 154.01,
+          "high": 154.04,
+          "low": 152.86,
+          "close": 153.16,
+          "volume": 147468.77,
+          "quote_volume": 22604694.3061,
+          "taker_buy_volume": 69849.84
+        },
+        {
+          "time": "2026-11-27T13:30:00.000Z",
+          "open": 153.16,
+          "high": 153.62,
+          "low": 152.78,
+          "close": 153.08,
+          "volume": 89712.11,
+          "quote_volume": 13746812.4926,
+          "taker_buy_volume": 41820.95
+        },
+        {
+          "time": "2026-11-27T13:45:00.000Z",
+          "open": 153.08,
+          "high": 153.6,
+          "low": 152.79,
+          "close": 153.22,
+          "volume": 65492.56,
+          "quote_volume": 10036180.7415,
+          "taker_buy_volume": 29643.33
+        },
+        {
+          "time": "2026-11-27T14:00:00.000Z",
+          "open": 153.22,
+          "high": 153.23,
+          "low": 152.41,
+          "close": 152.99,
+          "volume": 101350.7,
+          "quote_volume": 15491141.7839,
+          "taker_buy_volume": 49670.39
+        },
+        {
+          "time": "2026-11-27T14:15:00.000Z",
+          "open": 152.99,
+          "high": 153.02,
+          "low": 151.73,
+          "close": 152.23,
+          "volume": 207861.02,
+          "quote_volume": 31657923.889,
+          "taker_buy_volume": 94951.17
+        },
+        {
+          "time": "2026-11-27T14:30:00.000Z",
+          "open": 152.25,
+          "high": 152.27,
+          "low": 146.94,
+          "close": 147.96,
+          "volume": 1382559.8,
+          "quote_volume": 205492808.1294,
+          "taker_buy_volume": 626307.5
+        },
+        {
+          "time": "2026-11-27T14:45:00.000Z",
+          "open": 147.97,
+          "high": 148.13,
+          "low": 145.63,
+          "close": 146.56,
+          "volume": 761905.28,
+          "quote_volume": 111844403.4752,
+          "taker_buy_volume": 381803.77
+        },
+        {
+          "time": "2026-11-27T15:00:00.000Z",
+          "open": 146.56,
+          "high": 147.71,
+          "low": 145.62,
+          "close": 147.53,
+          "volume": 595316.64,
+          "quote_volume": 87316914.1585,
+          "taker_buy_volume": 294132.44
+        },
+        {
+          "time": "2026-11-27T15:15:00.000Z",
+          "open": 147.53,
+          "high": 147.72,
+          "low": 146.68,
+          "close": 147.29,
+          "volume": 369656.06,
+          "quote_volume": 54419432.6021,
+          "taker_buy_volume": 156265.9
+        },
+        {
+          "time": "2026-11-27T15:30:00.000Z",
+          "open": 147.29,
+          "high": 148.48,
+          "low": 146.69,
+          "close": 148.26,
+          "volume": 437654.61,
+          "quote_volume": 64618858.8567,
+          "taker_buy_volume": 216878.17
+        },
+        {
+          "time": "2026-11-27T15:45:00.000Z",
+          "open": 148.26,
+          "high": 148.91,
+          "low": 147.25,
+          "close": 147.7,
+          "volume": 324199.38,
+          "quote_volume": 47965544.5934,
+          "taker_buy_volume": 153769.18
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 147.7,
+          "high": 148.69,
+          "low": 147.56,
+          "close": 148.28,
+          "volume": 207726.4,
+          "quote_volume": 30792321.5337,
+          "taker_buy_volume": 96917.44
+        },
+        {
+          "time": "2026-11-27T16:15:00.000Z",
+          "open": 148.28,
+          "high": 149.17,
+          "low": 148.12,
+          "close": 149.09,
+          "volume": 215112.26,
+          "quote_volume": 31973442.6839,
+          "taker_buy_volume": 108414.3
+        },
+        {
+          "time": "2026-11-27T16:30:00.000Z",
+          "open": 149.08,
+          "high": 149.65,
+          "low": 148.66,
+          "close": 149.18,
+          "volume": 259513.85,
+          "quote_volume": 38723592.9395,
+          "taker_buy_volume": 124333.96
+        },
+        {
+          "time": "2026-11-27T16:45:00.000Z",
+          "open": 149.18,
+          "high": 149.91,
+          "low": 149.1,
+          "close": 149.11,
+          "volume": 181782.6,
+          "quote_volume": 27166550.4751,
+          "taker_buy_volume": 88395.55
+        },
+        {
+          "time": "2026-11-27T17:00:00.000Z",
+          "open": 149.1,
+          "high": 149.32,
+          "low": 148.44,
+          "close": 149.2,
+          "volume": 178453.51,
+          "quote_volume": 26567760.8739,
+          "taker_buy_volume": 96212.53
+        },
+        {
+          "time": "2026-11-27T17:15:00.000Z",
+          "open": 149.2,
+          "high": 149.99,
+          "low": 149.11,
+          "close": 149.61,
+          "volume": 128276.96,
+          "quote_volume": 19180184.1932,
+          "taker_buy_volume": 69746.32
+        },
+        {
+          "time": "2026-11-27T17:30:00.000Z",
+          "open": 149.61,
+          "high": 149.66,
+          "low": 148.73,
+          "close": 149.42,
+          "volume": 162571.46,
+          "quote_volume": 24253452.9937,
+          "taker_buy_volume": 76750.36
+        },
+        {
+          "time": "2026-11-27T17:45:00.000Z",
+          "open": 149.41,
+          "high": 151.1,
+          "low": 149.03,
+          "close": 150.83,
+          "volume": 298012.37,
+          "quote_volume": 44712571.1999,
+          "taker_buy_volume": 184384.71
+        },
+        {
+          "time": "2026-11-27T18:00:00.000Z",
+          "open": 150.83,
+          "high": 151.03,
+          "low": 150.04,
+          "close": 150.24,
+          "volume": 184531.89,
+          "quote_volume": 27766141.0522,
+          "taker_buy_volume": 79928.38
+        },
+        {
+          "time": "2026-11-27T18:15:00.000Z",
+          "open": 150.25,
+          "high": 150.28,
+          "low": 149.75,
+          "close": 149.81,
+          "volume": 87992.54,
+          "quote_volume": 13198477.5571,
+          "taker_buy_volume": 43876.2
+        },
+        {
+          "time": "2026-11-27T18:30:00.000Z",
+          "open": 149.81,
+          "high": 149.98,
+          "low": 149.57,
+          "close": 149.89,
+          "volume": 57486.54,
+          "quote_volume": 8609497.0909,
+          "taker_buy_volume": 28754.86
+        },
+        {
+          "time": "2026-11-27T18:45:00.000Z",
+          "open": 149.89,
+          "high": 150.14,
+          "low": 149.68,
+          "close": 149.81,
+          "volume": 34584.12,
+          "quote_volume": 5185107.3423,
+          "taker_buy_volume": 14184.9
+        },
+        {
+          "time": "2026-11-27T19:00:00.000Z",
+          "open": 149.81,
+          "high": 150.3,
+          "low": 149.81,
+          "close": 150.04,
+          "volume": 44316.31,
+          "quote_volume": 6650566.9143,
+          "taker_buy_volume": 24336.38
+        },
+        {
+          "time": "2026-11-27T19:15:00.000Z",
+          "open": 150.05,
+          "high": 150.41,
+          "low": 150.04,
+          "close": 150.19,
+          "volume": 40681.99,
+          "quote_volume": 6113177.1447,
+          "taker_buy_volume": 19835.54
+        },
+        {
+          "time": "2026-11-27T19:30:00.000Z",
+          "open": 150.19,
+          "high": 150.22,
+          "low": 149.8,
+          "close": 150.02,
+          "volume": 29255.02,
+          "quote_volume": 4389590.8297,
+          "taker_buy_volume": 12148.95
+        },
+        {
+          "time": "2026-11-27T19:45:00.000Z",
+          "open": 150.01,
+          "high": 150.06,
+          "low": 149.78,
+          "close": 149.87,
+          "volume": 20194.92,
+          "quote_volume": 3027172.2757,
+          "taker_buy_volume": 8518.64
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 149.86,
+          "high": 149.87,
+          "low": 149.72,
+          "close": 149.73,
+          "volume": 4446.52,
+          "quote_volume": 665988.2913,
+          "taker_buy_volume": 1102.23
+        }
+      ]
+    },
+    "AMDUSDT": {
+      "latest_price": "422.31000",
+      "price_timestamp": 1795809702793,
+      "daily": [
+        {
+          "time": "2026-11-04T00:00:00.000Z",
+          "open": 516.21,
+          "high": 524.63,
+          "low": 472.01,
+          "close": 486.97,
+          "volume": 786278.64,
+          "quote_volume": 391277478.5928,
+          "taker_buy_volume": 355230.76
+        },
+        {
+          "time": "2026-11-05T00:00:00.000Z",
+          "open": 486.98,
+          "high": 488.81,
+          "low": 400.1,
+          "close": 404.67,
+          "volume": 608606.5,
+          "quote_volume": 262444160.3561,
+          "taker_buy_volume": 311397.7
+        },
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 404.68,
+          "high": 460.77,
+          "low": 404.62,
+          "close": 447.57,
+          "volume": 360514.6,
+          "quote_volume": 158051067.0514,
+          "taker_buy_volume": 185114.48
+        },
+        {
+          "time": "2026-11-07T00:00:00.000Z",
+          "open": 447.58,
+          "high": 451.76,
+          "low": 445.1,
+          "close": 447.56,
+          "volume": 17164.28,
+          "quote_volume": 7686191.6499,
+          "taker_buy_volume": 8996
+        },
+        {
+          "time": "2026-11-08T00:00:00.000Z",
+          "open": 447.57,
+          "high": 453.4,
+          "low": 440,
+          "close": 449.19,
+          "volume": 41287.64,
+          "quote_volume": 18494868.3103,
+          "taker_buy_volume": 20636.98
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 449.26,
+          "high": 516.13,
+          "low": 441.1,
+          "close": 514.8,
+          "volume": 421751.19,
+          "quote_volume": 201359091.2911,
+          "taker_buy_volume": 210429.16
+        },
+        {
+          "time": "2026-11-10T00:00:00.000Z",
+          "open": 514.76,
+          "high": 540.16,
+          "low": 494.68,
+          "close": 519.97,
+          "volume": 497750.7,
+          "quote_volume": 255864261.9055,
+          "taker_buy_volume": 246631.96
+        },
+        {
+          "time": "2026-11-11T00:00:00.000Z",
+          "open": 519.99,
+          "high": 584,
+          "low": 519.94,
+          "close": 575.99,
+          "volume": 475122.93,
+          "quote_volume": 261391100.8357,
+          "taker_buy_volume": 247285.2
+        },
+        {
+          "time": "2026-11-12T00:00:00.000Z",
+          "open": 576.02,
+          "high": 594.78,
+          "low": 550.93,
+          "close": 584.86,
+          "volume": 837059.34,
+          "quote_volume": 478929711.02,
+          "taker_buy_volume": 416568.81
+        },
+        {
+          "time": "2026-11-13T00:00:00.000Z",
+          "open": 584.86,
+          "high": 588.46,
+          "low": 520.87,
+          "close": 522.83,
+          "volume": 510680.6,
+          "quote_volume": 282239500.3733,
+          "taker_buy_volume": 259540.44
+        },
+        {
+          "time": "2026-11-14T00:00:00.000Z",
+          "open": 522.8,
+          "high": 525.96,
+          "low": 512.72,
+          "close": 519.93,
+          "volume": 78680.66,
+          "quote_volume": 40962394.6759,
+          "taker_buy_volume": 40565.69
+        },
+        {
+          "time": "2026-11-15T00:00:00.000Z",
+          "open": 519.93,
+          "high": 534.79,
+          "low": 515.49,
+          "close": 531.9,
+          "volume": 76830.21,
+          "quote_volume": 40210964.5585,
+          "taker_buy_volume": 40069.5
+        },
+        {
+          "time": "2026-11-16T00:00:00.000Z",
+          "open": 531.82,
+          "high": 535.55,
+          "low": 497.15,
+          "close": 505.49,
+          "volume": 372118.22,
+          "quote_volume": 190674927.6693,
+          "taker_buy_volume": 186486.06
+        },
+        {
+          "time": "2026-11-17T00:00:00.000Z",
+          "open": 505.58,
+          "high": 532.66,
+          "low": 481.26,
+          "close": 522.53,
+          "volume": 471861.07,
+          "quote_volume": 238908882.4227,
+          "taker_buy_volume": 241256.92
+        },
+        {
+          "time": "2026-11-18T00:00:00.000Z",
+          "open": 522.54,
+          "high": 536.55,
+          "low": 495.98,
+          "close": 533.85,
+          "volume": 378347.4,
+          "quote_volume": 194979366.0506,
+          "taker_buy_volume": 189061.41
+        },
+        {
+          "time": "2026-11-19T00:00:00.000Z",
+          "open": 533.86,
+          "high": 555.81,
+          "low": 471.44,
+          "close": 475.83,
+          "volume": 872413.97,
+          "quote_volume": 439251286.972,
+          "taker_buy_volume": 439131.28
+        },
+        {
+          "time": "2026-11-20T00:00:00.000Z",
+          "open": 475.83,
+          "high": 480.68,
+          "low": 419.45,
+          "close": 436.93,
+          "volume": 800756.51,
+          "quote_volume": 363289433.0009,
+          "taker_buy_volume": 400460.36
+        },
+        {
+          "time": "2026-11-21T00:00:00.000Z",
+          "open": 436.9,
+          "high": 443.1,
+          "low": 428.71,
+          "close": 441.71,
+          "volume": 88613.23,
+          "quote_volume": 38665916.8969,
+          "taker_buy_volume": 47016.02
+        },
+        {
+          "time": "2026-11-22T00:00:00.000Z",
+          "open": 441.71,
+          "high": 451.18,
+          "low": 438.22,
+          "close": 450.94,
+          "volume": 59282.33,
+          "quote_volume": 26392276.7659,
+          "taker_buy_volume": 31101.2
+        },
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 450.92,
+          "high": 481.74,
+          "low": 432.61,
+          "close": 448.5,
+          "volume": 894101.83,
+          "quote_volume": 405577108.0737,
+          "taker_buy_volume": 453571.99
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 448.53,
+          "high": 459.62,
+          "low": 396.61,
+          "close": 412.11,
+          "volume": 619062.68,
+          "quote_volume": 261663366.1087,
+          "taker_buy_volume": 307650.69
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 412.07,
+          "high": 415.49,
+          "low": 371.02,
+          "close": 408.71,
+          "volume": 712450.51,
+          "quote_volume": 277856833.3132,
+          "taker_buy_volume": 354917.88
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 408.67,
+          "high": 418.83,
+          "low": 404.75,
+          "close": 408.14,
+          "volume": 166110.15,
+          "quote_volume": 68288073.1896,
+          "taker_buy_volume": 85869.03
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 408.14,
+          "high": 436.17,
+          "low": 400.09,
+          "close": 422.31,
+          "volume": 440605.39,
+          "quote_volume": 184778118.3086,
+          "taker_buy_volume": 218442.93
+        }
+      ],
+      "four_hour": [
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 450.92,
+          "high": 453.11,
+          "low": 436.5,
+          "close": 446.73,
+          "volume": 87559.2,
+          "quote_volume": 39112266.2555,
+          "taker_buy_volume": 40573.7
+        },
+        {
+          "time": "2026-11-23T04:00:00.000Z",
+          "open": 446.76,
+          "high": 453.38,
+          "low": 446.01,
+          "close": 449.45,
+          "volume": 27209.71,
+          "quote_volume": 12226071.3149,
+          "taker_buy_volume": 13379.38
+        },
+        {
+          "time": "2026-11-23T08:00:00.000Z",
+          "open": 449.39,
+          "high": 456.54,
+          "low": 442.72,
+          "close": 445.26,
+          "volume": 51336.22,
+          "quote_volume": 23069650.0467,
+          "taker_buy_volume": 25439.1
+        },
+        {
+          "time": "2026-11-23T12:00:00.000Z",
+          "open": 445.32,
+          "high": 481.74,
+          "low": 432.61,
+          "close": 459.01,
+          "volume": 489239.53,
+          "quote_volume": 222440212.2678,
+          "taker_buy_volume": 248854.85
+        },
+        {
+          "time": "2026-11-23T16:00:00.000Z",
+          "open": 458.99,
+          "high": 476.56,
+          "low": 446.68,
+          "close": 450.4,
+          "volume": 138305.14,
+          "quote_volume": 63500960.5547,
+          "taker_buy_volume": 73511.25
+        },
+        {
+          "time": "2026-11-23T20:00:00.000Z",
+          "open": 450.36,
+          "high": 456.29,
+          "low": 442.68,
+          "close": 448.5,
+          "volume": 100452.03,
+          "quote_volume": 45227947.6341,
+          "taker_buy_volume": 51813.71
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 448.53,
+          "high": 459.62,
+          "low": 444.79,
+          "close": 450.32,
+          "volume": 50776.53,
+          "quote_volume": 22901333.6205,
+          "taker_buy_volume": 26159.64
+        },
+        {
+          "time": "2026-11-24T04:00:00.000Z",
+          "open": 450.33,
+          "high": 454.93,
+          "low": 448.31,
+          "close": 450.58,
+          "volume": 28244.79,
+          "quote_volume": 12740328.2877,
+          "taker_buy_volume": 14590.3
+        },
+        {
+          "time": "2026-11-24T08:00:00.000Z",
+          "open": 450.58,
+          "high": 451.15,
+          "low": 430.18,
+          "close": 438.38,
+          "volume": 88444.85,
+          "quote_volume": 38726063.2224,
+          "taker_buy_volume": 45457.24
+        },
+        {
+          "time": "2026-11-24T12:00:00.000Z",
+          "open": 438.39,
+          "high": 439.85,
+          "low": 401.04,
+          "close": 403.21,
+          "volume": 264227.3,
+          "quote_volume": 110676962.3798,
+          "taker_buy_volume": 129013.11
+        },
+        {
+          "time": "2026-11-24T16:00:00.000Z",
+          "open": 403.23,
+          "high": 418.95,
+          "low": 396.61,
+          "close": 413.04,
+          "volume": 141926.34,
+          "quote_volume": 57784171.9276,
+          "taker_buy_volume": 69301.27
+        },
+        {
+          "time": "2026-11-24T20:00:00.000Z",
+          "open": 413.07,
+          "high": 419.78,
+          "low": 409.99,
+          "close": 412.11,
+          "volume": 45442.87,
+          "quote_volume": 18834506.6707,
+          "taker_buy_volume": 23129.13
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 412.07,
+          "high": 415.49,
+          "low": 400.02,
+          "close": 405.41,
+          "volume": 67751.94,
+          "quote_volume": 27621544.4094,
+          "taker_buy_volume": 33067.74
+        },
+        {
+          "time": "2026-11-25T04:00:00.000Z",
+          "open": 405.4,
+          "high": 406.85,
+          "low": 391.77,
+          "close": 397.02,
+          "volume": 57120.82,
+          "quote_volume": 22795285.8421,
+          "taker_buy_volume": 27797.57
+        },
+        {
+          "time": "2026-11-25T08:00:00.000Z",
+          "open": 397.03,
+          "high": 401.44,
+          "low": 386.15,
+          "close": 387.11,
+          "volume": 86776.1,
+          "quote_volume": 33990852.6259,
+          "taker_buy_volume": 41122.47
+        },
+        {
+          "time": "2026-11-25T12:00:00.000Z",
+          "open": 387.14,
+          "high": 392.83,
+          "low": 372.19,
+          "close": 377.03,
+          "volume": 276861.53,
+          "quote_volume": 105702370.8926,
+          "taker_buy_volume": 146035.55
+        },
+        {
+          "time": "2026-11-25T16:00:00.000Z",
+          "open": 377.01,
+          "high": 408.28,
+          "low": 371.02,
+          "close": 403.42,
+          "volume": 167333.73,
+          "quote_volume": 64806492.6463,
+          "taker_buy_volume": 78132.44
+        },
+        {
+          "time": "2026-11-25T20:00:00.000Z",
+          "open": 403.42,
+          "high": 410.1,
+          "low": 397.23,
+          "close": 408.71,
+          "volume": 56606.39,
+          "quote_volume": 22940286.8969,
+          "taker_buy_volume": 28762.11
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 408.67,
+          "high": 418.83,
+          "low": 408.34,
+          "close": 414.27,
+          "volume": 38261.76,
+          "quote_volume": 15864637.7006,
+          "taker_buy_volume": 19537.04
+        },
+        {
+          "time": "2026-11-26T04:00:00.000Z",
+          "open": 414.26,
+          "high": 418.43,
+          "low": 410.73,
+          "close": 414.08,
+          "volume": 21441.71,
+          "quote_volume": 8882798.7854,
+          "taker_buy_volume": 11012.51
+        },
+        {
+          "time": "2026-11-26T08:00:00.000Z",
+          "open": 414.18,
+          "high": 414.73,
+          "low": 406.5,
+          "close": 409.33,
+          "volume": 37409.92,
+          "quote_volume": 15339255.1608,
+          "taker_buy_volume": 18336.64
+        },
+        {
+          "time": "2026-11-26T12:00:00.000Z",
+          "open": 409.35,
+          "high": 412.34,
+          "low": 404.75,
+          "close": 409.61,
+          "volume": 41633.9,
+          "quote_volume": 17023787.0686,
+          "taker_buy_volume": 22567.76
+        },
+        {
+          "time": "2026-11-26T16:00:00.000Z",
+          "open": 409.61,
+          "high": 410.44,
+          "low": 406.29,
+          "close": 408.34,
+          "volume": 14489.99,
+          "quote_volume": 5915396.9957,
+          "taker_buy_volume": 7857.26
+        },
+        {
+          "time": "2026-11-26T20:00:00.000Z",
+          "open": 408.31,
+          "high": 411.47,
+          "low": 406.68,
+          "close": 408.14,
+          "volume": 12872.87,
+          "quote_volume": 5262197.4785,
+          "taker_buy_volume": 6557.82
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 408.14,
+          "high": 429.44,
+          "low": 406.67,
+          "close": 427.41,
+          "volume": 79382.19,
+          "quote_volume": 33302147.9887,
+          "taker_buy_volume": 40863.8
+        },
+        {
+          "time": "2026-11-27T04:00:00.000Z",
+          "open": 427.43,
+          "high": 433.32,
+          "low": 422.23,
+          "close": 423.28,
+          "volume": 42327.85,
+          "quote_volume": 18128155.5026,
+          "taker_buy_volume": 20109.63
+        },
+        {
+          "time": "2026-11-27T08:00:00.000Z",
+          "open": 423.27,
+          "high": 436.17,
+          "low": 422.34,
+          "close": 424.37,
+          "volume": 83870.45,
+          "quote_volume": 35961687.2647,
+          "taker_buy_volume": 41789.98
+        },
+        {
+          "time": "2026-11-27T12:00:00.000Z",
+          "open": 424.38,
+          "high": 429.2,
+          "low": 400.09,
+          "close": 415.15,
+          "volume": 177185.09,
+          "quote_volume": 73077819.5422,
+          "taker_buy_volume": 86540.26
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 415.2,
+          "high": 427.3,
+          "low": 414.96,
+          "close": 422.47,
+          "volume": 57726.86,
+          "quote_volume": 24260607.6546,
+          "taker_buy_volume": 29069.44
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 422.45,
+          "high": 422.45,
+          "low": 422.22,
+          "close": 422.31,
+          "volume": 112.95,
+          "quote_volume": 47700.3558,
+          "taker_buy_volume": 69.82
+        }
+      ],
+      "fifteen_minute": [
+        {
+          "time": "2026-11-27T12:15:00.000Z",
+          "open": 425.5,
+          "high": 426.78,
+          "low": 425.4,
+          "close": 425.64,
+          "volume": 2596.66,
+          "quote_volume": 1106188.1637,
+          "taker_buy_volume": 1261.32
+        },
+        {
+          "time": "2026-11-27T12:30:00.000Z",
+          "open": 425.61,
+          "high": 426.38,
+          "low": 424.91,
+          "close": 425.69,
+          "volume": 1939.51,
+          "quote_volume": 825932.0674,
+          "taker_buy_volume": 1020.52
+        },
+        {
+          "time": "2026-11-27T12:45:00.000Z",
+          "open": 425.65,
+          "high": 428.11,
+          "low": 424.91,
+          "close": 427.88,
+          "volume": 1915.75,
+          "quote_volume": 816728.4848,
+          "taker_buy_volume": 906.97
+        },
+        {
+          "time": "2026-11-27T13:00:00.000Z",
+          "open": 427.87,
+          "high": 429.2,
+          "low": 426.88,
+          "close": 427.57,
+          "volume": 2837.25,
+          "quote_volume": 1214720.0043,
+          "taker_buy_volume": 1363.68
+        },
+        {
+          "time": "2026-11-27T13:15:00.000Z",
+          "open": 427.57,
+          "high": 427.61,
+          "low": 424.25,
+          "close": 424.78,
+          "volume": 2885.43,
+          "quote_volume": 1228548.7319,
+          "taker_buy_volume": 1160.89
+        },
+        {
+          "time": "2026-11-27T13:30:00.000Z",
+          "open": 424.76,
+          "high": 425.79,
+          "low": 423.57,
+          "close": 423.69,
+          "volume": 3493.24,
+          "quote_volume": 1483291.6892,
+          "taker_buy_volume": 1451.34
+        },
+        {
+          "time": "2026-11-27T13:45:00.000Z",
+          "open": 423.63,
+          "high": 425.24,
+          "low": 423.2,
+          "close": 424.44,
+          "volume": 1692.96,
+          "quote_volume": 718635.2408,
+          "taker_buy_volume": 951.13
+        },
+        {
+          "time": "2026-11-27T14:00:00.000Z",
+          "open": 424.44,
+          "high": 424.47,
+          "low": 422.6,
+          "close": 423.17,
+          "volume": 2682.72,
+          "quote_volume": 1135456.0444,
+          "taker_buy_volume": 1187.5
+        },
+        {
+          "time": "2026-11-27T14:15:00.000Z",
+          "open": 423.2,
+          "high": 423.28,
+          "low": 420.1,
+          "close": 420.47,
+          "volume": 11901.23,
+          "quote_volume": 5014039.1067,
+          "taker_buy_volume": 5555.8
+        },
+        {
+          "time": "2026-11-27T14:30:00.000Z",
+          "open": 420.5,
+          "high": 421.04,
+          "low": 406.34,
+          "close": 409.1,
+          "volume": 54790.02,
+          "quote_volume": 22638435.1527,
+          "taker_buy_volume": 27065.15
+        },
+        {
+          "time": "2026-11-27T14:45:00.000Z",
+          "open": 409.03,
+          "high": 410.13,
+          "low": 400.79,
+          "close": 402.2,
+          "volume": 29390.22,
+          "quote_volume": 11871999.0411,
+          "taker_buy_volume": 13884.21
+        },
+        {
+          "time": "2026-11-27T15:00:00.000Z",
+          "open": 402.17,
+          "high": 407.07,
+          "low": 400.09,
+          "close": 406.68,
+          "volume": 19772.12,
+          "quote_volume": 7968408.2739,
+          "taker_buy_volume": 10285.39
+        },
+        {
+          "time": "2026-11-27T15:15:00.000Z",
+          "open": 406.68,
+          "high": 408.67,
+          "low": 403.9,
+          "close": 406.87,
+          "volume": 14826.3,
+          "quote_volume": 6031925.2906,
+          "taker_buy_volume": 6385.7
+        },
+        {
+          "time": "2026-11-27T15:30:00.000Z",
+          "open": 406.89,
+          "high": 417.24,
+          "low": 406.38,
+          "close": 416.18,
+          "volume": 12976.56,
+          "quote_volume": 5370282.3043,
+          "taker_buy_volume": 7321.69
+        },
+        {
+          "time": "2026-11-27T15:45:00.000Z",
+          "open": 416.18,
+          "high": 417.77,
+          "low": 413.52,
+          "close": 415.15,
+          "volume": 7794.28,
+          "quote_volume": 3238003.7823,
+          "taker_buy_volume": 3650.77
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 415.2,
+          "high": 418.2,
+          "low": 414.97,
+          "close": 416.71,
+          "volume": 7908.24,
+          "quote_volume": 3296073.2121,
+          "taker_buy_volume": 4207.71
+        },
+        {
+          "time": "2026-11-27T16:15:00.000Z",
+          "open": 416.74,
+          "high": 418.18,
+          "low": 415.19,
+          "close": 416.84,
+          "volume": 5888.89,
+          "quote_volume": 2452386.7213,
+          "taker_buy_volume": 2962.25
+        },
+        {
+          "time": "2026-11-27T16:30:00.000Z",
+          "open": 416.84,
+          "high": 419.75,
+          "low": 416.77,
+          "close": 419.47,
+          "volume": 4918.31,
+          "quote_volume": 2058602.2762,
+          "taker_buy_volume": 2038.73
+        },
+        {
+          "time": "2026-11-27T16:45:00.000Z",
+          "open": 419.44,
+          "high": 422.63,
+          "low": 418.28,
+          "close": 418.28,
+          "volume": 6573.19,
+          "quote_volume": 2765353.4261,
+          "taker_buy_volume": 2998.69
+        },
+        {
+          "time": "2026-11-27T17:00:00.000Z",
+          "open": 418.27,
+          "high": 420.13,
+          "low": 416.54,
+          "close": 419.11,
+          "volume": 3448.67,
+          "quote_volume": 1441332.2289,
+          "taker_buy_volume": 1494.69
+        },
+        {
+          "time": "2026-11-27T17:15:00.000Z",
+          "open": 419.12,
+          "high": 420.8,
+          "low": 418.65,
+          "close": 419.11,
+          "volume": 2546.8,
+          "quote_volume": 1068989.4065,
+          "taker_buy_volume": 1207.32
+        },
+        {
+          "time": "2026-11-27T17:30:00.000Z",
+          "open": 419.11,
+          "high": 419.88,
+          "low": 414.96,
+          "close": 417.23,
+          "volume": 2858.07,
+          "quote_volume": 1192828.277,
+          "taker_buy_volume": 1440.7
+        },
+        {
+          "time": "2026-11-27T17:45:00.000Z",
+          "open": 417.18,
+          "high": 427.3,
+          "low": 416.09,
+          "close": 424.5,
+          "volume": 6417.94,
+          "quote_volume": 2709675.0983,
+          "taker_buy_volume": 3668.11
+        },
+        {
+          "time": "2026-11-27T18:00:00.000Z",
+          "open": 424.34,
+          "high": 426.15,
+          "low": 422,
+          "close": 422.71,
+          "volume": 9389.68,
+          "quote_volume": 3983884.624,
+          "taker_buy_volume": 4557.77
+        },
+        {
+          "time": "2026-11-27T18:15:00.000Z",
+          "open": 422.74,
+          "high": 424.7,
+          "low": 422.66,
+          "close": 422.94,
+          "volume": 3333.84,
+          "quote_volume": 1412043.3589,
+          "taker_buy_volume": 2162.07
+        },
+        {
+          "time": "2026-11-27T18:30:00.000Z",
+          "open": 422.94,
+          "high": 423.35,
+          "low": 422.53,
+          "close": 422.75,
+          "volume": 1050.49,
+          "quote_volume": 444285.8899,
+          "taker_buy_volume": 609.3
+        },
+        {
+          "time": "2026-11-27T18:45:00.000Z",
+          "open": 422.75,
+          "high": 423.3,
+          "low": 422.62,
+          "close": 422.85,
+          "volume": 933.44,
+          "quote_volume": 394832.1594,
+          "taker_buy_volume": 415.42
+        },
+        {
+          "time": "2026-11-27T19:00:00.000Z",
+          "open": 422.87,
+          "high": 423.32,
+          "low": 422.71,
+          "close": 422.93,
+          "volume": 517.41,
+          "quote_volume": 218862.3514,
+          "taker_buy_volume": 374.86
+        },
+        {
+          "time": "2026-11-27T19:15:00.000Z",
+          "open": 422.95,
+          "high": 423.71,
+          "low": 422.95,
+          "close": 423.16,
+          "volume": 893.68,
+          "quote_volume": 378440.733,
+          "taker_buy_volume": 445.63
+        },
+        {
+          "time": "2026-11-27T19:30:00.000Z",
+          "open": 423.18,
+          "high": 423.26,
+          "low": 422.11,
+          "close": 422.57,
+          "volume": 699.64,
+          "quote_volume": 295774.9402,
+          "taker_buy_volume": 293.53
+        },
+        {
+          "time": "2026-11-27T19:45:00.000Z",
+          "open": 422.57,
+          "high": 422.61,
+          "low": 422.21,
+          "close": 422.47,
+          "volume": 348.57,
+          "quote_volume": 147242.9514,
+          "taker_buy_volume": 192.66
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 422.45,
+          "high": 422.45,
+          "low": 422.22,
+          "close": 422.31,
+          "volume": 112.95,
+          "quote_volume": 47700.3558,
+          "taker_buy_volume": 69.82
+        }
+      ]
+    },
+    "SOXLUSDT": {
+      "latest_price": "35.90000",
+      "price_timestamp": 1795809704153,
+      "daily": [
+        {
+          "time": "2026-11-04T00:00:00.000Z",
+          "open": 75.65,
+          "high": 79.29,
+          "low": 62.36,
+          "close": 65.46,
+          "volume": 108344976.58,
+          "quote_volume": 7588896877.9129,
+          "taker_buy_volume": 51486592.57
+        },
+        {
+          "time": "2026-11-05T00:00:00.000Z",
+          "open": 65.45,
+          "high": 65.79,
+          "low": 38.81,
+          "close": 40.79,
+          "volume": 246281409.82,
+          "quote_volume": 12064794381.9032,
+          "taker_buy_volume": 120802251.5
+        },
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 40.79,
+          "high": 49.71,
+          "low": 40.76,
+          "close": 45.93,
+          "volume": 133727317.03,
+          "quote_volume": 6169219556.7335,
+          "taker_buy_volume": 70394297.59
+        },
+        {
+          "time": "2026-11-07T00:00:00.000Z",
+          "open": 45.94,
+          "high": 47.62,
+          "low": 45.08,
+          "close": 45.99,
+          "volume": 12560592.4,
+          "quote_volume": 578543593.6756,
+          "taker_buy_volume": 6388019.21
+        },
+        {
+          "time": "2026-11-08T00:00:00.000Z",
+          "open": 45.98,
+          "high": 47.66,
+          "low": 43.4,
+          "close": 44.07,
+          "volume": 16501214.8,
+          "quote_volume": 751555721.4343,
+          "taker_buy_volume": 8235638.9
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 44.08,
+          "high": 57.59,
+          "low": 41.34,
+          "close": 57.3,
+          "volume": 97641110.34,
+          "quote_volume": 4855625000.7801,
+          "taker_buy_volume": 49914024.36
+        },
+        {
+          "time": "2026-11-10T00:00:00.000Z",
+          "open": 57.3,
+          "high": 59.75,
+          "low": 51.04,
+          "close": 57.59,
+          "volume": 105699038.35,
+          "quote_volume": 5811655278.3823,
+          "taker_buy_volume": 53511635.95
+        },
+        {
+          "time": "2026-11-11T00:00:00.000Z",
+          "open": 57.6,
+          "high": 69.79,
+          "low": 57.27,
+          "close": 62.4,
+          "volume": 95141158.57,
+          "quote_volume": 6104686483.4771,
+          "taker_buy_volume": 47859688.18
+        },
+        {
+          "time": "2026-11-12T00:00:00.000Z",
+          "open": 62.41,
+          "high": 68.98,
+          "low": 58.42,
+          "close": 67.93,
+          "volume": 82759448.14,
+          "quote_volume": 5231833593.0486,
+          "taker_buy_volume": 40951070.37
+        },
+        {
+          "time": "2026-11-13T00:00:00.000Z",
+          "open": 67.94,
+          "high": 69.02,
+          "low": 52.41,
+          "close": 55.96,
+          "volume": 89413537.22,
+          "quote_volume": 5315274669.2715,
+          "taker_buy_volume": 44231489.72
+        },
+        {
+          "time": "2026-11-14T00:00:00.000Z",
+          "open": 55.96,
+          "high": 56.47,
+          "low": 52.88,
+          "close": 54.18,
+          "volume": 10857373.97,
+          "quote_volume": 597786138.804,
+          "taker_buy_volume": 5349680.92
+        },
+        {
+          "time": "2026-11-15T00:00:00.000Z",
+          "open": 54.17,
+          "high": 59.08,
+          "low": 52.64,
+          "close": 58.18,
+          "volume": 11740342.1,
+          "quote_volume": 652557399.2617,
+          "taker_buy_volume": 6069417.91
+        },
+        {
+          "time": "2026-11-16T00:00:00.000Z",
+          "open": 58.19,
+          "high": 59.19,
+          "low": 46.98,
+          "close": 48.66,
+          "volume": 93494417.44,
+          "quote_volume": 4809710031.2396,
+          "taker_buy_volume": 46061172.75
+        },
+        {
+          "time": "2026-11-17T00:00:00.000Z",
+          "open": 48.65,
+          "high": 56.08,
+          "low": 43.6,
+          "close": 54.08,
+          "volume": 143784673.47,
+          "quote_volume": 7076789508.4394,
+          "taker_buy_volume": 72848291.41
+        },
+        {
+          "time": "2026-11-18T00:00:00.000Z",
+          "open": 54.09,
+          "high": 54.9,
+          "low": 46.52,
+          "close": 50.93,
+          "volume": 99234878.92,
+          "quote_volume": 4979716428.6345,
+          "taker_buy_volume": 51327559.98
+        },
+        {
+          "time": "2026-11-19T00:00:00.000Z",
+          "open": 50.93,
+          "high": 56.47,
+          "low": 43.3,
+          "close": 44.26,
+          "volume": 136792330.04,
+          "quote_volume": 6849498313.1606,
+          "taker_buy_volume": 68085734.99
+        },
+        {
+          "time": "2026-11-20T00:00:00.000Z",
+          "open": 44.25,
+          "high": 44.92,
+          "low": 29.88,
+          "close": 33.1,
+          "volume": 243373727.04,
+          "quote_volume": 9023523279.5491,
+          "taker_buy_volume": 119882653.58
+        },
+        {
+          "time": "2026-11-21T00:00:00.000Z",
+          "open": 33.1,
+          "high": 33.7,
+          "low": 31.12,
+          "close": 33.19,
+          "volume": 35680836.7,
+          "quote_volume": 1157938570.6524,
+          "taker_buy_volume": 17884288.89
+        },
+        {
+          "time": "2026-11-22T00:00:00.000Z",
+          "open": 33.18,
+          "high": 35.17,
+          "low": 32.25,
+          "close": 34.78,
+          "volume": 22826974.63,
+          "quote_volume": 767989338.3722,
+          "taker_buy_volume": 11516568
+        },
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 34.78,
+          "high": 45.43,
+          "low": 32.96,
+          "close": 42.72,
+          "volume": 188954088.51,
+          "quote_volume": 7658694790.0526,
+          "taker_buy_volume": 94735400.91
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 42.72,
+          "high": 44.9,
+          "low": 30.2,
+          "close": 32.45,
+          "volume": 226018530.72,
+          "quote_volume": 8035122019.8329,
+          "taker_buy_volume": 113599263.59
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 32.44,
+          "high": 32.73,
+          "low": 24.66,
+          "close": 32.32,
+          "volume": 357250065.26,
+          "quote_volume": 10072271016.6383,
+          "taker_buy_volume": 182745219.6
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 32.33,
+          "high": 34.63,
+          "low": 32.24,
+          "close": 33.25,
+          "volume": 53672193.7,
+          "quote_volume": 1786900611.3819,
+          "taker_buy_volume": 26650196.73
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 33.26,
+          "high": 38.01,
+          "low": 32.07,
+          "close": 35.91,
+          "volume": 159991798.85,
+          "quote_volume": 5659628052.195,
+          "taker_buy_volume": 81534264.45
+        }
+      ],
+      "four_hour": [
+        {
+          "time": "2026-11-23T00:00:00.000Z",
+          "open": 34.78,
+          "high": 35.74,
+          "low": 32.96,
+          "close": 35.02,
+          "volume": 21055359.21,
+          "quote_volume": 726496844.3546,
+          "taker_buy_volume": 10098267.53
+        },
+        {
+          "time": "2026-11-23T04:00:00.000Z",
+          "open": 35.01,
+          "high": 36.3,
+          "low": 34.97,
+          "close": 35.56,
+          "volume": 10579768.86,
+          "quote_volume": 376751084.3099,
+          "taker_buy_volume": 5308349.27
+        },
+        {
+          "time": "2026-11-23T08:00:00.000Z",
+          "open": 35.56,
+          "high": 37.36,
+          "low": 35.55,
+          "close": 36.28,
+          "volume": 17152318.84,
+          "quote_volume": 625127204.1593,
+          "taker_buy_volume": 8781936.03
+        },
+        {
+          "time": "2026-11-23T12:00:00.000Z",
+          "open": 36.29,
+          "high": 45.43,
+          "low": 35.14,
+          "close": 43.3,
+          "volume": 94838491.55,
+          "quote_volume": 3982897875.6935,
+          "taker_buy_volume": 47390935.31
+        },
+        {
+          "time": "2026-11-23T16:00:00.000Z",
+          "open": 43.3,
+          "high": 43.96,
+          "low": 41.84,
+          "close": 42.49,
+          "volume": 29286305.8,
+          "quote_volume": 1256950571.7274,
+          "taker_buy_volume": 14981913.71
+        },
+        {
+          "time": "2026-11-23T20:00:00.000Z",
+          "open": 42.48,
+          "high": 44.06,
+          "low": 41.81,
+          "close": 42.72,
+          "volume": 16041844.25,
+          "quote_volume": 690471209.8079,
+          "taker_buy_volume": 8173999.06
+        },
+        {
+          "time": "2026-11-24T00:00:00.000Z",
+          "open": 42.72,
+          "high": 44.9,
+          "low": 41.47,
+          "close": 42.89,
+          "volume": 17771602.78,
+          "quote_volume": 764967149.3255,
+          "taker_buy_volume": 9020969.18
+        },
+        {
+          "time": "2026-11-24T04:00:00.000Z",
+          "open": 42.89,
+          "high": 43.56,
+          "low": 42.31,
+          "close": 42.7,
+          "volume": 7794796.75,
+          "quote_volume": 334283699.6305,
+          "taker_buy_volume": 3971943.3
+        },
+        {
+          "time": "2026-11-24T08:00:00.000Z",
+          "open": 42.7,
+          "high": 42.89,
+          "low": 37.16,
+          "close": 38.9,
+          "volume": 32506647.91,
+          "quote_volume": 1272460756.6852,
+          "taker_buy_volume": 15533359.4
+        },
+        {
+          "time": "2026-11-24T12:00:00.000Z",
+          "open": 38.91,
+          "high": 39.26,
+          "low": 31.03,
+          "close": 31.33,
+          "volume": 84790551.56,
+          "quote_volume": 2975917390.2539,
+          "taker_buy_volume": 41691777.33
+        },
+        {
+          "time": "2026-11-24T16:00:00.000Z",
+          "open": 31.33,
+          "high": 34.12,
+          "low": 30.2,
+          "close": 32.8,
+          "volume": 64261730.43,
+          "quote_volume": 2069405364.6942,
+          "taker_buy_volume": 33589852.98
+        },
+        {
+          "time": "2026-11-24T20:00:00.000Z",
+          "open": 32.81,
+          "high": 33.74,
+          "low": 31.93,
+          "close": 32.45,
+          "volume": 18893201.29,
+          "quote_volume": 618087659.2436,
+          "taker_buy_volume": 9791361.4
+        },
+        {
+          "time": "2026-11-25T00:00:00.000Z",
+          "open": 32.44,
+          "high": 32.73,
+          "low": 29.9,
+          "close": 31.13,
+          "volume": 24916165.25,
+          "quote_volume": 782450073.7148,
+          "taker_buy_volume": 12297369.52
+        },
+        {
+          "time": "2026-11-25T04:00:00.000Z",
+          "open": 31.12,
+          "high": 31.48,
+          "low": 28.12,
+          "close": 29.25,
+          "volume": 23721339.83,
+          "quote_volume": 707623775.3012,
+          "taker_buy_volume": 11450770.13
+        },
+        {
+          "time": "2026-11-25T08:00:00.000Z",
+          "open": 29.24,
+          "high": 30.05,
+          "low": 27.71,
+          "close": 28.18,
+          "volume": 42773805.96,
+          "quote_volume": 1221825396.0557,
+          "taker_buy_volume": 21801094
+        },
+        {
+          "time": "2026-11-25T12:00:00.000Z",
+          "open": 28.17,
+          "high": 28.53,
+          "low": 25.02,
+          "close": 25.66,
+          "volume": 133657004.48,
+          "quote_volume": 3567684816.552,
+          "taker_buy_volume": 68515093.68
+        },
+        {
+          "time": "2026-11-25T16:00:00.000Z",
+          "open": 25.65,
+          "high": 31.86,
+          "low": 24.66,
+          "close": 31.03,
+          "volume": 108661199.22,
+          "quote_volume": 3053613590.4576,
+          "taker_buy_volume": 56521097.08
+        },
+        {
+          "time": "2026-11-25T20:00:00.000Z",
+          "open": 31.03,
+          "high": 32.52,
+          "low": 30.03,
+          "close": 32.32,
+          "volume": 23520550.52,
+          "quote_volume": 739073364.557,
+          "taker_buy_volume": 12159795.19
+        },
+        {
+          "time": "2026-11-26T00:00:00.000Z",
+          "open": 32.33,
+          "high": 33.94,
+          "low": 32.24,
+          "close": 33.26,
+          "volume": 13639876.43,
+          "quote_volume": 453828860.7589,
+          "taker_buy_volume": 6793540.18
+        },
+        {
+          "time": "2026-11-26T04:00:00.000Z",
+          "open": 33.26,
+          "high": 34.31,
+          "low": 32.34,
+          "close": 33.08,
+          "volume": 9274814.52,
+          "quote_volume": 307975289.0838,
+          "taker_buy_volume": 4574817.37
+        },
+        {
+          "time": "2026-11-26T08:00:00.000Z",
+          "open": 33.08,
+          "high": 33.69,
+          "low": 32.6,
+          "close": 33.38,
+          "volume": 9631685.76,
+          "quote_volume": 319182202.3309,
+          "taker_buy_volume": 4658978
+        },
+        {
+          "time": "2026-11-26T12:00:00.000Z",
+          "open": 33.38,
+          "high": 33.96,
+          "low": 32.79,
+          "close": 33.44,
+          "volume": 11204807.58,
+          "quote_volume": 374452090.7476,
+          "taker_buy_volume": 5696897.31
+        },
+        {
+          "time": "2026-11-26T16:00:00.000Z",
+          "open": 33.43,
+          "high": 33.71,
+          "low": 32.77,
+          "close": 33.53,
+          "volume": 5073900.08,
+          "quote_volume": 168459374.5277,
+          "taker_buy_volume": 2403406.01
+        },
+        {
+          "time": "2026-11-26T20:00:00.000Z",
+          "open": 33.52,
+          "high": 34.63,
+          "low": 32.8,
+          "close": 33.25,
+          "volume": 4847109.33,
+          "quote_volume": 163002793.933,
+          "taker_buy_volume": 2522557.86
+        },
+        {
+          "time": "2026-11-27T00:00:00.000Z",
+          "open": 33.26,
+          "high": 36.81,
+          "low": 32.88,
+          "close": 36.49,
+          "volume": 20320969.68,
+          "quote_volume": 714205374.1466,
+          "taker_buy_volume": 10515272.95
+        },
+        {
+          "time": "2026-11-27T04:00:00.000Z",
+          "open": 36.49,
+          "high": 38.01,
+          "low": 35.28,
+          "close": 35.82,
+          "volume": 25418834.31,
+          "quote_volume": 937437612.5627,
+          "taker_buy_volume": 12876185.62
+        },
+        {
+          "time": "2026-11-27T08:00:00.000Z",
+          "open": 35.82,
+          "high": 37.62,
+          "low": 35.39,
+          "close": 35.9,
+          "volume": 25557501.83,
+          "quote_volume": 934384297.4498,
+          "taker_buy_volume": 12623756.84
+        },
+        {
+          "time": "2026-11-27T12:00:00.000Z",
+          "open": 35.89,
+          "high": 36.64,
+          "low": 32.07,
+          "close": 34.69,
+          "volume": 58171976.76,
+          "quote_volume": 1987484436.8833,
+          "taker_buy_volume": 29497522.67
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 34.69,
+          "high": 37.02,
+          "low": 34.49,
+          "close": 35.96,
+          "volume": 30426362.63,
+          "quote_volume": 1082666121.6677,
+          "taker_buy_volume": 15957611.53
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 35.96,
+          "high": 35.97,
+          "low": 35.83,
+          "close": 35.91,
+          "volume": 96153.64,
+          "quote_volume": 3450209.4849,
+          "taker_buy_volume": 63914.84
+        }
+      ],
+      "fifteen_minute": [
+        {
+          "time": "2026-11-27T12:15:00.000Z",
+          "open": 35.85,
+          "high": 36.16,
+          "low": 35.83,
+          "close": 35.95,
+          "volume": 1353169,
+          "quote_volume": 48761219.1336,
+          "taker_buy_volume": 703134.38
+        },
+        {
+          "time": "2026-11-27T12:30:00.000Z",
+          "open": 35.94,
+          "high": 36.2,
+          "low": 35.75,
+          "close": 36.08,
+          "volume": 917106.55,
+          "quote_volume": 32995579.8828,
+          "taker_buy_volume": 433682.61
+        },
+        {
+          "time": "2026-11-27T12:45:00.000Z",
+          "open": 36.09,
+          "high": 36.54,
+          "low": 35.96,
+          "close": 36.53,
+          "volume": 1379506.01,
+          "quote_volume": 50016285.9588,
+          "taker_buy_volume": 770839.13
+        },
+        {
+          "time": "2026-11-27T13:00:00.000Z",
+          "open": 36.54,
+          "high": 36.64,
+          "low": 36.36,
+          "close": 36.51,
+          "volume": 1192946.84,
+          "quote_volume": 43556442.4612,
+          "taker_buy_volume": 623422.74
+        },
+        {
+          "time": "2026-11-27T13:15:00.000Z",
+          "open": 36.52,
+          "high": 36.53,
+          "low": 36.1,
+          "close": 36.22,
+          "volume": 1591387.4,
+          "quote_volume": 57734706.904,
+          "taker_buy_volume": 662282.48
+        },
+        {
+          "time": "2026-11-27T13:30:00.000Z",
+          "open": 36.21,
+          "high": 36.44,
+          "low": 36.04,
+          "close": 36.21,
+          "volume": 999904.23,
+          "quote_volume": 36251180.7294,
+          "taker_buy_volume": 582754.19
+        },
+        {
+          "time": "2026-11-27T13:45:00.000Z",
+          "open": 36.2,
+          "high": 36.49,
+          "low": 36.09,
+          "close": 36.22,
+          "volume": 627276.2,
+          "quote_volume": 22768360.3,
+          "taker_buy_volume": 371354.95
+        },
+        {
+          "time": "2026-11-27T14:00:00.000Z",
+          "open": 36.23,
+          "high": 36.23,
+          "low": 35.84,
+          "close": 35.97,
+          "volume": 1051749.88,
+          "quote_volume": 37877525.4202,
+          "taker_buy_volume": 558059.49
+        },
+        {
+          "time": "2026-11-27T14:15:00.000Z",
+          "open": 35.97,
+          "high": 36.01,
+          "low": 35.05,
+          "close": 35.17,
+          "volume": 1879491.59,
+          "quote_volume": 66745860.9554,
+          "taker_buy_volume": 843171.7
+        },
+        {
+          "time": "2026-11-27T14:30:00.000Z",
+          "open": 35.17,
+          "high": 35.33,
+          "low": 32.6,
+          "close": 33.45,
+          "volume": 12427119.4,
+          "quote_volume": 418839350.8411,
+          "taker_buy_volume": 5953966.88
+        },
+        {
+          "time": "2026-11-27T14:45:00.000Z",
+          "open": 33.44,
+          "high": 33.68,
+          "low": 32.07,
+          "close": 32.93,
+          "volume": 10493725.23,
+          "quote_volume": 345901358.0876,
+          "taker_buy_volume": 5228244.11
+        },
+        {
+          "time": "2026-11-27T15:00:00.000Z",
+          "open": 32.93,
+          "high": 33.99,
+          "low": 32.19,
+          "close": 33.85,
+          "volume": 7678638.05,
+          "quote_volume": 253211125.9784,
+          "taker_buy_volume": 4030763.91
+        },
+        {
+          "time": "2026-11-27T15:15:00.000Z",
+          "open": 33.85,
+          "high": 34.24,
+          "low": 33.34,
+          "close": 33.85,
+          "volume": 5159195.87,
+          "quote_volume": 174354899.0322,
+          "taker_buy_volume": 2765948.03
+        },
+        {
+          "time": "2026-11-27T15:30:00.000Z",
+          "open": 33.86,
+          "high": 35.13,
+          "low": 33.74,
+          "close": 34.83,
+          "volume": 5145457.4,
+          "quote_volume": 177842354.0307,
+          "taker_buy_volume": 2801211.21
+        },
+        {
+          "time": "2026-11-27T15:45:00.000Z",
+          "open": 34.84,
+          "high": 35.28,
+          "low": 34.38,
+          "close": 34.69,
+          "volume": 3478497.19,
+          "quote_volume": 120893466.3559,
+          "taker_buy_volume": 1843119.73
+        },
+        {
+          "time": "2026-11-27T16:00:00.000Z",
+          "open": 34.69,
+          "high": 35.09,
+          "low": 34.49,
+          "close": 34.9,
+          "volume": 2738764.37,
+          "quote_volume": 95324073.4459,
+          "taker_buy_volume": 1443383.75
+        },
+        {
+          "time": "2026-11-27T16:15:00.000Z",
+          "open": 34.91,
+          "high": 35.37,
+          "low": 34.68,
+          "close": 35.22,
+          "volume": 3325019.21,
+          "quote_volume": 116472715.2096,
+          "taker_buy_volume": 1703872.09
+        },
+        {
+          "time": "2026-11-27T16:30:00.000Z",
+          "open": 35.22,
+          "high": 35.68,
+          "low": 35.18,
+          "close": 35.51,
+          "volume": 2351358.4,
+          "quote_volume": 83229193.6551,
+          "taker_buy_volume": 1247603.68
+        },
+        {
+          "time": "2026-11-27T16:45:00.000Z",
+          "open": 35.52,
+          "high": 36.14,
+          "low": 35.28,
+          "close": 35.29,
+          "volume": 2465245.47,
+          "quote_volume": 88049737.2585,
+          "taker_buy_volume": 1202592.16
+        },
+        {
+          "time": "2026-11-27T17:00:00.000Z",
+          "open": 35.28,
+          "high": 35.59,
+          "low": 34.91,
+          "close": 35.41,
+          "volume": 2287093.29,
+          "quote_volume": 80480410.2167,
+          "taker_buy_volume": 1229491.38
+        },
+        {
+          "time": "2026-11-27T17:15:00.000Z",
+          "open": 35.42,
+          "high": 35.66,
+          "low": 35.15,
+          "close": 35.22,
+          "volume": 933412.97,
+          "quote_volume": 33036722.4147,
+          "taker_buy_volume": 427322.75
+        },
+        {
+          "time": "2026-11-27T17:30:00.000Z",
+          "open": 35.22,
+          "high": 35.31,
+          "low": 34.64,
+          "close": 35.06,
+          "volume": 2035385.13,
+          "quote_volume": 71224502.6956,
+          "taker_buy_volume": 924026.66
+        },
+        {
+          "time": "2026-11-27T17:45:00.000Z",
+          "open": 35.05,
+          "high": 37.02,
+          "low": 34.75,
+          "close": 36.47,
+          "volume": 3616654,
+          "quote_volume": 129021539.5804,
+          "taker_buy_volume": 1923175.32
+        },
+        {
+          "time": "2026-11-27T18:00:00.000Z",
+          "open": 36.42,
+          "high": 36.93,
+          "low": 35.88,
+          "close": 35.95,
+          "volume": 5410448.45,
+          "quote_volume": 197202534.9347,
+          "taker_buy_volume": 2909949.16
+        },
+        {
+          "time": "2026-11-27T18:15:00.000Z",
+          "open": 35.95,
+          "high": 36.14,
+          "low": 35.49,
+          "close": 35.62,
+          "volume": 1888747.59,
+          "quote_volume": 67643890.0104,
+          "taker_buy_volume": 1031014.82
+        },
+        {
+          "time": "2026-11-27T18:30:00.000Z",
+          "open": 35.63,
+          "high": 35.85,
+          "low": 35.52,
+          "close": 35.77,
+          "volume": 1069549.91,
+          "quote_volume": 38144465.0307,
+          "taker_buy_volume": 646897.13
+        },
+        {
+          "time": "2026-11-27T18:45:00.000Z",
+          "open": 35.77,
+          "high": 36.03,
+          "low": 35.73,
+          "close": 35.9,
+          "volume": 678440.11,
+          "quote_volume": 24334839.5636,
+          "taker_buy_volume": 392727.52
+        },
+        {
+          "time": "2026-11-27T19:00:00.000Z",
+          "open": 35.91,
+          "high": 36,
+          "low": 35.78,
+          "close": 35.92,
+          "volume": 481100.71,
+          "quote_volume": 17261747.9756,
+          "taker_buy_volume": 269051.16
+        },
+        {
+          "time": "2026-11-27T19:15:00.000Z",
+          "open": 35.93,
+          "high": 36.18,
+          "low": 35.89,
+          "close": 35.97,
+          "volume": 517290.96,
+          "quote_volume": 18653567.6952,
+          "taker_buy_volume": 286676.06
+        },
+        {
+          "time": "2026-11-27T19:30:00.000Z",
+          "open": 35.97,
+          "high": 36.12,
+          "low": 35.85,
+          "close": 35.95,
+          "volume": 427765.54,
+          "quote_volume": 15391210.5871,
+          "taker_buy_volume": 205382.02
+        },
+        {
+          "time": "2026-11-27T19:45:00.000Z",
+          "open": 35.94,
+          "high": 36.06,
+          "low": 35.9,
+          "close": 35.96,
+          "volume": 200086.52,
+          "quote_volume": 7194971.3939,
+          "taker_buy_volume": 114445.87
+        },
+        {
+          "time": "2026-11-27T20:00:00.000Z",
+          "open": 35.96,
+          "high": 35.97,
+          "low": 35.83,
+          "close": 35.91,
+          "volume": 96153.64,
+          "quote_volume": 3450209.4849,
+          "taker_buy_volume": 63914.84
+        }
+      ]
+    }
+  }
+}
