@@ -46,11 +46,10 @@ jobs:
           TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
         run: |
           python - <<'PY'
-          import os
-          from pathlib import Path
+          import os, io
           from jproperties import Properties
           p=Properties()
-          p.load(os.environ["TIGER_OPENAPI_CONFIG"].encode("utf-8"), "utf-8")
+          p.load(io.BytesIO(os.environ["TIGER_OPENAPI_CONFIG"].encode("utf-8")), "utf-8")
           print("Tiger config keys:", ", ".join(sorted(p.keys())))
           for key in ("tiger_id", "account", "license", "private_key", "private_key_pk1", "private_key_pk8"):
               item=p.get(key)
