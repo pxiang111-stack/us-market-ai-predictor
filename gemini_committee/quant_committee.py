@@ -47,6 +47,8 @@ def get_market(symbol):
     if isinstance(df.columns,pd.MultiIndex): df.columns=[str(c[0]) for c in df.columns]
     df=df.dropna(subset=["Close"])
     close=pd.to_numeric(df["Close"],errors="coerce").dropna()
+    high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
+    low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25: raise RuntimeError("有效日线不足25根")
     p=float(close.iloc[-1]); ma20=float(close.tail(20).mean())
@@ -61,7 +63,7 @@ def get_market(symbol):
       "return_5d_pct":(p/old5-1)*100 if old5 else None,
       "volume_ratio_20d":last/avg if avg>0 else None,
       "volume_ratio_definition":"最新日成交量/前20个交易日平均成交量（不含当天）",
-      "high_20d":float(close.tail(20).max()),"low_20d":float(close.tail(20).min()),
+      "high_20d":float(high.tail(20).max()),"low_20d":float(low.tail(20).min()),
       "latest_news_titles":get_news(symbol),"daily_bars":len(close)}
 
 def run_committee(data):
@@ -85,12 +87,12 @@ pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入�
 
 def pine(d):
     if d.verdict=="NO-GO" or any(x is None for x in [d.entry_low,d.entry_high,d.stop_price,d.target_price]):
-        return '//@version=5\\nindicator("Committee NO-GO", overlay=true)\\n// No valid levels'
+        return '//@version=5\nindicator("Committee NO-GO", overlay=true)\n// No valid levels'
     candidate=(d.pine_script or "").strip()
     if candidate.startswith("//@version=5") and "hline(" in candidate and len(candidate.splitlines())<=5:
         return candidate
     mid=(float(d.entry_low)+float(d.entry_high))/2
-    return "\\n".join(["//@version=5",'indicator("Gemini Committee Levels", overlay=true)',
+    return "\n".join(["//@version=5",'indicator("Gemini Committee Levels", overlay=true)',
       f'hline({mid:.4f}, "Entry", color=color.blue)',
       f'hline({float(d.stop_price):.4f}, "Stop", color=color.red)',
       f'hline({float(d.target_price):.4f}, "Target", color=color.green)'])
