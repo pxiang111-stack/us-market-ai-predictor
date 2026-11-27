@@ -10,7 +10,7 @@ import yfinance as yf
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-WATCHLIST=["SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","META","GOOGL","TSLA","AMD","AVGO","MU","ARM","TSM","PLTR","SMCI","NFLX","CRM","ORCL","APP","UBER","COIN","MSTR","HOOD","GLD","SLV","TLT","XLE"]
+WATCHLIST=["SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","META","GOOGL","TSLA","AMD","AVGO","MU","ARM","TSM","PLTR","SMCI","NFLX","CRM","ORCL","APP","UBER","COIN","MSTR","HOOD","GLD","SLV","TLT","XLE","SOXL"]
 ACCOUNT_SIZE=10000.0
 MAX_RISK_PCT=0.01
 DEEPSEEK_MODEL="deepseek-flash"
@@ -29,8 +29,28 @@ class CommitteeDecision(BaseModel):
     target_price:Optional[float]=None
     judge_reason:str
     pine_script:str=Field(description="Pine Script v5，最多5行")
+    weekly_bias:Literal["BULLISH","NEUTRAL","BEARISH"]
+    weekly_confidence_pct:int=Field(ge=0,le=100)
+    weekly_range_low:float
+    weekly_range_high:float
+    weekly_support:float
+    weekly_resistance:float
+    weekly_scenario:str
+    weekly_trigger:str
+    weekly_risk:str
+
+class WeeklyMarketSummary(BaseModel):
+    market_bias:Literal["BULLISH","NEUTRAL","BEARISH"]
+    confidence_pct:int=Field(ge=0,le=100)
+    base_case:str
+    bull_case:str
+    bear_case:str
+    key_catalysts:list[str]
+    index_levels:str
+    risk_management:str
 
 class CommitteeBatch(BaseModel):
+    market_summary:WeeklyMarketSummary
     results:list[CommitteeDecision]
 
 def ticker_frame(frame,symbol):
@@ -128,13 +148,15 @@ def get_market(symbol):
 def run_committee(data):
     if not DEEPSEEK_API_KEY: raise RuntimeError("缺少DEEPSEEK_API_KEY")
     prompt=f"""
-你是严格的美股盘前/盘中量化委员会。逐一分析全部30只股票，不得遗漏。
+你是严格的美股周度策略委员会。预测下一完整交易周（2026-11-30至2026-12-04）的美股走势；逐一分析以下31只标的，不得遗漏。
+先给出全市场指数风险判断，再给每只标的未来一周方向、预期波动区间、关键支撑压力、触发条件和主要风险。预测是概率情景，不是保证。
 每只股票分别给出多头分析师逻辑、空头风控官反驳（检查放量破位、高位派发、增发、债务、指引下调）、裁判结论。
 输入包含日K、4小时K、15分钟K，均为Yahoo Finance历史OHLC而非交易所实时行情。日K判断主趋势，4小时K判断波段结构，15分钟K寻找入场形态。日K方向与4小时结构优先一致；15分钟只负责入场确认，不能单独反转大周期方向。若周期冲突、K线不足、成交量缺失或结构不清晰，NO-GO。GO/GO SMALLER代表条件式交易计划候选，不代表实时可成交；下单前必须用券商现价复核，价格离开入场区间则不追单。止损必须低于参考价，目标必须高于参考价。
-仅考虑做多。证据不足NO-GO。不要计算股数/仓位，交给Python硬风控。
+对单只标的交易计划仍仅考虑做多；证据不足NO-GO。周度方向允许看多/中性/看空。weekly_range_low必须小于weekly_range_high；weekly_support和weekly_resistance必须符合数值逻辑。请特别分析QQQ、SPY、SMH、NVDA、AMD、SOXL之间的联动。不要把历史行情说成实时行情。
 pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
-只输出JSON：{{"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}
-results必须恰好包含以下30只且每只一次：{", ".join(WATCHLIST)}
+只输出JSON：{{"market_summary":{{"market_bias":"NEUTRAL","confidence_pct":55,"base_case":"...","bull_case":"...","bear_case":"...","key_catalysts":["..."],"index_levels":"...","risk_management":"..."}},
+"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"...","weekly_bias":"NEUTRAL","weekly_confidence_pct":55,"weekly_range_low":700,"weekly_range_high":740,"weekly_support":700,"weekly_resistance":740,"weekly_scenario":"...","weekly_trigger":"...","weekly_risk":"..."}}]}}
+market_summary必须包含全市场下周研判；results必须恰好包含以下31只且每只一次：{", ".join(WATCHLIST)}
 多周期行情数据（日K/4小时K/15分钟K）：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
     client=OpenAI(api_key=DEEPSEEK_API_KEY,base_url="https://api.deepseek.com",timeout=240.0,max_retries=0)
@@ -144,7 +166,7 @@ results必须恰好包含以下30只且每只一次：{", ".join(WATCHLIST)}
             try:
                 r=client.chat.completions.create(model=DEEPSEEK_MODEL,messages=[
                   {"role":"system","content":"只返回符合要求的有效JSON，不要Markdown代码围栏。"},
-                  {"role":"user","content":prompt}],max_tokens=16000,temperature=0.1,
+                  {"role":"user","content":prompt}],max_tokens=22000,temperature=0.1,
                   response_format={"type":"json_object"},stream=False,
                   extra_body={"thinking":{"type":"disabled"}})
                 if not r.choices: raise RuntimeError("DeepSeek无choices")
@@ -161,8 +183,8 @@ results必须恰好包含以下30只且每只一次：{", ".join(WATCHLIST)}
     finally: client.close()
     batch=CommitteeBatch.model_validate_json(content)
     got=[x.ticker for x in batch.results]
-    if len(got)!=30 or set(got)!=set(WATCHLIST) or len(set(got))!=30: raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
-    return {x.ticker:x for x in batch.results}
+    if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(WATCHLIST): raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
+    return batch
 
 def pine(d):
     if d.verdict=="NO-GO" or any(x is None for x in [d.entry_low,d.entry_high,d.stop_price,d.target_price]):
@@ -198,7 +220,7 @@ def write_reports(rows):
     stamp=datetime.now(timezone.utc).isoformat()
     rows=sorted(rows,key=lambda x:(x["risk"]["verdict"]=="NO-GO",WATCHLIST.index(x["ticker"])))
     report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,"max_risk_pct":MAX_RISK_PCT,
-      "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Binance USDⓈ-M TradFi perpetual (public market data)","results":rows}
+      "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Yahoo Finance historical OHLC (Daily + 4H + 15m)","results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     first=rows[0]["market"] if rows else {}
     session=first.get("market_session","UNKNOWN")
@@ -231,6 +253,41 @@ def write_reports(rows):
         lines.append(f"| {x['ticker']} | {price_text} | {reason} |")
     (OUT/"daily_report.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
 
+def write_weekly_report(rows,summary):
+    from zoneinfo import ZoneInfo
+    stamp=datetime.now(timezone.utc).isoformat()
+    generated=datetime.now(ZoneInfo("America/New_York")).isoformat()
+    rows=sorted(rows,key=lambda x:(-x["committee"]["weekly_confidence_pct"],x["ticker"]))
+    report={"generated_at_utc":stamp,"forecast_period":"2026-11-30 to 2026-12-04",
+      "data_cutoff_note":"Yahoo Finance historical OHLC; last completed bars only; not exchange-grade real-time data",
+      "market_summary":summary.model_dump(),"results":[{"ticker":x["ticker"],"reference_price":x["market"]["current_price"],
+      "latest_15m_bar":x["market"]["intraday_timestamp"],"weekly":{k:x["committee"][k] for k in
+      ["weekly_bias","weekly_confidence_pct","weekly_range_low","weekly_range_high","weekly_support","weekly_resistance","weekly_scenario","weekly_trigger","weekly_risk"]},
+      "daily":x["market"]["daily"],"four_hour":x["market"]["four_hour"]} for x in rows]}
+    (OUT/"weekly_outlook.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\\n",encoding="utf-8")
+    label={"BULLISH":"偏多","NEUTRAL":"震荡/中性","BEARISH":"偏空"}.get(summary.market_bias,summary.market_bias)
+    lines=["# 美股下周展望｜2026-11-30 至 2026-12-04","",
+      f"- 生成时间（美东）：{generated}",f"- 模型：DeepSeek {DEEPSEEK_MODEL}",
+      "- 数据：Yahoo Finance历史日K、4小时K、15分钟K；不是实时行情。预测依据为截至最近已收盘K线及可获取新闻。",
+      "- 注意：周度区间是模型情景估计，不是保证价格；开盘跳空后须重新评估。","",
+      "## 一、全市场判断","",f"**总体方向：{label}｜置信度 {summary.confidence_pct}%**","",
+      f"- 基准情景：{summary.base_case}",f"- 偏多情景：{summary.bull_case}",f"- 偏空情景：{summary.bear_case}",
+      f"- 指数关键位：{summary.index_levels}","- 主要催化剂："]
+    lines += [f"  - {x}" for x in summary.key_catalysts]
+    lines += ["",f"- 风险控制：{summary.risk_management}","","## 二、重点标的下周预测","",
+      "| 标的 | 方向 | 置信度 | 预期区间 | 支撑 | 压力 |","|---|---|---:|---:|---:|---:|"]
+    for x in rows:
+        c=x["committee"]; bias={"BULLISH":"偏多","NEUTRAL":"中性","BEARISH":"偏空"}[c["weekly_bias"]]
+        lines.append(f"| {x['ticker']} | {bias} | {c['weekly_confidence_pct']}% | {c['weekly_range_low']:.2f}-{c['weekly_range_high']:.2f} | {c['weekly_support']:.2f} | {c['weekly_resistance']:.2f} |")
+    for x in rows:
+        c=x["committee"]; bias={"BULLISH":"偏多","NEUTRAL":"中性","BEARISH":"偏空"}[c["weekly_bias"]]
+        lines += ["",f"### {x['ticker']}｜{bias}",
+          f"- 参考价（非实时）：{x['market']['current_price']:.2f}；最新15分钟K：{x['market']['intraday_timestamp']}",
+          f"- 下周预期波动区间：**{c['weekly_range_low']:.2f} – {c['weekly_range_high']:.2f}**",
+          f"- 支撑：{c['weekly_support']:.2f}；压力：{c['weekly_resistance']:.2f}；置信度：{c['weekly_confidence_pct']}%",
+          f"- 基本路径：{c['weekly_scenario']}",f"- 关键触发：{c['weekly_trigger']}",f"- 主要风险：{c['weekly_risk']}"]
+    (OUT/"weekly_outlook.md").write_text("\\n".join(lines)+"\\n",encoding="utf-8")
+
 def bark(rows):
     if not BARK_KEY: print("BARK_KEY未配置，跳过推送"); return
     picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
@@ -240,7 +297,7 @@ def bark(rows):
 
 def main():
     if not DEEPSEEK_API_KEY:raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY")
-    print("获取30只标的日K、4小时K和15分钟K（历史OHLC，不宣称实时行情）。")
+    print(f"获取{len(WATCHLIST)}只标的日K、4小时K和15分钟K（历史OHLC，不宣称实时行情）。")
     market={};failures={}
     for sym in WATCHLIST:
         try:
@@ -248,16 +305,17 @@ def main():
             print(f"{sym}: 日K {market[sym]['daily']['bars']}根 | 4H {market[sym]['four_hour']['bars']}根 | 15m {market[sym]['fifteen_minute']['bars']}根 | 参考价 {market[sym]['current_price']:.4f}")
         except Exception as e:failures[sym]=f"{type(e).__name__}: {e}"
     if failures:raise RuntimeError("多周期行情不完整，停止委员会分析："+json.dumps(failures,ensure_ascii=False))
-    print(f"多周期数据完整：{len(market)}/30；所有计划均需券商现价复核。")
-    decisions=run_committee(list(market.values()));rows=[]
+    print(f"多周期数据完整：{len(market)}/{len(WATCHLIST)}；所有计划均需券商现价复核。")
+    batch=run_committee(list(market.values()));decisions={x.ticker:x for x in batch.results};rows=[]
     for sym in WATCHLIST:
         m,d=market[sym],decisions[sym];r=hard_risk(m,d)
         rows.append({"ticker":sym,"market":m,"committee":d.model_dump(),"risk":r});print(f"{sym}: {r['verdict']}")
-    if len(rows)!=30:raise RuntimeError("委员会报告不完整")
+    if len(rows)!=len(WATCHLIST):raise RuntimeError("委员会报告不完整")
     write_reports(rows)
+    write_weekly_report(rows,batch.market_summary)
     try:bark(rows)
     except Exception as e:print(f"Bark失败：{type(e).__name__}: {e}")
-    print("30只标的多周期委员会报告生成完成；交易计划不是实时成交信号。")
+    print(f"{len(WATCHLIST)}只标的多周期委员会及下周展望报告生成完成；交易计划不是实时成交信号。")
 
 if __name__=="__main__":
     try: main()
