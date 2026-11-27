@@ -26,6 +26,8 @@ jobs:
           cache-dependency-path: gemini_committee/requirements.txt
       - name: Install committee-only dependencies
         run: python -m pip install -r gemini_committee/requirements.txt
+      - name: Compile committee Python modules
+        run: python -m compileall -q gemini_committee
       - name: Validate free Alpaca IEX credentials
         env:
           APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
