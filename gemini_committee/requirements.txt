@@ -2,4 +2,4 @@ yfinance
 pandas
 requests
 pydantic
-google-genai>=2.25,<3.0
+openai>=1.30,<3.0
