@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-27T12:42:38.911339+00:00",
+  "generated_at_utc": "2026-11-27T13:24:21.095956+00:00",
   "watchlist": [
     "NVDA",
     "MSFT",
@@ -12,39 +12,361 @@
   ],
   "account_size_usd": 10000.0,
   "max_risk_pct": 0.01,
-  "gemini_model": "models/gemini-3.8-flash",
+  "ai_provider": "DeepSeek API",
+  "model": "deepseek-flash",
+  "api_calls": 1,
   "results": [
     {
       "ticker": "NVDA",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "NVDA",
+        "as_of": "2026-11-25",
+        "current_price": 149.3000030517578,
+        "ma20": 172.4775016784668,
+        "ma20_deviation_pct": -13.437983737679925,
+        "ma50": 203.65440155029296,
+        "ma50_deviation_pct": -26.689527987006066,
+        "return_5d_pct": -1.0996314177805888,
+        "volume_ratio_20d": 1.0867734454509381,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 215.3300018310547,
+        "low_20d": 124.5,
+        "latest_news_titles": [
+          "Nvidia stock is still paying the price for the Jensen Huang CEO drama",
+          "He was right about AI and still lost $35 billion",
+          "UnitedHealth Keeps Raising Guidance. Here's What a $10,000 Investment Could Be Worth If the Turnaround Sticks.",
+          "Stock Futures Rise as Wall Street Heads for Weekly Gains"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "NVDA",
+        "bull_case": "股价已从20日高点215.33大幅回落至149.30，接近20日低点124.5，5日跌幅仅1.1%显示抛压趋缓，若AI叙事修复存在超跌反弹空间。",
+        "bear_case_risks": "价格低于MA20达13.4%、低于MA50达26.7%，属深度破位；新闻聚焦CEO戏剧与AI亏损，缺乏基本面催化，放量比1.09未显示承接，反弹证据不足。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "趋势严重破位且无明确止跌信号，新闻面偏负面，证据不足以支持做多，按规则选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"NVDA NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "MSFT",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "MSFT",
+        "as_of": "2026-11-25",
+        "current_price": 489.92999267578125,
+        "ma20": 516.3777145385742,
+        "ma20_deviation_pct": -5.121778325857096,
+        "ma50": 518.6443994140625,
+        "ma50_deviation_pct": -5.5364343605602055,
+        "return_5d_pct": -3.42591412872858,
+        "volume_ratio_20d": 0.8700659373388003,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 558.0719712336797,
+        "low_20d": 477.3900146484375,
+        "latest_news_titles": [
+          "Allstate Joins Growing List of Companies Hit by Tech Outages",
+          "Latest News In Cloud AI - Cloudera Advances Data Control With Digital Sovereignty Solution",
+          "Tech Sell-Off: 1 Unstoppable Stock-Split Stock to Buy Before It Joins Nvidia, Alphabet, Microsoft, and Apple in the $3 Trillion Club",
+          "Market Chatter: Hackers Breach US Air Force Cloud Platform Powered by Microsoft, Amazon, Oracle, Alphabet"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "MSFT",
+        "bull_case": "股价489.93接近20日低点477.39，MA20与MA50偏离仅约5%，回调相对温和，云AI长期逻辑仍在，存在区间下沿支撑反弹可能。",
+        "bear_case_risks": "5日跌3.4%，价格位于MA20与MA50下方，新闻涉及黑客入侵美空军云平台及科技抛售，安全事件构成声誉风险，量比0.87显示无放量承接。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "处于均线下方且负面安全新闻发酵，缺乏放量反转证据，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"MSFT NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "AAPL",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "AAPL",
+        "as_of": "2026-11-25",
+        "current_price": 355.5799865722656,
+        "ma20": 348.5403549194336,
+        "ma20_deviation_pct": 2.0197465095424194,
+        "ma50": 342.8381805419922,
+        "ma50_deviation_pct": 3.7165656433393535,
+        "return_5d_pct": 0.888061925614525,
+        "volume_ratio_20d": 1.0725041178122026,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 360.8299865722656,
+        "low_20d": 325.0829909815337,
+        "latest_news_titles": [
+          "Why Should Apple Stock Holders Watch The December Quarter?",
+          "Allstate Joins Growing List of Companies Hit by Tech Outages",
+          "Latest News In Cloud AI - Cloudera Advances Data Control With Digital Sovereignty Solution",
+          "Tech Sell-Off: 1 Unstoppable Stock-Split Stock to Buy Before It Joins Nvidia, Alphabet, Microsoft, and Apple in the $3 Trillion Club"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "AAPL",
+        "bull_case": "价格355.58站上MA20（+2.0%）与MA50（+3.7%），5日涨0.89%，是8只中唯一趋势向上的标的，量比1.07温和放量，相对强势明显。",
+        "bear_case_risks": "接近20日高点360.83，上行空间受限于前高；新闻多为泛科技与云AI话题，缺乏苹果自身催化，若大盘走弱可能补跌。",
+        "verdict": "GO SMALLER",
+        "entry_low": 350.0,
+        "entry_high": 356.0,
+        "stop_price": 340.0,
+        "target_price": 372.0,
+        "judge_reason": "唯一维持均线上方且相对强势的标的，但接近前高且缺乏个股催化，给予小仓位做多，止损设于MA50下方。",
+        "pine_script": "//@version=5\nindicator(\"AAPL GO SMALLER\", overlay=true)\nhline(353.0, \"Entry\", color=color.blue)\nhline(340.0, \"Stop\", color=color.red)\nhline(372.0, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "GO SMALLER",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": 15.58,
+        "max_shares": 3,
+        "max_position_value_usd": 1066.74,
+        "pine_script": "//@version=5\nindicator(\"AAPL GO SMALLER\", overlay=true)\nhline(353.0, \"Entry\", color=color.blue)\nhline(340.0, \"Stop\", color=color.red)\nhline(372.0, \"Target\", color=color.green)"
+      }
     },
     {
       "ticker": "META",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "META",
+        "as_of": "2026-11-25",
+        "current_price": 609.8900146484375,
+        "ma20": 615.2680023193359,
+        "ma20_deviation_pct": -0.8740886330225739,
+        "ma50": 672.3955395507812,
+        "ma50_deviation_pct": -9.295945797633165,
+        "return_5d_pct": -1.0529203061362957,
+        "volume_ratio_20d": 0.9763422077293802,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 648.4500122070312,
+        "low_20d": 558.6799926757812,
+        "latest_news_titles": [
+          "Broadcom’s 2027 Bull Case: AI Revenue Doubles to $115B and $230B—Here’s What Finally Unlocks the Stock",
+          "Broadcom Makes More AI Money Than AMD—So Why Is AMD’s Stock Crushing It?",
+          "He was right about AI and still lost $35 billion",
+          "Amazon Blocked Meta’s Muse Two Months Ago. Now It’s in Talks to Let It Shop, and Walmart Already Did"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "META",
+        "bull_case": "价格609.89贴近MA20（-0.87%），5日仅跌1.05%，相对抗跌，若守住600关口存在向MA20回归的反弹机会。",
+        "bear_case_risks": "低于MA50达9.3%，中期趋势转弱；新闻涉及亚马逊曾封锁Meta的Muse，竞争与生态摩擦风险，量比0.98无放量承接。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "中期均线下方且缺乏放量止跌信号，新闻面存在竞争摩擦，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"META NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "AMZN",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "AMZN",
+        "as_of": "2026-11-25",
+        "current_price": 244.42999267578125,
+        "ma20": 257.18749923706054,
+        "ma20_deviation_pct": -4.960391387265739,
+        "ma50": 255.11580017089844,
+        "ma50_deviation_pct": -4.188610618377586,
+        "return_5d_pct": -8.706206920448667,
+        "volume_ratio_20d": 1.157489380255626,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 275.3399963378906,
+        "low_20d": 229.36000061035156,
+        "latest_news_titles": [
+          "Does Qualcomm Stock Have A Future?",
+          "Market Chatter: Hackers Breach US Air Force Cloud Platform Powered by Microsoft, Amazon, Oracle, Alphabet",
+          "How Does Capex-Led Margin Pressure Shape Alibaba Group Stock's Future?",
+          "Can Microsoft Stock Sustain Margins as AI Data Center Spending Climbs?"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "AMZN",
+        "bull_case": "价格244.43接近20日低点229.36，若在230附近获得支撑，存在超跌反弹至MA20（257.19）的空间。",
+        "bear_case_risks": "5日大跌8.7%，量比1.16放量下跌，属放量破位；价格低于MA20与MA50约4-5%，新闻涉及云平台被黑客入侵及资本开支挤压利润率，负面因素叠加。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "放量破位且5日跌幅显著，新闻面偏空，未见止跌证据，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"AMZN NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "TSLA",
-      "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      "market": {
+        "ticker": "TSLA",
+        "as_of": "2026-11-25",
+        "current_price": 380.1400146484375,
+        "ma20": 382.14749908447266,
+        "ma20_deviation_pct": -0.5253166488972338,
+        "ma50": 377.1685986328125,
+        "ma50_deviation_pct": 0.7878216867459154,
+        "return_5d_pct": -0.9329684563944673,
+        "volume_ratio_20d": 0.9806624480750921,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 414.2300109863281,
+        "low_20d": 338.1499938964844,
+        "latest_news_titles": [
+          "Stock Market Today: Dow Jumps 715 Points As Nvidia Rebounds; Anthropic, SpaceX, Tesla Rally (Live Coverage)",
+          "SpaceX Cratered 13.5% This Month: Near 300% Returns to Materialize at Today’s Price According to this Pro Analyst",
+          "iShares Paris-Aligned Climate (PABU) Buys $9.4 Million More Apple on Wednesday",
+          "What ARK Autonomous Technology & Robotics ETF (ARKQ) Sold: Tesla Leads on Nov. 25"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "TSLA",
+        "bull_case": "价格380.14基本贴合MA20（-0.53%）并略高于MA50（+0.79%），5日仅跌0.93%，在均线附近横盘整理，若守住377一线存在向上突破可能。",
+        "bear_case_risks": "距20日高点414.23有约9%空间，量比0.98无放量确认；新闻中ARKQ减持特斯拉，机构资金流出构成派发线索。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "虽贴近均线但缺乏放量突破确认，且新闻显示机构减持，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"TSLA NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "QQQ",
-      "error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash, description: Generate content requests per day limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 19h17m23.007767334s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content requests per day limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.8-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '69443s'}]}}"
+      "market": {
+        "ticker": "QQQ",
+        "as_of": "2026-11-25",
+        "current_price": 633.9299926757812,
+        "ma20": 666.730502319336,
+        "ma20_deviation_pct": -4.919605377203018,
+        "ma50": 707.0196569824219,
+        "ma50_deviation_pct": -10.337713185880748,
+        "return_5d_pct": -3.8786397038817255,
+        "volume_ratio_20d": 1.3424554121098773,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 718.0700073242188,
+        "low_20d": 606.22998046875,
+        "latest_news_titles": [
+          "Stock Market Today: Dow Jumps 715 Points As Nvidia Rebounds; Anthropic, SpaceX, Tesla Rally (Live Coverage)",
+          "Stock Futures Rip on Thanksgiving Night as S&P 500 Futures Top 7,300",
+          "What INVESCO QQQ Trust (QQQ) Bought: Apple Leads on Wednesday",
+          "ETFs Bought $58.9 Million of Gilead Sciences (GILD) on Wednesday"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "QQQ",
+        "bull_case": "价格633.93接近20日低点606.23，若科技股在感恩节后延续反弹，指数存在向MA20（666.73）修复的空间。",
+        "bear_case_risks": "低于MA20达4.9%、低于MA50达10.3%，5日跌3.88%，量比1.34放量下跌，属放量破位，趋势明显走弱。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "放量跌破MA50且5日跌幅明显，趋势向下，缺乏止跌证据，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"QQQ NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     },
     {
       "ticker": "SPY",
-      "error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash, description: Generate content requests per day limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 19h17m21.089866241s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content requests per day limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.8-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '69441s'}]}}"
+      "market": {
+        "ticker": "SPY",
+        "as_of": "2026-11-25",
+        "current_price": 716.7000122070312,
+        "ma20": 740.3289947509766,
+        "ma20_deviation_pct": -3.191686765137891,
+        "ma50": 757.851015625,
+        "ma50_deviation_pct": -5.429959526283867,
+        "return_5d_pct": -1.8488085146967093,
+        "volume_ratio_20d": 1.161879388316416,
+        "volume_ratio_definition": "最新日成交量/前20个交易日平均成交量（不含当天）",
+        "high_20d": 775.6400146484375,
+        "low_20d": 686.75,
+        "latest_news_titles": [
+          "JEPI Gets the Attention. JPMorgan’s 0.12% Quality ETF Has Quietly Grown Past $9 Billion",
+          "Down 26% This Year, Is It Time to Buy Salesforce Stock Before Earnings?",
+          "Trump Wants a GDP Investigation Over the “Fake” Pre-Election Number",
+          "Stock Futures Rip on Thanksgiving Night as S&P 500 Futures Top 7,300"
+        ],
+        "daily_bars": 65
+      },
+      "committee": {
+        "ticker": "SPY",
+        "bull_case": "价格716.70接近20日低点686.75，若大盘在感恩节后延续期货反弹，指数存在向MA20（740.33）回归的空间。",
+        "bear_case_risks": "低于MA20达3.2%、低于MA50达5.4%，5日跌1.85%，量比1.16放量下跌，属放量破位，且新闻含GDP数据争议，宏观不确定性上升。",
+        "verdict": "NO-GO",
+        "entry_low": null,
+        "entry_high": null,
+        "stop_price": null,
+        "target_price": null,
+        "judge_reason": "放量跌破均线且宏观新闻存在不确定性，未见止跌确认，做多证据不足，选NO-GO。",
+        "pine_script": "//@version=5\nindicator(\"SPY NO-GO\", overlay=true)\nhline(na, \"Entry\", color=color.gray)\nhline(na, \"Stop\", color=color.red)\nhline(na, \"Target\", color=color.green)"
+      },
+      "risk": {
+        "verdict": "NO-GO",
+        "risk_budget_usd": 100.0,
+        "risk_per_share_usd": null,
+        "max_shares": 0,
+        "max_position_value_usd": 0.0,
+        "pine_script": "//@version=5\nindicator(\"Committee NO-GO\", overlay=true)\n// No valid levels"
+      }
     }
   ]
 }
