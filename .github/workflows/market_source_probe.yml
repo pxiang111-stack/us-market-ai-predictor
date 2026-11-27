@@ -8,6 +8,10 @@ on:
       - 'gemini_committee/test_market_sources.py'
       - '.github/workflows/market_source_probe.yml'
 
+concurrency:
+  group: market-source-probe-main
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
