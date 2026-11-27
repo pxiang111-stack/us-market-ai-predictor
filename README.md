@@ -27,7 +27,7 @@ python us_market_ai_v3.py --period 10y --max-symbols 1200
 The pipeline runs the V3.1 cross-sectional stock scanner, V4 NDX/SOXL and AI-infrastructure risk screen, then a Gemini role-based committee review. The committee consumes the generated CSV/JSON/Markdown reports and writes `output/gemini_committee_premarket.md`.
 
 - Add the GitHub Actions repository secret `GEMINI_API_KEY`; never put the key in source code or commit it.
-- Optional repository variable: `GEMINI_MODEL` (defaults to `gemini-2.5-flash`).
+- Optional repository variable: `GEMINI_MODEL` (defaults to `gemini-3.8-flash`).
 - Scheduled weekdays at 12:30 UTC (07:30 New York in standard time / 08:30 in daylight time), before the US cash-session open. GitHub may delay scheduled jobs and does not automatically skip exchange holidays.
 - Manual run: Actions → Daily US Market AI Scan → Run workflow.
 - Download `daily-market-predictions` from the completed run's Artifacts section.
