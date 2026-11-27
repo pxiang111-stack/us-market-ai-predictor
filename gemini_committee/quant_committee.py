@@ -204,9 +204,13 @@ def write_reports(rows):
     report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,"max_risk_pct":MAX_RISK_PCT,
       "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Yahoo Finance","results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
-    lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- UTC生成时间：{stamp}",
-      "- 日线：Yahoo Finance 3mo/1d；盘前盘中：Yahoo Finance 5d/5m，prepost=True",
-      "- 注意：1分钟K线不等于交易所逐笔实时行情；报告逐只标注时间及日线回退状态",
+    first=rows[0]["market"] if rows else {}
+    session=first.get("market_session","UNKNOWN")
+    session_label={"PRE":"盘前 PRE","REGULAR":"盘中 REGULAR","POST":"盘后 POST","CLOSED":"休市 CLOSED"}.get(session,session)
+    latest=max((x["market"].get("intraday_timestamp") or "" for x in rows),default="")
+    lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- 当前交易时段：**{session_label}**（美东）",f"- 最新可验证1分钟行情时间：**{latest or '无可验证报价'}**",f"- UTC生成时间：{stamp}",
+      "- 日线：Yahoo Finance 3mo/1d；盘前盘中盘后：Yahoo Finance 2d/1m，prepost=True（目标覆盖美东04:00-20:00）",
+      "- 只有时间戳在3分钟内的1分钟K线才可产生GO；fast_info无时间戳及日线收盘价仅作参考，不视为实时行情",
       "- 账户资金：10,000 USD；单笔风险预算：100 USD（1%）",""]
     picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
     rejects=[x for x in rows if x["risk"]["verdict"]=="NO-GO"]
@@ -215,7 +219,7 @@ def write_reports(rows):
     for x in picks:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"### {x['ticker']}｜{r['verdict']}","",f"- 当前参考现价：**{m['current_price']:.4f}**",
-          f"- 行情时间：{m['intraday_timestamp']}；来源：{m['quote_source']}；回退日线收盘：{'是' if m['quote_fallback_to_daily_close'] else '否'}；数据年龄：{m['quote_age_minutes']}分钟",
+          f"- 行情时间：{m['intraday_timestamp'] or '无时间戳'}；来源：{m['quote_source']}；实时验证：{'是' if m['quote_verified_realtime'] else '否'}；数据年龄：{m['quote_age_minutes']}分钟",
           f"- 入场区间：**{c['entry_low']} – {c['entry_high']}**；止损：**{c['stop_price']}**；目标：**{c['target_price']}**",
           f"- 最大股数：**{r['max_shares']}股**；每股风险：{r['risk_per_share_usd']} USD；风险预算：{r['risk_budget_usd']} USD",
           f"- 多头分析师：{c['bull_case']}",f"- 空头风控官：{c['bear_case_risks']}",f"- 裁判结论：{c['judge_reason']}",
@@ -244,7 +248,7 @@ def main():
     for s in WATCHLIST:
         try:
             market[s]=get_market(s,daily,intra); m=market[s]
-            print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp']} | {'回退收盘' if m['quote_fallback_to_daily_close'] else '5分钟K线'}")
+            print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp'] or '无时间戳'} | {'已验证1分钟' if m['quote_verified_realtime'] else m['quote_source']}")
         except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
     if failures: raise RuntimeError("行情数据不完整，拒绝生成报告："+json.dumps(failures,ensure_ascii=False))
     fresh_1m=sum(1 for m in market.values() if m["quote_verified_realtime"])
