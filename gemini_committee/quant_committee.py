@@ -183,7 +183,7 @@ def write_reports(rows):
           f"- 多头分析师：{c['bull_case']}",f"- 空头风控官：{c['bear_case_risks']}",f"- 裁判结论：{c['judge_reason']}",
           f"- 技术参考：MA20 {m['ma20']:.2f}；MA50 {m['ma50']}；20日支撑/阻力 {m['low_20d']:.2f}/{m['high_20d']:.2f}；ATR14 {m['atr14']:.2f}",
           f"- 新闻线索：{'；'.join(m['latest_news_titles']) if m['latest_news_titles'] else '暂无'}","",
-          "Pine Script v5：","\\x60\\x60\\x60pine",r["pine_script"],"\\x60\\x60\\x60",""]
+          "Pine Script v5：","\x60\x60\x60pine",r["pine_script"],"\x60\x60\x60",""]
     lines += ["## 二、NO-GO淘汰汇总","","| 代码 | 当前参考现价 | 一句话淘汰原因 |","|---|---:|---|"]
     for x in rejects:
         reason=(x["committee"].get("judge_reason") or x["committee"].get("bear_case_risks") or "未通过风控").replace("|","/").replace("\n"," ")
