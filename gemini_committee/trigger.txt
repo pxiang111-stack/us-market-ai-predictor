@@ -1,2 +1,1 @@
-Gemini Quant Committee trigger
-Triggered at: 2026-11-27T12:48:10.887Z
+Trigger GitHub Models committee after API response diagnostics update 2026-11-27T12:52:36.826Z
