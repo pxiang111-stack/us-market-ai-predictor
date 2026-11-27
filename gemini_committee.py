@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 import requests
 
 OUT = Path("output")
-MODEL = os.getenv("GEMINI_MODEL", "").strip() or "gemini-2.5-flash"
+MODEL = os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.8-flash"
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
@@ -108,7 +108,7 @@ def call_gemini(prompt: str) -> str:
         params={"key": api_key},
         json={
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 7000},
+            "generationConfig": {"maxOutputTokens": 7000},
         },
         headers={"Content-Type": "application/json"},
         timeout=120,
