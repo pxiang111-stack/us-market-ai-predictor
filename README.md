@@ -23,8 +23,16 @@ pip install -r requirements.txt
 python us_market_ai_v3.py --period 10y --max-symbols 1200
 ```
 
-## GitHub Actions
-The workflow installs VADER sentiment dependencies, runs after model/factor/workflow changes are pushed to `main`, and runs weekdays at 22:30 UTC (about 06:30 next day in China, UTC+8). GitHub may delay scheduled jobs. You can run manually from Actions → Daily US Market AI Scan → Run workflow. Download `daily-market-predictions` from the completed run's Artifacts section.
+## GitHub Actions — premarket pipeline
+The pipeline runs the V3.1 cross-sectional stock scanner, V4 NDX/SOXL and AI-infrastructure risk screen, then a Gemini role-based committee review. The committee consumes the generated CSV/JSON/Markdown reports and writes `output/gemini_committee_premarket.md`.
+
+- Add the GitHub Actions repository secret `GEMINI_API_KEY`; never put the key in source code or commit it.
+- Optional repository variable: `GEMINI_MODEL` (defaults to `gemini-2.5-flash`).
+- Scheduled weekdays at 12:30 UTC (07:30 New York in standard time / 08:30 in daylight time), before the US cash-session open. GitHub may delay scheduled jobs and does not automatically skip exchange holidays.
+- Manual run: Actions → Daily US Market AI Scan → Run workflow.
+- Download `daily-market-predictions` from the completed run's Artifacts section.
+
+The Gemini committee is one Gemini model instructed to examine five review perspectives; it is not five independent models or a calibrated probability engine. Model scores and estimated returns are research signals, not guaranteed outcomes.
 
 ## Replace files in your repository
 Upload `us_market_ai_v3.py` and `requirements.txt` to the repository root. Replace `.github/workflows/daily_scan.yml` with the included workflow. The workflow now runs V3. You may keep the old V2 file as an archive.
