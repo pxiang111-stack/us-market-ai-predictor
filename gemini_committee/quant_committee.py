@@ -82,18 +82,47 @@ pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入�
 results必须恰好包含这8个ticker：NVDA, MSFT, AAPL, META, AMZN, TSLA, QQQ, SPY。
 数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
-    response=requests.post(
-        GITHUB_MODELS_ENDPOINT,
-        headers={"Authorization":f"Bearer {GITHUB_TOKEN}","Content-Type":"application/json"},
-        json={"model":GITHUB_MODEL,
-              "messages":[{"role":"system","content":"你是严谨的美股量化委员会。严格遵循用户要求并只返回合法JSON。"},
-                         {"role":"user","content":prompt}],
-              "temperature":0.1,"max_tokens":8192,
-              "response_format":{"type":"json_object"}},
-        timeout=180)
+    request_body={"model":GITHUB_MODEL,
+        "messages":[{"role":"system","content":"你是严谨的美股量化委员会。严格遵循用户要求并只返回合法JSON。"},
+                    {"role":"user","content":prompt}],
+        "temperature":0.1,"max_tokens":8192,
+        "response_format":{"type":"json_object"}}
+    # 对限流和服务端暂时故障进行有限重试；每次仍是同一份8标的批量请求。
+    response=None
+    for attempt in range(3):
+        try:
+            response=requests.post(
+                GITHUB_MODELS_ENDPOINT,
+                headers={"Authorization":f"Bearer {GITHUB_TOKEN}",
+                         "Content-Type":"application/json","Accept":"application/json"},
+                json=request_body, timeout=(15,180))
+        except requests.RequestException as exc:
+            if attempt==2: raise RuntimeError(f"GitHub Models网络请求失败（已重试3次）：{type(exc).__name__}: {exc}") from exc
+            import time
+            time.sleep(5*(attempt+1))
+            continue
+        if response.status_code not in (429,500,502,503,504):
+            break
+        if attempt<2:
+            import time
+            retry_after=response.headers.get("Retry-After","")
+            try: delay=min(60,max(1,int(retry_after))) if retry_after else 10*(attempt+1)
+            except ValueError: delay=10*(attempt+1)
+            print(f"GitHub Models暂时不可用（HTTP {response.status_code}），{delay}秒后重试第{attempt+2}次……")
+            time.sleep(delay)
+    if response is None:
+        raise RuntimeError("GitHub Models请求未获得HTTP响应")
     if not response.ok:
-        raise RuntimeError(f"GitHub Models API HTTP {response.status_code}: {response.text[:2000]}")
-    payload=response.json()
+        raise RuntimeError(f"GitHub Models API HTTP {response.status_code}; request_id={response.headers.get('x-github-request-id','未知')}; body={response.text[:2000]}")
+    raw_body=response.text or ""
+    if not raw_body.strip():
+        raise RuntimeError(f"GitHub Models返回空响应体；HTTP {response.status_code}; request_id={response.headers.get('x-github-request-id','未知')}; content_type={response.headers.get('Content-Type','未知')}")
+    try:
+        payload=response.json()
+    except requests.exceptions.JSONDecodeError as exc:
+        raise RuntimeError(f"GitHub Models响应不是JSON；HTTP {response.status_code}; content_type={response.headers.get('Content-Type','未知')}; request_id={response.headers.get('x-github-request-id','未知')}; body片段={raw_body[:1200]!r}") from exc
+    if not isinstance(payload,dict):
+        raise RuntimeError(f"GitHub Models响应顶层不是JSON对象：{str(payload)[:1000]}")
     choices=payload.get("choices") or []
     if not choices: raise RuntimeError(f"GitHub Models未返回choices：{json.dumps(payload,ensure_ascii=False)[:2000]}")
     content=(choices[0].get("message") or {}).get("content")
