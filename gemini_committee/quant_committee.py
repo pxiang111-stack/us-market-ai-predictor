@@ -62,71 +62,62 @@ def et_session(now=None):
     if 960<=minute<1200: return "POST"
     return "CLOSED"
 
-def get_market(symbol,daily_all,intraday_all):
-    df=ticker_frame(daily_all,symbol)
-    if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 日线为空")
-    df=df.dropna(subset=["Close"])
-    close=pd.to_numeric(df["Close"],errors="coerce").dropna()
-    high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
-    low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
-    vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
-    if len(close)<25:
-        retry_df=yf.download(symbol,period="3mo",interval="1d",auto_adjust=True,threads=False,progress=False)
-        df=ticker_frame(retry_df,symbol)
-        if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 批量及单票重试后日线为空")
-        df=df.dropna(subset=["Close"])
-        close=pd.to_numeric(df["Close"],errors="coerce").dropna()
-        high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
-        low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
-        vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
-        if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
-    daily_close=float(close.iloc[-1])
-    p=None; qtime=None; source=None; verified=False; fallback_kind=None
-    intra=ticker_frame(intraday_all,symbol)
-    if not intra.empty and "Close" in intra:
-        ic=pd.to_numeric(intra["Close"],errors="coerce").dropna()
-        ic=ic[ic>0]
-        if not ic.empty:
-            ts=pd.Timestamp(ic.index[-1])
-            if ts.tzinfo is None: ts=ts.tz_localize("UTC")
-            age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
-            if age<=3:
-                p=float(ic.iloc[-1]); qtime=ts.isoformat()
-                source="Yahoo Finance 1分钟K线（prepost=True）"; verified=True
-    if p is None:
-        try:
-            fi=yf.Ticker(symbol).fast_info
-            candidate=fi.get("last_price") if hasattr(fi,"get") else None
-            if candidate is not None and math.isfinite(float(candidate)) and float(candidate)>0:
-                p=float(candidate); source="Yahoo fast_info兜底（无报价时间戳，未验证实时性）"
-                fallback_kind="fast_info_unverified"
-        except Exception as e:
-            fallback_kind=f"fast_info_failed:{type(e).__name__}"
-    if p is None:
-        p=daily_close; source="最近日线收盘价（非实时，仅供参考）"
-        fallback_kind="daily_close_only"
-    try:
-        age=max(0,(pd.Timestamp.now(tz="UTC")-pd.Timestamp(qtime)).total_seconds()/60) if qtime else None
-    except Exception: age=None
+BINANCE_BASE="https://fapi.binance.com"
+BINANCE_CONTRACTS={s:s+"USDT" for s in WATCHLIST if s not in {"GLD","SLV","TLT"}}
+BINANCE_UNAVAILABLE={"GLD","SLV","TLT"}
+
+def binance_klines(symbol,interval,limit):
+    r=requests.get(f"{BINANCE_BASE}/fapi/v1/continuousKlines",
+      params={"pair":symbol,"contractType":"TRADIFI_PERPETUAL","interval":interval,"limit":limit},timeout=25)
+    r.raise_for_status()
+    data=r.json()
+    if not isinstance(data,list) or not data: raise RuntimeError(f"Binance无K线：{symbol} {interval}")
+    return data
+
+def get_market(symbol):
+    from zoneinfo import ZoneInfo
+    now_et=datetime.now(ZoneInfo("America/New_York"))
+    if symbol in BINANCE_UNAVAILABLE:
+        return {"ticker":symbol,"current_price":None,"daily_close":None,"intraday_timestamp":None,
+          "quote_source":"Binance无对应TradFi永续合约","quote_verified_realtime":False,
+          "quote_fallback_kind":"unsupported_symbol","quote_age_minutes":None,
+          "market_session":et_session(now_et),"market_session_time_et":now_et.isoformat(),
+          "ma20":None,"ma20_deviation_pct":None,"ma50":None,"ma50_deviation_pct":None,
+          "return_5d_pct":None,"volume_ratio_20d":None,"high_20d":None,"low_20d":None,
+          "atr14":None,"latest_news_titles":[],"daily_bars":0,"data_status":"UNAVAILABLE"}
+    pair=BINANCE_CONTRACTS[symbol]
+    daily=binance_klines(pair,"1d",100)
+    intraday=binance_klines(pair,"1m",100)
+    now_ms=int(datetime.now(timezone.utc).timestamp()*1000)
+    valid=[k for k in intraday if int(k[6])<=now_ms+5000 and float(k[4])>0 and float(k[5])>0]
+    if not valid: raise RuntimeError(f"{symbol}: Binance无有效1分钟成交K线")
+    latest=valid[-1]
+    qtime=datetime.fromtimestamp(int(latest[0])/1000,tz=timezone.utc)
+    age=max(0,(now_ms-int(latest[0]))/60000)
+    if age>3: raise RuntimeError(f"{symbol}: Binance 1分钟K线过期，{age:.1f}分钟")
+    price=float(latest[4])
+    d=pd.DataFrame(daily,columns=["open_time","Open","High","Low","Close","Volume","close_time","quote_volume","trades","taker_buy_base","taker_buy_quote","ignore"])
+    for col in ["Open","High","Low","Close","Volume"]: d[col]=pd.to_numeric(d[col],errors="coerce")
+    d=d.dropna(subset=["High","Low","Close"]).sort_values("open_time")
+    close,high,low,vol=d["Close"],d["High"],d["Low"],d["Volume"]
+    if len(d)<15: raise RuntimeError(f"{symbol}: Binance日线不足15根")
     prev=close.shift(1)
     tr=pd.concat([high-low,(high-prev).abs(),(low-prev).abs()],axis=1).max(axis=1)
     ma20=float(close.tail(20).mean()); ma50=float(close.tail(50).mean()) if len(close)>=50 else None
-    pv=vol.iloc[-21:-1].dropna() if len(vol)>=21 else vol.iloc[:-1].dropna()
-    avg=float(pv.mean()) if not pv.empty else 0
-    lastvol=float(vol.iloc[-1]) if pd.notna(vol.iloc[-1]) else 0
+    avg=float(vol.iloc[-21:-1].mean()) if len(vol)>=21 else float(vol.iloc[:-1].mean())
     c5=float(close.iloc[-6]) if len(close)>=6 else None
-    from zoneinfo import ZoneInfo
-    now_et=datetime.now(ZoneInfo("America/New_York"))
-    return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,"daily_close":daily_close,
-      "intraday_timestamp":qtime,"quote_source":source,"quote_verified_realtime":verified,
-      "quote_fallback_kind":fallback_kind,"quote_age_minutes":age,"market_session":et_session(now_et),
-      "market_session_time_et":now_et.isoformat(),
-      "ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
-      "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
-      "return_5d_pct":(p/c5-1)*100 if c5 else None,
-      "volume_ratio_20d":lastvol/avg if avg>0 else None,
+    return {"ticker":symbol,"current_price":price,"daily_close":float(close.iloc[-1]),
+      "intraday_timestamp":qtime.isoformat(),"quote_source":"Binance USDⓈ-M TradFi perpetual 1分钟K线",
+      "quote_verified_realtime":True,"quote_fallback_kind":None,"quote_age_minutes":round(age,2),
+      "market_session":et_session(now_et),"market_session_time_et":now_et.isoformat(),
+      "ma20":ma20,"ma20_deviation_pct":(price/ma20-1)*100 if ma20 else None,
+      "ma50":ma50,"ma50_deviation_pct":(price/ma50-1)*100 if ma50 else None,
+      "return_5d_pct":(price/c5-1)*100 if c5 else None,
+      "volume_ratio_20d":float(vol.iloc[-1])/avg if avg>0 else None,
       "high_20d":float(high.tail(20).max()),"low_20d":float(low.tail(20).min()),
-      "atr14":float(tr.tail(14).mean()),"latest_news_titles":get_news(symbol),"daily_bars":len(close)}
+      "atr14":float(tr.tail(14).mean()),"latest_news_titles":get_news(symbol),
+      "daily_bars":len(d),"data_status":"OK","binance_symbol":pair}
+
 
 def run_committee(data):
     if not DEEPSEEK_API_KEY: raise RuntimeError("缺少DEEPSEEK_API_KEY")
@@ -138,7 +129,7 @@ def run_committee(data):
 pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
 只输出JSON：{{"results":[{{"ticker":"SPY","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}
 results必须恰好包含以下30只且每只一次：{", ".join(WATCHLIST)}
-行情数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
+行情数据（Binance TradFi永续代理行情）：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
     client=OpenAI(api_key=DEEPSEEK_API_KEY,base_url="https://api.deepseek.com",timeout=240.0,max_retries=0)
     content=None
@@ -178,9 +169,11 @@ def pine(d):
       f'hline({float(d.target_price):.4f}, "Target", color=color.green)'])
 
 def hard_risk(m,d):
-    p=float(m["current_price"]); verdict=d.verdict
+    p=float(m["current_price"]) if m.get("current_price") is not None else 0.0; verdict=d.verdict
     valid=(d.entry_low is not None and d.entry_high is not None and d.stop_price is not None and d.target_price is not None
       and 0<d.entry_low<=d.entry_high and 0<d.stop_price<p<d.target_price)
+    if p<=0 or m.get("data_status")!="OK":
+        verdict="NO-GO"; d.judge_reason+="；Python硬风控否决：币安无该标的合约行情。"
     if verdict!="NO-GO" and not m.get("quote_verified_realtime",False):
         verdict="NO-GO"; d.judge_reason+="；Python硬风控否决：没有带时间戳且3分钟内的1分钟实时K线。"
     if verdict!="NO-GO" and not valid:
@@ -201,7 +194,7 @@ def write_reports(rows):
     stamp=datetime.now(timezone.utc).isoformat()
     rows=sorted(rows,key=lambda x:(x["risk"]["verdict"]=="NO-GO",WATCHLIST.index(x["ticker"])))
     report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,"max_risk_pct":MAX_RISK_PCT,
-      "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Yahoo Finance","results":rows}
+      "ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"market_data_provider":"Binance USDⓈ-M TradFi perpetual (public market data)","results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     first=rows[0]["market"] if rows else {}
     session=first.get("market_session","UNKNOWN")
@@ -240,19 +233,16 @@ def bark(rows):
 
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY")
-    print(f"批量获取{len(WATCHLIST)}只标的日线及1分钟盘前/盘中/盘后K线……")
-    daily=yf.download(WATCHLIST,period="3mo",interval="1d",auto_adjust=True,group_by="ticker",threads=True,progress=False)
-    intra=yf.download(WATCHLIST,period="2d",interval="1m",prepost=True,group_by="ticker",threads=True,progress=False)
+    print("从Binance公开接口读取TradFi永续合约日线及1分钟行情；无需API Key。")
     market={}; failures={}
     for s in WATCHLIST:
         try:
-            market[s]=get_market(s,daily,intra); m=market[s]
-            print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp'] or '无时间戳'} | {'已验证1分钟' if m['quote_verified_realtime'] else m['quote_source']}")
+            market[s]=get_market(s); m=market[s]
+            px=f"{m['current_price']:.4f}" if m["current_price"] is not None else "N/A"
+            print(f"{s}: {px} | {m['intraday_timestamp'] or '无报价'} | {m['quote_source']}")
         except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
-    if failures: raise RuntimeError("行情数据不完整，拒绝生成报告："+json.dumps(failures,ensure_ascii=False))
-    fresh_1m=sum(1 for m in market.values() if m["quote_verified_realtime"])
-    print(f"已验证1分钟行情：{fresh_1m}/{len(WATCHLIST)}")
-    if fresh_1m==0: raise RuntimeError("Yahoo没有返回3分钟内的1分钟K线，停止委员会裁决。")
+    if failures: raise RuntimeError("Binance行情读取失败："+json.dumps(failures,ensure_ascii=False))
+    print(f"Binance新鲜1分钟行情：{sum(1 for m in market.values() if m['quote_verified_realtime'])}/30；无合约：3/30")
     decisions=run_committee(list(market.values()))
     rows=[]
     for s in WATCHLIST:
@@ -263,7 +253,8 @@ def main():
     write_reports(rows)
     try: bark(rows)
     except Exception as e: print(f"Bark失败：{type(e).__name__}: {e}")
-    print("30只标的委员会报告已生成")
+    print("30只标的币安代理行情委员会报告已生成")
+
 
 if __name__=="__main__":
     try: main()
