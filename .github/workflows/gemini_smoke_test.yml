@@ -57,11 +57,11 @@ jobs:
           if meta.status_code != 200:
               detail = meta.text[:1200].replace(key, "[REDACTED]")
               raise SystemExit(f"Gemini model metadata HTTP {meta.status_code}: {detail}")
-          prompt = """请模拟美股盘前委员会的五个审查席位，各用一句话回答：量化筛选、市场环境、新闻与基本面、AI资本开支风险、风控。最后给出“委员会结论”。说明这是同一个Gemini模型模拟五种视角，不是五个独立模型。没有实时数据，不得编造行情。"""
+          prompt = """请用中文按以下六个标题逐项回答，每项至少一句完整内容：\n## 1. 量化筛选\n## 2. 市场环境\n## 3. 新闻与基本面\n## 4. AI资本开支风险\n## 5. 风控\n## 6. 委员会结论\n说明这是同一个Gemini模型模拟五种视角，不是五个独立模型。没有实时数据，不得编造行情。"""
           body = {
               "contents":[{"role":"user","parts":[{"text":prompt}]}],
               "generationConfig":{
-                  "maxOutputTokens":512,
+                  "maxOutputTokens":2048,
                   "thinkingConfig":{"thinkingLevel":"low"}
               }
           }
@@ -89,7 +89,7 @@ jobs:
               f.write("# Gemini 委员会直连测试\n\n")
               f.write(f"- 模型：{model}\n- API：generateContent\n- 结果：成功\n- 说明：这是连接与五席结构测试，不是完整盘前研究报告。\n\n")
               f.write(answer + "\n")
-          print(json.dumps({"status":"success","model":model,"committee_sections":"all five seats + conclusion","output":"gemini-smoke-output/gemini_committee_smoke_test.md"}, ensure_ascii=False))
+          print(json.dumps({"status":"success","model":model,"finish_reason":finish_reason,"response_chars":len(answer),"output":"gemini-smoke-output/gemini_committee_smoke_test.md"}, ensure_ascii=False))
           PY
 
       - name: Upload Gemini smoke test report
