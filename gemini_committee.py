@@ -52,7 +52,7 @@ def build_packet() -> dict:
         "market_risk_summary": read_json(OUT / "run_summary_v4.json"),
         "ai_infrastructure_risk": read_csv(OUT / "ai_infrastructure_risk_summary_v4.csv", 5),
         "ai_infrastructure_risk_details": read_csv(OUT / "ai_infrastructure_risk_details_v4.csv", 12),
-        "nq_soxl_forecasts": read_csv(OUT / "forecasts_v4.csv", 20),
+        "nq_soxl_forecasts": read_csv(OUT / "market_forecasts_v4.csv", 20),
         "recent_ai_news": read_csv(OUT / "ai_news_v4.csv", 35),
         "market_dashboard_excerpt": (
             (OUT / "market_dashboard_v4.md").read_text(encoding="utf-8")[:18000]
