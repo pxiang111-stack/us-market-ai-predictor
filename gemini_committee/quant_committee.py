@@ -60,7 +60,17 @@ def get_market(symbol,daily_all,intraday_all):
     high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
     low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
-    if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
+    if len(close)<25:
+        # 批量接口偶发单票失败时，单独重试该标的，避免整批数据被一个ticker拖垮。
+        retry_df=yf.download(symbol,period="3mo",interval="1d",auto_adjust=True,threads=False,progress=False)
+        df=ticker_frame(retry_df,symbol)
+        if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 批量及单票重试后日线仍为空")
+        df=df.dropna(subset=["Close"])
+        close=pd.to_numeric(df["Close"],errors="coerce").dropna()
+        high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
+        low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
+        vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
+        if len(close)<25: raise RuntimeError(f"{symbol}: 单票重试后有效日线仍不足25根")
     daily_close=float(close.iloc[-1]); p=daily_close
     qtime=str(close.index[-1]); source="Yahoo日线收盘价（5分钟K线无有效数据，已回退）"; fallback=True
     intra=ticker_frame(intraday_all,symbol)
@@ -75,6 +85,17 @@ def get_market(symbol,daily_all,intraday_all):
         if ts.tzinfo is None: ts=ts.tz_localize("UTC")
         age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
     except Exception: age=None
+    # 5分钟K线超过60分钟未更新，不把旧K线当作当前价；回退到最近日线收盘。
+    if not fallback and age is not None and age>60:
+        p=daily_close
+        qtime=str(close.index[-1])
+        source="Yahoo 5分钟K线过期，回退最近日线收盘价"
+        fallback=True
+        try:
+            ts=pd.Timestamp(qtime)
+            if ts.tzinfo is None: ts=ts.tz_localize("UTC")
+            age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
+        except Exception: age=None
     prev=close.shift(1)
     tr=pd.concat([high-low,(high-prev).abs(),(low-prev).abs()],axis=1).max(axis=1)
     ma20=float(close.tail(20).mean()); ma50=float(close.tail(50).mean()) if len(close)>=50 else None
@@ -209,6 +230,9 @@ def main():
             print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp']} | {'回退收盘' if m['quote_fallback_to_daily_close'] else '5分钟K线'}")
         except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
     if failures: raise RuntimeError("行情数据不完整，拒绝生成报告："+json.dumps(failures,ensure_ascii=False))
+    fresh_5m=sum(1 for m in market.values() if not m["quote_fallback_to_daily_close"])
+    if fresh_5m<3:
+        raise RuntimeError(f"Yahoo 5分钟行情整体疑似过期：仅{fresh_5m}/30只标的有60分钟内新K线。已停止DeepSeek裁决，避免把旧行情伪装成实时盘前价格。")
     decisions=run_committee(list(market.values()))
     rows=[]
     for s in WATCHLIST:
