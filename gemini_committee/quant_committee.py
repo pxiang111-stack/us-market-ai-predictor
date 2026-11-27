@@ -119,6 +119,31 @@ def get_market(symbol):
       "daily_bars":len(d),"data_status":"OK","binance_symbol":pair}
 
 
+
+def get_yahoo_fallback(symbol):
+    """Fallback daily-only data; never treats daily bars as live quotes."""
+    from zoneinfo import ZoneInfo
+    now_et=datetime.now(ZoneInfo("America/New_York"))
+    raw=yf.download(symbol,period="3mo",interval="1d",auto_adjust=True,progress=False,threads=False)
+    df=ticker_frame(raw,symbol)
+    if df.empty: raise RuntimeError(f"Yahoo日线备用源也无法获取{symbol}")
+    df=df.dropna(subset=["Close"]).sort_index()
+    close=pd.to_numeric(df["Close"],errors="coerce"); high=pd.to_numeric(df["High"],errors="coerce"); low=pd.to_numeric(df["Low"],errors="coerce"); vol=pd.to_numeric(df["Volume"],errors="coerce")
+    if len(df)<15: raise RuntimeError(f"{symbol}: 备用日线数据不足")
+    p=float(close.iloc[-1]); ma20=float(close.tail(20).mean()); ma50=float(close.tail(50).mean()) if len(close)>=50 else None
+    prev=close.shift(1); tr=pd.concat([high-low,(high-prev).abs(),(low-prev).abs()],axis=1).max(axis=1)
+    avg=float(vol.iloc[-21:-1].mean()) if len(vol)>=21 else float(vol.iloc[:-1].mean()); c5=float(close.iloc[-6]) if len(close)>=6 else None
+    ts=df.index[-1]; ts=ts.to_pydatetime() if hasattr(ts,"to_pydatetime") else ts
+    ts=ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+    return {"ticker":symbol,"current_price":p,"daily_close":p,"intraday_timestamp":ts.isoformat(),
+      "quote_source":"Yahoo Finance daily fallback (NOT realtime)","quote_verified_realtime":False,
+      "quote_fallback_kind":"daily_only","quote_age_minutes":None,"market_session":et_session(now_et),
+      "market_session_time_et":now_et.isoformat(),"ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
+      "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
+      "return_5d_pct":(p/c5-1)*100 if c5 else None,"volume_ratio_20d":float(vol.iloc[-1])/avg if avg>0 else None,
+      "high_20d":float(high.tail(20).max()),"low_20d":float(low.tail(20).min()),"atr14":float(tr.tail(14).mean()),
+      "latest_news_titles":get_news(symbol),"daily_bars":len(df),"data_status":"DAILY_ONLY"}
+
 def run_committee(data):
     if not DEEPSEEK_API_KEY: raise RuntimeError("缺少DEEPSEEK_API_KEY")
     prompt=f"""
@@ -201,8 +226,8 @@ def write_reports(rows):
     session_label={"PRE":"盘前 PRE","REGULAR":"盘中 REGULAR","POST":"盘后 POST","CLOSED":"休市 CLOSED"}.get(session,session)
     latest=max((x["market"].get("intraday_timestamp") or "" for x in rows),default="")
     lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- 当前交易时段：**{session_label}**（美东）",f"- 最新可验证1分钟行情时间：**{latest or '无可验证报价'}**",f"- UTC生成时间：{stamp}",
-      "- 日线：Yahoo Finance 3mo/1d；盘前盘中盘后：Yahoo Finance 2d/1m，prepost=True（目标覆盖美东04:00-20:00）",
-      "- 只有时间戳在3分钟内的1分钟K线才可产生GO；fast_info无时间戳及日线收盘价仅作参考，不视为实时行情",
+      "- 行情源：Binance TradFi 1分钟实时行情；无法访问时使用Yahoo Finance 3mo日线备用模式（非实时）",
+      "- Binance受限时自动降级Yahoo日线参考；日线降级模式强制NO-GO，不视为实时行情",
       "- 账户资金：10,000 USD；单笔风险预算：100 USD（1%）",""]
     picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
     rejects=[x for x in rows if x["risk"]["verdict"]=="NO-GO"]
@@ -235,16 +260,21 @@ def bark(rows):
 
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY")
-    print("从Binance公开接口读取TradFi永续合约日线及1分钟行情；无需API Key。")
-    market={}; failures={}
+    print("尝试Binance TradFi 1分钟行情；若受区域限制则自动降级到Yahoo日线（明确标记非实时，所有信号强制NO-GO）。")
+    market={}; realtime_failures={}
     for s in WATCHLIST:
-        try:
-            market[s]=get_market(s); m=market[s]
-            px=f"{m['current_price']:.4f}" if m["current_price"] is not None else "N/A"
-            print(f"{s}: {px} | {m['intraday_timestamp'] or '无报价'} | {m['quote_source']}")
-        except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
-    if failures: raise RuntimeError("Binance行情读取失败："+json.dumps(failures,ensure_ascii=False))
-    print(f"Binance新鲜1分钟行情：{sum(1 for m in market.values() if m['quote_verified_realtime'])}/30；无合约：3/30")
+        try: market[s]=get_market(s)
+        except Exception as e: realtime_failures[s]=f"{type(e).__name__}: {e}"
+    if realtime_failures:
+        print(f"Binance实时行情不可用{len(realtime_failures)}只，启用Yahoo日线备用源；不绕过地域限制。")
+        market={}; fallback_failures={}
+        for s in WATCHLIST:
+            try:
+                market[s]=get_yahoo_fallback(s)
+                print(f"{s}: {market[s]['current_price']:.4f} | {market[s]['intraday_timestamp']} | DAILY ONLY")
+            except Exception as e: fallback_failures[s]=f"{type(e).__name__}: {e}"
+        if fallback_failures: raise RuntimeError("备用日线源失败："+json.dumps(fallback_failures,ensure_ascii=False))
+    print(f"可验证实时行情：{sum(1 for m in market.values() if m['quote_verified_realtime'])}/30；其余仅日线参考。")
     decisions=run_committee(list(market.values()))
     rows=[]
     for s in WATCHLIST:
@@ -255,7 +285,7 @@ def main():
     write_reports(rows)
     try: bark(rows)
     except Exception as e: print(f"Bark失败：{type(e).__name__}: {e}")
-    print("30只标的币安代理行情委员会报告已生成")
+    print("30只标的委员会报告生成完成；日线降级模式不产生买入信号。")
 
 
 if __name__=="__main__":
