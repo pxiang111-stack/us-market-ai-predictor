@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gemini盘前量化委员会独立程序：8只标的一次批量推理。"""
+"""DeepSeek盘前量化委员会独立程序：8只标的一次批量推理。"""
 import json, math, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,15 +8,14 @@ from urllib.parse import quote
 import pandas as pd
 import requests
 import yfinance as yf
-from google import genai
-from google.genai import types
+from openai import OpenAI
 from pydantic import BaseModel, Field
 
 WATCHLIST=["NVDA","MSFT","AAPL","META","AMZN","TSLA","QQQ","SPY"]
 ACCOUNT_SIZE=10000.0
 MAX_RISK_PCT=0.01
-GEMINI_MODEL="gemini-3.8-flash"
-GEMINI_API_KEY=os.getenv("GEMINI_API_KEY","").strip()
+DEEPSEEK_MODEL="deepseek-flash"
+DEEPSEEK_API_KEY=os.getenv("DEEPSEEK_API_KEY","").strip()
 BARK_KEY=os.getenv("BARK_KEY","").strip()
 OUT=Path(__file__).resolve().parent
 
@@ -71,7 +70,8 @@ def get_market(symbol):
       "latest_news_titles":get_news(symbol),"daily_bars":len(close)}
 
 def run_committee(data):
-    if not GEMINI_API_KEY: raise RuntimeError("缺少GEMINI_API_KEY；请在GitHub Actions Secrets中配置")
+    if not DEEPSEEK_API_KEY:
+        raise RuntimeError("缺少DEEPSEEK_API_KEY；请在GitHub Actions Secrets中配置")
     prompt=f"""
 你是严格的美股盘前量化委员会。以下包含8只标的的完整行情、技术面和新闻数据。
 必须在这一次回答中逐一完成全部8只股票的分析，不得遗漏、合并或编造数据。
@@ -79,47 +79,55 @@ def run_committee(data):
 证据不足选NO-GO。仅考虑做多；入场区间、止损、第一目标必须合理，止损低于现价、目标高于现价；无法给出合理价格时NO-GO且价格字段为null。
 禁止计算股数、仓位、风险预算，全部由Python硬风控计算。
 pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入场、止损、目标，价格与字段一致，不要代码围栏。
-每个输入ticker恰好出现一次：NVDA, MSFT, AAPL, META, AMZN, TSLA, QQQ, SPY。
+必须只输出一个JSON对象，结构严格符合：{{"results":[{{"ticker":"NVDA","bull_case":"...","bear_case_risks":"...","verdict":"NO-GO","entry_low":null,"entry_high":null,"stop_price":null,"target_price":null,"judge_reason":"...","pine_script":"..."}}]}}。
+results必须恰好包含以下8个ticker且每个一次：NVDA, MSFT, AAPL, META, AMZN, TSLA, QQQ, SPY。
 数据：{json.dumps(data,ensure_ascii=False,allow_nan=False)}
 """
-    client=genai.Client(api_key=GEMINI_API_KEY)
+    client=OpenAI(api_key=DEEPSEEK_API_KEY,base_url="https://api.deepseek.com",timeout=180.0,max_retries=0)
     content=None
     try:
         for attempt in range(3):
             try:
-                response=client.models.generate_content(
-                    model=GEMINI_MODEL,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.1,
-                        max_output_tokens=8192,
-                        response_mime_type="application/json",
-                        response_json_schema=CommitteeBatch.model_json_schema(),
-                    ),
+                response=client.chat.completions.create(
+                    model=DEEPSEEK_MODEL,
+                    messages=[
+                        {"role":"system","content":"你是严格遵循输出格式的美股量化委员会。只返回有效JSON，不要Markdown代码围栏。"},
+                        {"role":"user","content":prompt},
+                    ],
+                    max_tokens=8192,
+                    temperature=0.1,
+                    response_format={"type":"json_object"},
+                    stream=False,
+                    extra_body={"thinking":{"type":"disabled"}},
                 )
-                content=response.text
+                if not response.choices:
+                    raise RuntimeError("DeepSeek API未返回任何choices")
+                choice=response.choices[0]
+                if choice.finish_reason=="length":
+                    raise RuntimeError("DeepSeek输出达到8192 token上限并被截断，拒绝生成不完整报告")
+                content=choice.message.content
                 if not content or not content.strip():
-                    raise RuntimeError("Gemini API返回空文本；可能被安全策略拦截或输出令牌耗尽")
+                    raise RuntimeError(f"DeepSeek API返回空文本，finish_reason={choice.finish_reason}")
                 break
             except Exception as exc:
-                code=getattr(exc,"code",None)
+                status=getattr(exc,"status_code",None)
                 message=str(exc)
                 lower=message.lower()
-                retryable=(code in (429,500,502,503,504) or any(
-                    token in lower for token in ("429","500","502","503","504","timeout","temporarily","connection reset","service unavailable")
+                retryable=(status in (408,409,429,500,502,503,504) or any(
+                    token in lower for token in ("408","409","429","500","502","503","504","timeout","temporarily","connection reset","service unavailable")
                 ))
                 if not retryable or attempt==2:
-                    raise RuntimeError(f"Gemini API调用失败（模型={GEMINI_MODEL}）：{type(exc).__name__}: {message[:2500]}") from exc
+                    raise RuntimeError(f"DeepSeek API调用失败（模型={DEEPSEEK_MODEL}）：{type(exc).__name__}: {message[:2500]}") from exc
                 import time
                 delay=10*(attempt+1)
-                print(f"Gemini API暂时故障，{delay}秒后重试第{attempt+2}次……")
+                print(f"DeepSeek API暂时故障，{delay}秒后重试第{attempt+2}次……")
                 time.sleep(delay)
     finally:
         client.close()
     try:
         batch=CommitteeBatch.model_validate_json(content)
     except Exception as exc:
-        raise RuntimeError(f"Gemini返回的委员会JSON无效：{exc}; 内容片段={content[:1500]}") from exc
+        raise RuntimeError(f"DeepSeek返回的委员会JSON无效：{exc}; 内容片段={content[:1500]}") from exc
     got=[x.ticker for x in batch.results]
     if len(got)!=len(WATCHLIST) or set(got)!=set(WATCHLIST) or len(set(got))!=len(got):
         raise RuntimeError(f"委员会结果不完整或ticker重复：{got}")
@@ -132,7 +140,7 @@ def pine(d):
     if candidate.startswith("//@version=5") and "hline(" in candidate and len(candidate.splitlines())<=5:
         return candidate
     mid=(float(d.entry_low)+float(d.entry_high))/2
-    return "\n".join(["//@version=5",'indicator("Gemini Committee Levels", overlay=true)',
+    return "\n".join(["//@version=5",'indicator("DeepSeek Committee Levels", overlay=true)',
       f'hline({mid:.4f}, "Entry", color=color.blue)',
       f'hline({float(d.stop_price):.4f}, "Stop", color=color.red)',
       f'hline({float(d.target_price):.4f}, "Target", color=color.green)'])
@@ -159,10 +167,10 @@ def hard_risk(m,d):
 def write_reports(rows):
     stamp=datetime.now(timezone.utc).isoformat()
     report={"generated_at_utc":stamp,"watchlist":WATCHLIST,"account_size_usd":ACCOUNT_SIZE,
-      "max_risk_pct":MAX_RISK_PCT,"ai_provider":"Google Gemini API","model":GEMINI_MODEL,"api_calls":1,"results":rows}
+      "max_risk_pct":MAX_RISK_PCT,"ai_provider":"DeepSeek API","model":DEEPSEEK_MODEL,"api_calls":1,"results":rows}
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
-    lines=["# Gemini盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
-      "- Gemini API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- Gemini模型：{GEMINI_MODEL}",""]
+    lines=["# DeepSeek盘前量化委员会","",f"- UTC生成时间：{stamp}",f"- 股票池：{', '.join(WATCHLIST)}",
+      "- DeepSeek API批量调用次数：1","- 账户资金：10000 USD","- 单笔风险上限：1%（Python硬风控）",f"- DeepSeek模型：{DEEPSEEK_MODEL}",""]
     for x in rows:
         m,c,r=x["market"],x["committee"],x["risk"]
         lines += [f"## {x['ticker']}","",f"- 裁决：**{r['verdict']}**",f"- 现价：{m['current_price']:.4f}（{m['as_of']}）",
@@ -181,14 +189,14 @@ def bark(rows):
     picks=[x for x in rows if x.get("risk",{}).get("verdict") in ("GO","GO SMALLER")]
     if not picks: print("今日无GO/GO SMALLER标的"); return
     body="\n".join(f"{x['ticker']} {x['risk']['verdict']} | {x['market']['current_price']:.2f} | 最多{x['risk']['max_shares']}股" for x in picks)
-    url=f"https://api.day.app/{quote(BARK_KEY,safe='')}/{quote('Gemini Quant Committee',safe='')}/{quote(body,safe='')}"
+    url=f"https://api.day.app/{quote(BARK_KEY,safe='')}/{quote('DeepSeek Quant Committee',safe='')}/{quote(body,safe='')}"
     response=requests.get(url,timeout=20); response.raise_for_status()
 
 def main():
-    if not GEMINI_API_KEY: raise RuntimeError("GitHub Actions未提供GEMINI_API_KEY，请检查Actions Secrets配置")
+    if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY，请检查Actions Secrets配置")
     print("正在获取8只标的行情、技术面与新闻数据……")
     market={s:get_market(s) for s in WATCHLIST}
-    print("行情数据齐备，向Gemini API发送一次批量委员会请求……")
+    print("行情数据齐备，向DeepSeek API发送一次批量委员会请求……")
     decisions=run_committee(list(market.values()))
     rows=[]
     for symbol in WATCHLIST:
@@ -201,7 +209,7 @@ def main():
     write_reports(rows)
     try: bark(rows)
     except Exception as e: print(f"Bark失败（报告已生成）：{type(e).__name__}: {e}")
-    print("8只股票批量委员会报告已生成")
+    print("8只股票DeepSeek批量委员会报告已生成")
 
 if __name__=="__main__":
     try:
