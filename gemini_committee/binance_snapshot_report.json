@@ -1,0 +1,98 @@
+{
+  "generated_at_utc": "N/A",
+  "source_note": "输入中的__DATA_JSON__未被替换为实际行情，未收到任何Binance TradFi永续代理的日K、4小时K、15分钟K、成交量、成交额或主动买入量。以下输出为数据缺失下的保护性WAIT；所有价格字段留空，不编造报价，不声称实时可成交，也不代表券商现货/ETF可直接下单价格。最新K线是否未完成无法核验。若后续提供完整数据，应重新计算。",
+  "market_summary": {
+    "bias": "NEUTRAL",
+    "confidence_pct": 0,
+    "summary": "由于输入仅有占位符__DATA_JSON__，没有任何可用于识别趋势、成交量变化、吸筹/放量下跌、支撑阻力或周期共振的行情，无法形成可验证的交易判断。为避免为了给信号而给信号，QQQ、NVDA、AMD、SOXL四个代理标的均判定为WAIT。",
+    "strength_rank": [
+      "无法排序：四个标的均无行情数据"
+    ],
+    "next_week_base_case": "无数据基础，不能构建下周基准情景；在获得完整且时间戳明确的日K、4小时K、15分钟K及量能数据前，维持无信号/WAIT。",
+    "risks": [
+      "输入行情缺失或仅为占位符，任何方向判断都会是编造",
+      "代理行情非美股交易所官方现货/ETF报价，不可直接当作券商可成交现价",
+      "最新K线可能未完成，但当前无法核验时间和完整性",
+      "SOXL为杠杆ETF代理标的，波动放大",
+      "本输出不构成下单指令，不得据此交易"
+    ]
+  },
+  "results": [
+    {
+      "ticker": "QQQUSDT",
+      "bias": "NEUTRAL",
+      "decision": "WAIT",
+      "confidence_pct": 0,
+      "reference_price": null,
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": null,
+      "target_1": null,
+      "target_2": null,
+      "support_levels": [],
+      "resistance_levels": [],
+      "bull_case": "无法评估：未提供QQQUSDT任何周期K线、成交量或主动买入量。",
+      "bear_case": "无法评估：未提供QQQUSDT任何周期K线、成交量或主动买入量。",
+      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
+      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+    },
+    {
+      "ticker": "NVDAUSDT",
+      "bias": "NEUTRAL",
+      "decision": "WAIT",
+      "confidence_pct": 0,
+      "reference_price": null,
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": null,
+      "target_1": null,
+      "target_2": null,
+      "support_levels": [],
+      "resistance_levels": [],
+      "bull_case": "无法评估：未提供NVDAUSDT任何周期K线、成交量或主动买入量。",
+      "bear_case": "无法评估：未提供NVDAUSDT任何周期K线、成交量或主动买入量。",
+      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
+      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+    },
+    {
+      "ticker": "AMDUSDT",
+      "bias": "NEUTRAL",
+      "decision": "WAIT",
+      "confidence_pct": 0,
+      "reference_price": null,
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": null,
+      "target_1": null,
+      "target_2": null,
+      "support_levels": [],
+      "resistance_levels": [],
+      "bull_case": "无法评估：未提供AMDUSDT任何周期K线、成交量或主动买入量。",
+      "bear_case": "无法评估：未提供AMDUSDT任何周期K线、成交量或主动买入量。",
+      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；按要求必须WAIT。",
+      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+    },
+    {
+      "ticker": "SOXLUSDT",
+      "bias": "NEUTRAL",
+      "decision": "WAIT",
+      "confidence_pct": 0,
+      "reference_price": null,
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": null,
+      "target_1": null,
+      "target_2": null,
+      "support_levels": [],
+      "resistance_levels": [],
+      "bull_case": "无法评估：未提供SOXLUSDT任何周期K线、成交量或主动买入量；且该标的为杠杆ETF代理，波动放大。",
+      "bear_case": "无法评估：未提供SOXLUSDT任何周期K线、成交量或主动买入量；且该标的为杠杆ETF代理，波动放大。",
+      "judge_reason": "缺少日K主趋势、4小时波段结构和15分钟入场确认数据，无法识别趋势、关键量能、支撑阻力或周期共振；杠杆代理波动放大但无数据支持方向，按要求必须WAIT。",
+      "invalidation": "在获得完整且时间戳明确的代理行情前，本WAIT判断不转为交易；任何价格条件均无法验证。"
+    }
+  ],
+  "input_snapshot_generated_at_utc": "2026-11-27T20:01:46.140Z",
+  "model": "deepseek-flash",
+  "data_source": "Binance ChatGPT connector; USDⓈ-M TradFi perpetual proxy, not official US exchange quotes",
+  "report_generated_at_utc": "2026-11-27T20:03:30.858676+00:00"
+}
