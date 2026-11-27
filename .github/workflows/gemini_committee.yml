@@ -1,0 +1,39 @@
+name: Gemini Quant Committee
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-gemini-committee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: gemini_committee/requirements.txt
+      - name: Install committee-only dependencies
+        run: python -m pip install -r gemini_committee/requirements.txt
+      - name: Run Gemini Quant Committee
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+        run: python gemini_committee/quant_committee.py
+      - name: Commit committee reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gemini_committee/daily_report.json gemini_committee/daily_report.md
+          if git diff --cached --quiet; then
+            echo "No report changes."
+          else
+            git commit -m "Update Gemini Quant Committee report"
+            git push
+          fi
