@@ -40,7 +40,7 @@ def main():
         report["model"] = "deepseek-flash"
         report["snapshot"] = DATA
         report["report_generated_at_utc"] = datetime.now(timezone.utc).isoformat()
-        OUT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        OUT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         lines = [
             "# BTC｜DeepSeek 独立观察报告", "",
             f"- 数据快照：{DATA['generated_at_utc']}",
@@ -59,7 +59,7 @@ def main():
         lines += ["## 入场与止损", "", str(report.get("entry_plan")), "", str(report.get("stop_plan")),
                   "", "## 判断依据", ""] + [f"- {x}" for x in report.get("reasoning",[])]
         lines += ["", "## 风险", ""] + [f"- {x}" for x in report.get("risk_notes",[])]
-        OUT_MD.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+        OUT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
         print(json.dumps({"success":True,"model":report["model"],"decision":report.get("overall_decision"),
                           "bias":report.get("overall_bias"),"confidence_pct":report.get("confidence_pct"),
                           "snapshot_time_utc":DATA["generated_at_utc"]},ensure_ascii=False))
