@@ -5,8 +5,6 @@ on:
   push:
     paths:
       - 'gemini_committee/trigger.txt'
-      - 'gemini_committee/binance_spot_config.json'
-      - 'gemini_committee/binance_snapshot_committee.py'
 
 permissions:
   contents: write
