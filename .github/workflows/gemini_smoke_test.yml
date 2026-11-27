@@ -45,7 +45,7 @@ jobs:
           python - <<'PY'
           import json, os, requests
           from requests.exceptions import RequestException
-          model = (os.getenv("GEMINI_MODEL") or "").strip() or "gemini-3.8-flash"
+          model = (os.getenv("GEMINI_MODEL") or "").strip() or "gemini-3.6-flash"
           key = os.environ["GEMINI_API_KEY"]
           headers = {"Content-Type": "application/json", "x-goog-api-key": key}
           base = "https://generativelanguage.googleapis.com/v1beta"
