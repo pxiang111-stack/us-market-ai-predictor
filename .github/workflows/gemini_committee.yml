@@ -1,12 +1,16 @@
-name: DeepSeek Quant Committee (30 tickers Binance TradFi 1m)
+name: DeepSeek Multi-Timeframe Committee (Daily + 4H + 15m)
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 9-22 * * 1-5'
+    - cron: '*/15 13-21 * * 1-5'
   push:
     paths:
       - 'gemini_committee/trigger.txt'
+
+concurrency:
+  group: deepseek-multi-timeframe-committee
+  cancel-in-progress: false
 
 permissions:
   contents: write
