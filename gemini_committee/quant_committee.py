@@ -64,8 +64,6 @@ def get_market(symbol):
     intraday_timestamp=quote["timestamp_utc"]
     intraday_source=quote["source"]
     intraday_change_pct=(p/daily_close-1)*100 if daily_close else None
-    except Exception as exc:
-        print(f"{symbol}: 分钟行情不可用，回退日线收盘价：{type(exc).__name__}: {exc}")
     ma20=float(close.tail(20).mean())
     ma50=float(close.tail(50).mean()) if len(close)>=50 else None
     prior=vol.iloc[-21:-1].dropna() if len(vol)>=21 else vol.iloc[:-1].dropna()
