@@ -21,7 +21,7 @@ def main():
         s=data["symbols"][ticker]
         for tf,n in (("daily",10),("four_hour",10),("fifteen_minute",10)):
             if len(s.get(tf,[]))<n: raise RuntimeError(f"{ticker}: insufficient {tf} bars")
-    prompt=f"""
+    prompt="""
 你是独立的美股短线量化交易委员会。请只根据输入的Binance TradFi永续合约代理行情，对QQQ、NVDA、AMD、SOXL做独立判断。
 数据包含日K、4小时K、15分钟K及成交量、成交额、主动买入量。日K决定主趋势，4小时K判断波段结构，15分钟K只用于入场确认。
 请识别趋势、关键成交量变化、放量下跌/吸筹可能性、支撑阻力、周期共振或冲突。不要凭空引用新闻或宏观事件。
@@ -33,7 +33,7 @@ def main():
 {"generated_at_utc":"...","source_note":"...","market_summary":{"bias":"NEUTRAL","confidence_pct":50,"summary":"...","strength_rank":["..."],"next_week_base_case":"...","risks":["..."]},"results":[{"ticker":"QQQUSDT","bias":"NEUTRAL","decision":"WAIT","confidence_pct":50,"reference_price":0,"entry_low":null,"entry_high":null,"stop_loss":null,"target_1":null,"target_2":null,"support_levels":["..."],"resistance_levels":["..."],"bull_case":"...","bear_case":"...","judge_reason":"...","invalidation":"..."}]}
 results必须恰好包含四个标的且各一次。价格数值必须与输入代理行情同一报价尺度。禁止编造胜率；confidence_pct是判断置信度，不是胜率。
 输入行情：
-{json.dumps(data,ensure_ascii=False)}
+__DATA_JSON__
 """
     client=OpenAI(api_key=key,base_url="https://api.deepseek.com",timeout=240,max_retries=1)
     try:
