@@ -1,0 +1,63 @@
+{
+  "checked_at_utc": "2026-11-27T13:33:54.122036+00:00",
+  "source": "Yahoo Finance 1-minute bars (非保证实时)",
+  "quotes": {
+    "NVDA": {
+      "price": 151.22,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.91,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "MSFT": {
+      "price": 492.1477,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.91,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "AAPL": {
+      "price": 355.1,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.92,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "META": {
+      "price": 612.39,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.92,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "AMZN": {
+      "price": 246.7652,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.92,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "TSLA": {
+      "price": 383.23,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.92,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "QQQ": {
+      "price": 636.6214,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.93,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    },
+    "SPY": {
+      "price": 720.43,
+      "timestamp_utc": "2026-11-26T00:59:00+00:00",
+      "age_minutes": 2194.93,
+      "fresh": false,
+      "source": "Yahoo Finance 1-minute bars; extended hours; not guaranteed real-time"
+    }
+  },
+  "fresh_quote_count": 0
+}
