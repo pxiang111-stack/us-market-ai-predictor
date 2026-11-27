@@ -1,4 +1,4 @@
-name: Gemini Quant Committee
+name: DeepSeek Quant Committee
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  run-gemini-committee:
+  run-deepseek-committee:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -24,9 +24,9 @@ jobs:
           cache-dependency-path: gemini_committee/requirements.txt
       - name: Install committee-only dependencies
         run: python -m pip install -r gemini_committee/requirements.txt
-      - name: Run Gemini Quant Committee
+      - name: Run DeepSeek Quant Committee
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           BARK_KEY: ${{ secrets.BARK_KEY }}
         run: python gemini_committee/quant_committee.py
       - name: Commit committee reports
@@ -37,6 +37,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No report changes."
           else
-            git commit -m "Update Gemini Quant Committee report"
+            git commit -m "Update DeepSeek Quant Committee report"
             git push
           fi
