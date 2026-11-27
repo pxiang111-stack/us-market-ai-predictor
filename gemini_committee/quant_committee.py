@@ -52,6 +52,16 @@ def get_news(symbol):
         return out
     except Exception as e: return [f"新闻获取失败：{type(e).__name__}: {e}"]
 
+def et_session(now=None):
+    from zoneinfo import ZoneInfo
+    now=now or datetime.now(ZoneInfo("America/New_York"))
+    minute=now.hour*60+now.minute
+    if now.weekday()>=5: return "CLOSED"
+    if 240<=minute<570: return "PRE"
+    if 570<=minute<960: return "REGULAR"
+    if 960<=minute<1200: return "POST"
+    return "CLOSED"
+
 def get_market(symbol,daily_all,intraday_all):
     df=ticker_frame(daily_all,symbol)
     if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 日线为空")
@@ -61,41 +71,43 @@ def get_market(symbol,daily_all,intraday_all):
     low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
     vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
     if len(close)<25:
-        # 批量接口偶发单票失败时，单独重试该标的，避免整批数据被一个ticker拖垮。
         retry_df=yf.download(symbol,period="3mo",interval="1d",auto_adjust=True,threads=False,progress=False)
         df=ticker_frame(retry_df,symbol)
-        if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 批量及单票重试后日线仍为空")
+        if df.empty or "Close" not in df: raise RuntimeError(f"{symbol}: 批量及单票重试后日线为空")
         df=df.dropna(subset=["Close"])
         close=pd.to_numeric(df["Close"],errors="coerce").dropna()
         high=pd.to_numeric(df["High"],errors="coerce").reindex(close.index)
         low=pd.to_numeric(df["Low"],errors="coerce").reindex(close.index)
         vol=pd.to_numeric(df["Volume"],errors="coerce").reindex(close.index)
-        if len(close)<25: raise RuntimeError(f"{symbol}: 单票重试后有效日线仍不足25根")
-    daily_close=float(close.iloc[-1]); p=daily_close
-    qtime=str(close.index[-1]); source="Yahoo日线收盘价（5分钟K线无有效数据，已回退）"; fallback=True
+        if len(close)<25: raise RuntimeError(f"{symbol}: 有效日线不足25根")
+    daily_close=float(close.iloc[-1])
+    p=None; qtime=None; source=None; verified=False; fallback_kind=None
     intra=ticker_frame(intraday_all,symbol)
     if not intra.empty and "Close" in intra:
         ic=pd.to_numeric(intra["Close"],errors="coerce").dropna()
-        if not ic.empty and float(ic.iloc[-1])>0:
-            p=float(ic.iloc[-1]); idx=ic.index[-1]
-            qtime=idx.isoformat() if hasattr(idx,"isoformat") else str(idx)
-            source="Yahoo Finance 5分钟K线（prepost=True）"; fallback=False
-    try:
-        ts=pd.Timestamp(qtime)
-        if ts.tzinfo is None: ts=ts.tz_localize("UTC")
-        age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
-    except Exception: age=None
-    # 5分钟K线超过60分钟未更新，不把旧K线当作当前价；回退到最近日线收盘。
-    if not fallback and age is not None and age>60:
-        p=daily_close
-        qtime=str(close.index[-1])
-        source="Yahoo 5分钟K线过期，回退最近日线收盘价"
-        fallback=True
-        try:
-            ts=pd.Timestamp(qtime)
+        ic=ic[ic>0]
+        if not ic.empty:
+            ts=pd.Timestamp(ic.index[-1])
             if ts.tzinfo is None: ts=ts.tz_localize("UTC")
             age=max(0,(pd.Timestamp.now(tz="UTC")-ts.tz_convert("UTC")).total_seconds()/60)
-        except Exception: age=None
+            if age<=3:
+                p=float(ic.iloc[-1]); qtime=ts.isoformat()
+                source="Yahoo Finance 1分钟K线（prepost=True）"; verified=True
+    if p is None:
+        try:
+            fi=yf.Ticker(symbol).fast_info
+            candidate=fi.get("last_price") if hasattr(fi,"get") else None
+            if candidate is not None and math.isfinite(float(candidate)) and float(candidate)>0:
+                p=float(candidate); source="Yahoo fast_info兜底（无报价时间戳，未验证实时性）"
+                fallback_kind="fast_info_unverified"
+        except Exception as e:
+            fallback_kind=f"fast_info_failed:{type(e).__name__}"
+    if p is None:
+        p=daily_close; source="最近日线收盘价（非实时，仅供参考）"
+        fallback_kind="daily_close_only"
+    try:
+        age=max(0,(pd.Timestamp.now(tz="UTC")-pd.Timestamp(qtime)).total_seconds()/60) if qtime else None
+    except Exception: age=None
     prev=close.shift(1)
     tr=pd.concat([high-low,(high-prev).abs(),(low-prev).abs()],axis=1).max(axis=1)
     ma20=float(close.tail(20).mean()); ma50=float(close.tail(50).mean()) if len(close)>=50 else None
@@ -103,9 +115,12 @@ def get_market(symbol,daily_all,intraday_all):
     avg=float(pv.mean()) if not pv.empty else 0
     lastvol=float(vol.iloc[-1]) if pd.notna(vol.iloc[-1]) else 0
     c5=float(close.iloc[-6]) if len(close)>=6 else None
+    from zoneinfo import ZoneInfo
+    now_et=datetime.now(ZoneInfo("America/New_York"))
     return {"ticker":symbol,"as_of":str(close.index[-1].date()),"current_price":p,"daily_close":daily_close,
-      "intraday_timestamp":qtime,"quote_source":source,"quote_fallback_to_daily_close":fallback,"quote_age_minutes":age,
-      "intraday_change_vs_daily_close_pct":(p/daily_close-1)*100 if daily_close else None,
+      "intraday_timestamp":qtime,"quote_source":source,"quote_verified_realtime":verified,
+      "quote_fallback_kind":fallback_kind,"quote_age_minutes":age,"market_session":et_session(now_et),
+      "market_session_time_et":now_et.isoformat(),
       "ma20":ma20,"ma20_deviation_pct":(p/ma20-1)*100 if ma20 else None,
       "ma50":ma50,"ma50_deviation_pct":(p/ma50-1)*100 if ma50 else None,
       "return_5d_pct":(p/c5-1)*100 if c5 else None,
@@ -118,7 +133,7 @@ def run_committee(data):
     prompt=f"""
 你是严格的美股盘前/盘中量化委员会。逐一分析全部30只股票，不得遗漏。
 每只股票分别给出多头分析师逻辑、空头风控官反驳（检查放量破位、高位派发、增发、债务、指引下调）、裁判结论。
-强制价格纪律：current_price是本次裁决时的当前参考现价。GO/GO SMALLER的入场区间必须覆盖现价（entry_low <= current_price <= entry_high）。若现价已跳空突破或跌破原计划区间，必须按现价重新评估并重算覆盖现价的新入场区间；无法合理重算就NO-GO。止损必须低于现价，目标必须高于现价。
+强制价格纪律：只有quote_verified_realtime=true且报价时间戳不超过3分钟的1分钟K线，才可用于GO/GO SMALLER。fast_info没有时间戳或回退日线收盘价均不得视为实时现价，必须NO-GO。GO/GO SMALLER入场区间必须覆盖current_price；跳空突破或跌破原区间必须按现价重算，否则NO-GO。止损必须低于现价，目标必须高于现价。
 若quote_fallback_to_daily_close=true，必须说明使用的是最近日线收盘价而非盘前实时成交，不得称为实时成交。
 仅考虑做多。证据不足NO-GO。不要计算股数/仓位，交给Python硬风控。
 pine_script使用TradingView Pine Script v5，最多5行，hline画入场/止损/目标，不要代码围栏。
@@ -167,6 +182,8 @@ def hard_risk(m,d):
     p=float(m["current_price"]); verdict=d.verdict
     valid=(d.entry_low is not None and d.entry_high is not None and d.stop_price is not None and d.target_price is not None
       and 0<d.entry_low<=d.entry_high and 0<d.stop_price<p<d.target_price)
+    if verdict!="NO-GO" and not m.get("quote_verified_realtime",False):
+        verdict="NO-GO"; d.judge_reason+="；Python硬风控否决：没有带时间戳且3分钟内的1分钟实时K线。"
     if verdict!="NO-GO" and not valid:
         verdict="NO-GO"; d.judge_reason+="；Python硬风控否决：价格计划缺失或不合理。"
     if verdict!="NO-GO" and not (float(d.entry_low)<=p<=float(d.entry_high)):
@@ -189,7 +206,7 @@ def write_reports(rows):
     (OUT/"daily_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False,default=str)+"\n",encoding="utf-8")
     lines=["# DeepSeek量化委员会｜30只标的盘前/盘中报告","",f"- UTC生成时间：{stamp}",
       "- 日线：Yahoo Finance 3mo/1d；盘前盘中：Yahoo Finance 5d/5m，prepost=True",
-      "- 注意：5分钟K线不等于交易所逐笔实时行情；报告逐只标注时间及日线回退状态",
+      "- 注意：1分钟K线不等于交易所逐笔实时行情；报告逐只标注时间及日线回退状态",
       "- 账户资金：10,000 USD；单笔风险预算：100 USD（1%）",""]
     picks=[x for x in rows if x["risk"]["verdict"] in ("GO","GO SMALLER")]
     rejects=[x for x in rows if x["risk"]["verdict"]=="NO-GO"]
@@ -220,9 +237,9 @@ def bark(rows):
 
 def main():
     if not DEEPSEEK_API_KEY: raise RuntimeError("GitHub Actions未提供DEEPSEEK_API_KEY")
-    print(f"批量获取{len(WATCHLIST)}只标的日线及5分钟盘前/盘中K线……")
+    print(f"批量获取{len(WATCHLIST)}只标的日线及1分钟盘前/盘中/盘后K线……")
     daily=yf.download(WATCHLIST,period="3mo",interval="1d",auto_adjust=True,group_by="ticker",threads=True,progress=False)
-    intra=yf.download(WATCHLIST,period="5d",interval="5m",prepost=True,group_by="ticker",threads=True,progress=False)
+    intra=yf.download(WATCHLIST,period="2d",interval="1m",prepost=True,group_by="ticker",threads=True,progress=False)
     market={}; failures={}
     for s in WATCHLIST:
         try:
@@ -230,9 +247,9 @@ def main():
             print(f"{s}: {m['current_price']:.4f} | {m['intraday_timestamp']} | {'回退收盘' if m['quote_fallback_to_daily_close'] else '5分钟K线'}")
         except Exception as e: failures[s]=f"{type(e).__name__}: {e}"
     if failures: raise RuntimeError("行情数据不完整，拒绝生成报告："+json.dumps(failures,ensure_ascii=False))
-    fresh_5m=sum(1 for m in market.values() if not m["quote_fallback_to_daily_close"])
-    if fresh_5m<3:
-        raise RuntimeError(f"Yahoo 5分钟行情整体疑似过期：仅{fresh_5m}/30只标的有60分钟内新K线。已停止DeepSeek裁决，避免把旧行情伪装成实时盘前价格。")
+    fresh_1m=sum(1 for m in market.values() if m["quote_verified_realtime"])
+    print(f"已验证1分钟行情：{fresh_1m}/{len(WATCHLIST)}")
+    if fresh_1m==0: raise RuntimeError("Yahoo没有返回3分钟内的1分钟K线，停止委员会裁决。")
     decisions=run_committee(list(market.values()))
     rows=[]
     for s in WATCHLIST:
