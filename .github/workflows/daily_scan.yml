@@ -1,28 +1,36 @@
-
 name: Daily US Market AI Scan
+
 on:
   push:
-    branches: [main, assistant-v4-research]
+    branches: [main, assistant-v4-research, premarket-gemini-committee-v1]
     paths:
-      - 'us_market_ai_v3.py'
       - 'us_market_ai_v3_1_news.py'
       - 'quant_research.py'
       - 'market_risk_v4.py'
+      - 'gemini_committee.py'
       - 'tests/**'
       - 'requirements.txt'
       - '.github/workflows/daily_scan.yml'
   workflow_dispatch:
   schedule:
-    - cron: "30 22 * * 1-5"
+    # 12:30 UTC is 07:30 New York in standard time / 08:30 in daylight time.
+    # Runs before the US cash-session open; GitHub may delay scheduled jobs.
+    - cron: "30 12 * * 1-5"
+
 concurrency:
-  group: daily-us-market-scan-${{ github.ref }}
+  group: daily-us-market-scan-\${{ github.ref }}
   cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    env:
+      GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: \${{ vars.GEMINI_MODEL }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,13 +45,15 @@ jobs:
           pip install -r requirements.txt
       - name: Compile and test research modules
         run: |
-          python -m compileall -q us_market_ai_v3_1_news.py quant_research.py market_risk_v4.py tests
+          python -m compileall -q us_market_ai_v3_1_news.py quant_research.py market_risk_v4.py gemini_committee.py tests
           python -m unittest discover -s tests -v
       - name: Run V3.1 cross-sectional opportunity model
-        run: python us_market_ai_v3_1_news.py
+        run: python us_market_ai_v3_1_news.py --period 10y --max-symbols 1200
       - name: Run V4 NQ, SOXL and AI risk model
         run: python market_risk_v4.py
-      - name: Upload prediction reports
+      - name: Run Gemini premarket committee review
+        run: python gemini_committee.py
+      - name: Upload prediction and committee reports
         uses: actions/upload-artifact@v4
         with:
           name: daily-market-predictions
