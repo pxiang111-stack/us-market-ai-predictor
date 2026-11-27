@@ -1,20 +1,22 @@
-name: Binance Snapshot DeepSeek Committee
+name: Binance Spot Live DeepSeek Analysis
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'gemini_committee/binance_snapshot_input.json'
+      - 'gemini_committee/trigger.txt'
+      - 'gemini_committee/binance_spot_config.json'
+      - 'gemini_committee/binance_snapshot_committee.py'
 
 permissions:
   contents: write
 
 concurrency:
-  group: binance-snapshot-committee
+  group: binance-spot-deepseek-analysis
   cancel-in-progress: false
 
 jobs:
-  judge-binance-snapshot:
+  live-market-analysis:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -22,17 +24,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
-          cache-dependency-path: gemini_committee/requirements.txt
       - name: Install dependencies
         run: python -m pip install -r gemini_committee/requirements.txt
-      - name: Validate committee script
+      - name: Validate script
         run: python -m py_compile gemini_committee/binance_snapshot_committee.py
-      - name: Ask DeepSeek committee to judge Binance data
+      - name: Fetch Binance public spot data and ask DeepSeek
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python gemini_committee/binance_snapshot_committee.py
-      - name: Commit Binance committee report
+      - name: Commit analysis report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -40,6 +40,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No report changes."
           else
-            git commit -m "Add DeepSeek judgment of Binance multi-timeframe snapshot"
+            git commit -m "Publish Binance spot live DeepSeek analysis"
             git push
           fi
