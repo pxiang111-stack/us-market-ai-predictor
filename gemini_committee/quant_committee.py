@@ -85,9 +85,12 @@ pine_script必须为TradingView Pine Script v5，最多5行，使用hline画入�
 
 def pine(d):
     if d.verdict=="NO-GO" or any(x is None for x in [d.entry_low,d.entry_high,d.stop_price,d.target_price]):
-        return '//@version=5\nindicator("Committee NO-GO", overlay=true)\n// No valid levels'
+        return '//@version=5\\nindicator("Committee NO-GO", overlay=true)\\n// No valid levels'
+    candidate=(d.pine_script or "").strip()
+    if candidate.startswith("//@version=5") and "hline(" in candidate and len(candidate.splitlines())<=5:
+        return candidate
     mid=(float(d.entry_low)+float(d.entry_high))/2
-    return "\n".join(["//@version=5",'indicator("Gemini Committee Levels", overlay=true)',
+    return "\\n".join(["//@version=5",'indicator("Gemini Committee Levels", overlay=true)',
       f'hline({mid:.4f}, "Entry", color=color.blue)',
       f'hline({float(d.stop_price):.4f}, "Stop", color=color.red)',
       f'hline({float(d.target_price):.4f}, "Target", color=color.green)'])
@@ -136,7 +139,7 @@ def write_reports(rows):
           f"- 入场：{c['entry_low']}–{c['entry_high']}；止损：{c['stop_price']}；目标：{c['target_price']}",
           f"- 风控预算：{r['risk_budget_usd']} USD；每股风险：{r['risk_per_share_usd']}；最大股数：**{r['max_shares']}**",
           "- 最新新闻："]+[f"  - {n}" for n in m["latest_news_titles"]]
-        lines += ["","Pine Script v5：",r["pine_script"],""]
+        lines += ["","Pine Script v5：",chr(96)*3+"pine",r["pine_script"],chr(96)*3,""]
     (OUT/"daily_report.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
 
 def bark(rows):
