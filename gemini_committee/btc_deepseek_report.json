@@ -1,0 +1,381 @@
+{
+  "snapshot_time_utc": "2026-11-27T20:33:02Z",
+  "current_price": 59802,
+  "overall_decision": "观望",
+  "overall_bias": "偏空",
+  "confidence_pct": 56,
+  "horizons": {
+    "4h": {
+      "direction": "偏空",
+      "target_low": 59200,
+      "target_high": 59750,
+      "support": [
+        59500,
+        58790
+      ],
+      "resistance": [
+        60120,
+        60560,
+        61000
+      ],
+      "trigger": "15分钟或1小时收盘跌破59500，且taker buy/sell重新低于0.95或卖量放大；或反抽60120-60560受阻后转弱。",
+      "invalidation": "4小时收盘站上60560，且OI上升、taker转净买，则短线偏空失效。",
+      "confidence_pct": 54
+    },
+    "24h": {
+      "direction": "偏空",
+      "target_low": 58500,
+      "target_high": 59500,
+      "support": [
+        58790,
+        57300
+      ],
+      "resistance": [
+        60560,
+        61600,
+        62250
+      ],
+      "trigger": "跌破58790并伴随放量，或反弹至60500-61000区域受阻且taker净卖、OI不降。",
+      "invalidation": "4小时或日线收盘站稳61000上方，并伴随OI上升和taker持续净买，则偏空判断失效。",
+      "confidence_pct": 57
+    },
+    "3d": {
+      "direction": "震荡",
+      "target_low": 58000,
+      "target_high": 61000,
+      "support": [
+        57300,
+        55130
+      ],
+      "resistance": [
+        61600,
+        62250,
+        64600
+      ],
+      "trigger": "价格继续在58790-61600区间内反复，OI低位、资金费率温和，则维持震荡。",
+      "invalidation": "日线收盘跌破57300或站上62250，则3日震荡区间判断失效。",
+      "confidence_pct": 52
+    }
+  },
+  "entry_plan": "当前59802位于今日低点58792上方，但反弹弱且多空账户比偏拥挤，不追空也不抄底。若15分钟/1小时收盘跌破59500且卖压放大，可考虑轻仓短空；若4小时收盘站上60560且taker转净买、OI上升，再考虑短多。无触发则观望，不做自动下单。",
+  "stop_plan": "短空止损参考60120-60560区域，按触发周期收盘确认；若4小时收盘站回60560上方则离场。短多止损参考58790下方；若跌破58790并放量则取消短多思路。",
+  "reasoning": [
+    "最新日K为未完成K：11-27冲高62248.91后回落至59802，24小时跌1.51%，上方留长上影，62k附近卖压明显。",
+    "4小时12:00 UTC放量约6853 BTC长阴，低点58792.37，之后16:00和20:00未收复60560，反弹力度弱。",
+    "15分钟从59700附近小幅回升至59800，但成交量很低，未形成放量反转确认。",
+    "合约资金费率+0.00686%仅温和正，未极端；OI近1小时从约98796降至98115 BTC，价格下跌伴随OI略降，更像去杠杆而非新空大举进场。",
+    "账户多空比约2.99-3.04，多头账户约75%，拥挤偏多，对上行构成逆向压力；taker buy/sell多数低于1，最新1.0423仅显示短线回补。",
+    "结构上58790为最近低点，57300为更大支撑；60560/61000为反弹压力，62250为强压力。"
+  ],
+  "risk_notes": [
+    "最新日K、4小时K、15分钟K均未收盘，不能把未完成K线当成收盘确认。",
+    "数据仅来自Binance现货与USDⓈ-M合约，不是全市场合并数据。",
+    "多空账户比是账户数比例，不等同于持仓仓位或资金规模。",
+    "OI近1小时序列的时间标注不完整，只能作为短期去杠杆参考。",
+    "资金费率温和，拥挤指标可能钝化；15分钟成交量小，突破容易假突破。",
+    "未纳入新闻、宏观或突发事件；信心百分比是定性信心，不是胜率。"
+  ],
+  "model": "deepseek-flash",
+  "snapshot": {
+    "generated_at_utc": "2026-11-27T20:33:02Z",
+    "source": "Binance Spot BTCUSDT klines/ticker + Binance USDⓈ-M Futures BTCUSDT mark/funding/OI/long-short/taker flow, retrieved through ChatGPT Binance connector",
+    "symbol": "BTCUSDT",
+    "quote_currency": "USDT",
+    "spot": {
+      "last_price": 59802,
+      "change_24h_pct": -1.511,
+      "change_24h": -917.17,
+      "high_24h": 62248.91,
+      "low_24h": 58792.37,
+      "quote_volume_24h": 1259421381.51
+    },
+    "candle_status": {
+      "daily": "The latest 2026-11-27 UTC daily candle is incomplete; 2026-11-26 is the last completed daily candle.",
+      "four_hour": "The latest 20:00 UTC 4h candle is incomplete at snapshot time.",
+      "fifteen_minute": "The latest 20:30 UTC 15m candle is incomplete at snapshot time."
+    },
+    "daily": [
+      {
+        "date": "2026-11-20",
+        "open": 61986.73,
+        "high": 62639.52,
+        "low": 57778.35,
+        "close": 58951.51,
+        "volume_btc": 38125.92587
+      },
+      {
+        "date": "2026-11-21",
+        "open": 58951.51,
+        "high": 60996,
+        "low": 55130,
+        "close": 60215.77,
+        "volume_btc": 48558.10097
+      },
+      {
+        "date": "2026-11-22",
+        "open": 60215.78,
+        "high": 61669.99,
+        "low": 58768.51,
+        "close": 61271.08,
+        "volume_btc": 20137.13078
+      },
+      {
+        "date": "2026-11-23",
+        "open": 61271.09,
+        "high": 64603.12,
+        "low": 60386,
+        "close": 61270.93,
+        "volume_btc": 27493.88421
+      },
+      {
+        "date": "2026-11-24",
+        "open": 61270.92,
+        "high": 61682.01,
+        "low": 59260,
+        "close": 59832,
+        "volume_btc": 19707.39868
+      },
+      {
+        "date": "2026-11-25",
+        "open": 59832,
+        "high": 60568.01,
+        "low": 57300.38,
+        "close": 60458.01,
+        "volume_btc": 26999.08168
+      },
+      {
+        "date": "2026-11-26",
+        "open": 60458,
+        "high": 61622.38,
+        "low": 59915,
+        "close": 60577.18,
+        "volume_btc": 16482.40562
+      },
+      {
+        "date": "2026-11-27_partial",
+        "open": 60577.18,
+        "high": 62248.91,
+        "low": 58792.37,
+        "last": 59802,
+        "volume_btc": 19745.74684
+      }
+    ],
+    "four_hour": [
+      {
+        "open_time_utc": "2026-11-26T16:00:00Z",
+        "open": 60618.8,
+        "high": 60860.35,
+        "low": 60348.04,
+        "close": 60718.59,
+        "volume_btc": 2053.03259
+      },
+      {
+        "open_time_utc": "2026-11-26T20:00:00Z",
+        "open": 60718.59,
+        "high": 61006,
+        "low": 60390.65,
+        "close": 60577.18,
+        "volume_btc": 1073.16934
+      },
+      {
+        "open_time_utc": "2026-11-27T00:00:00Z",
+        "open": 60577.18,
+        "high": 61881.03,
+        "low": 60472,
+        "close": 61411,
+        "volume_btc": 3701.09458
+      },
+      {
+        "open_time_utc": "2026-11-27T04:00:00Z",
+        "open": 61411,
+        "high": 62025,
+        "low": 61336.73,
+        "close": 61673.45,
+        "volume_btc": 2951.03879
+      },
+      {
+        "open_time_utc": "2026-11-27T08:00:00Z",
+        "open": 61672.09,
+        "high": 62248.91,
+        "low": 61415.65,
+        "close": 61662.57,
+        "volume_btc": 3251.77547
+      },
+      {
+        "open_time_utc": "2026-11-27T12:00:00Z",
+        "open": 61662.57,
+        "high": 61707.41,
+        "low": 58792.37,
+        "close": 60116.98,
+        "volume_btc": 6852.97215
+      },
+      {
+        "open_time_utc": "2026-11-27T16:00:00Z",
+        "open": 60116.97,
+        "high": 60559.62,
+        "low": 59513.3,
+        "close": 59910.33,
+        "volume_btc": 2749.92981
+      },
+      {
+        "open_time_utc": "2026-11-27T20:00:00Z_partial",
+        "open": 59910.33,
+        "high": 59910.33,
+        "low": 59700.77,
+        "last": 59802,
+        "volume_btc": 238.93604
+      }
+    ],
+    "fifteen_minute": [
+      {
+        "open_time_utc": "2026-11-27T18:45:00Z",
+        "open": 59807.8,
+        "high": 59967.43,
+        "low": 59788.8,
+        "close": 59913.06,
+        "volume_btc": 113.21798
+      },
+      {
+        "open_time_utc": "2026-11-27T19:00:00Z",
+        "open": 59913.05,
+        "high": 59968.96,
+        "low": 59832,
+        "close": 59846.15,
+        "volume_btc": 83.99908
+      },
+      {
+        "open_time_utc": "2026-11-27T19:15:00Z",
+        "open": 59846.15,
+        "high": 59997.06,
+        "low": 59846.15,
+        "close": 59968.95,
+        "volume_btc": 96.49938
+      },
+      {
+        "open_time_utc": "2026-11-27T19:30:00Z",
+        "open": 59968.95,
+        "high": 60047.24,
+        "low": 59956.68,
+        "close": 60025.98,
+        "volume_btc": 48.73373
+      },
+      {
+        "open_time_utc": "2026-11-27T19:45:00Z",
+        "open": 60025.98,
+        "high": 60025.98,
+        "low": 59870.72,
+        "close": 59910.33,
+        "volume_btc": 97.64617
+      },
+      {
+        "open_time_utc": "2026-11-27T20:00:00Z",
+        "open": 59910.33,
+        "high": 59910.33,
+        "low": 59700.77,
+        "close": 59779.26,
+        "volume_btc": 186.25362
+      },
+      {
+        "open_time_utc": "2026-11-27T20:15:00Z",
+        "open": 59779.25,
+        "high": 59810.01,
+        "low": 59732.89,
+        "close": 59804.29,
+        "volume_btc": 46.74888
+      },
+      {
+        "open_time_utc": "2026-11-27T20:30:00Z_partial",
+        "open": 59804.29,
+        "high": 59820.81,
+        "low": 59800.52,
+        "last": 59802,
+        "volume_btc": 5.93354
+      }
+    ],
+    "futures": {
+      "mark_price": 59781.18791304,
+      "index_price": 59802.57391304,
+      "funding_rate": 6.861e-05,
+      "open_interest_btc": 98373.069,
+      "open_interest_1h_recent": [
+        98761.428,
+        98796.579,
+        98099.808,
+        98101.584,
+        98178.646,
+        98115.77
+      ],
+      "long_short_accounts_1h_recent": [
+        {
+          "long_pct": 73.13,
+          "short_pct": 26.87,
+          "ratio": 2.7216
+        },
+        {
+          "long_pct": 75.27,
+          "short_pct": 24.73,
+          "ratio": 3.0437
+        },
+        {
+          "long_pct": 74.94,
+          "short_pct": 25.06,
+          "ratio": 2.9904
+        },
+        {
+          "long_pct": 74.89,
+          "short_pct": 25.11,
+          "ratio": 2.9825
+        },
+        {
+          "long_pct": 74.79,
+          "short_pct": 25.21,
+          "ratio": 2.9667
+        },
+        {
+          "long_pct": 74.91,
+          "short_pct": 25.09,
+          "ratio": 2.9857
+        }
+      ],
+      "taker_buy_sell_1h_recent": [
+        {
+          "buy_sell_ratio": 0.8721,
+          "buy_btc": 21813.66,
+          "sell_btc": 25012.97
+        },
+        {
+          "buy_sell_ratio": 1.0814,
+          "buy_btc": 20270.542,
+          "sell_btc": 18745.053
+        },
+        {
+          "buy_sell_ratio": 0.9067,
+          "buy_btc": 7242.717,
+          "sell_btc": 7988.255
+        },
+        {
+          "buy_sell_ratio": 0.9272,
+          "buy_btc": 5762.792,
+          "sell_btc": 6215.406
+        },
+        {
+          "buy_sell_ratio": 0.9583,
+          "buy_btc": 2396.86,
+          "sell_btc": 2501.172
+        },
+        {
+          "buy_sell_ratio": 1.0423,
+          "buy_btc": 1705.402,
+          "sell_btc": 1636.191
+        }
+      ]
+    },
+    "limitations": [
+      "Binance spot and USDⓈ-M futures data; exchange-specific, not a consolidated market feed.",
+      "Daily/4h/15m most recent candles are incomplete as explicitly labelled; do not treat partial candles as closes.",
+      "Long/short ratio is account-based and can be crowded; not direct position size.",
+      "Confidence is qualitative confidence, not a statistically calibrated win probability."
+    ]
+  },
+  "report_generated_at_utc": "2026-11-27T20:36:09.474780+00:00"
+}
