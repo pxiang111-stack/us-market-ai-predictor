@@ -27,20 +27,28 @@ jobs:
       - name: Install committee-only dependencies
         run: python -m pip install -r gemini_committee/requirements.txt
       - name: Configure Tiger OpenAPI credentials
+        id: tiger
         env:
           TIGER_OPENAPI_CONFIG: ${{ secrets.TIGER_OPENAPI_CONFIG }}
         run: |
-          test -n "$TIGER_OPENAPI_CONFIG" || { echo "::error::Missing TIGER_OPENAPI_CONFIG GitHub Secret"; exit 1; }
+          if [ -z "$TIGER_OPENAPI_CONFIG" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Tiger OpenAPI is not configured yet; safely skipping this run."
+            exit 0
+          fi
           mkdir -p "$RUNNER_TEMP/tiger"
           printf '%s' "$TIGER_OPENAPI_CONFIG" > "$RUNNER_TEMP/tiger/tiger_openapi_config.properties"
           chmod 600 "$RUNNER_TEMP/tiger/tiger_openapi_config.properties"
+          echo "configured=true" >> "$GITHUB_OUTPUT"
       - name: Monitor intraday quotes and run committee only on triggers
+        if: steps.tiger.outputs.configured == 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           BARK_KEY: ${{ secrets.BARK_KEY }}
           TIGER_CONFIG_DIR: ${{ runner.temp }}/tiger
         run: python gemini_committee/intraday_monitor.py
       - name: Commit committee reports
+        if: steps.tiger.outputs.configured == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
