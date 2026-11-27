@@ -72,20 +72,20 @@ def make_prompt(packet: dict) -> str:
     return """你是美股盘前风险审查委员会。请只根据下方数据作判断，不得补造价格、新闻、财报、期权仓位或资金流数据。
 请用中文输出，明确区分“数据事实 / 推断 / 未知”。数据缺失必须写“未提供”，不能自行填补。
 
-请模拟以下五个审查席位分别提出意见，然后形成委员会结论：
-1. 量化筛选席：审查候选股排名、上涨概率、预期收益估计、样本量和验证指标；指出模型是否缺乏可证明优势。
-2. 市场环境席：审查 NQ/QQQ/SOXL 相关风险、市场压力指标和宏观背景；仅引用数据包中已有指标。
-3. 新闻与基本面席：审查新闻标题、AI 公司财务和新闻可信度；标题不等于事实，来源不明或重复新闻要降权。
-4. AI 资本开支/融资风险席：审查资本开支、现金流、债务与利息覆盖相关信息；缺失数据不能视为安全。
-5. 风控席：识别高波动、深回撤、拥挤/相关性、事件风险；给出哪些股票应排除、观察或保留。
+请模拟以下五个审查席位分别提出意见，然后形成委员会结论。每个席位必须输出一个独立小节，至少50-100个中文字符；不得用一句话敷衍。证据不足时，明确说明缺失，不得为了凑字数编造。
+1. 量化筛选席：审查候选股排名、上涨概率、预期收益估计、样本量和验证指标；分别说明支持多头的量化逻辑与模型局限。
+2. 市场环境席：审查 NQ/QQQ/SOXL 相关风险、市场压力指标和宏观背景；说明多头条件、空头触发条件和趋势判断依据，仅引用数据包中已有指标。
+3. 新闻与基本面席：审查新闻标题、AI 公司财务和新闻可信度；标题不等于事实，来源不明或重复新闻要降权，并说明新闻对多空逻辑的影响。
+4. AI 资本开支/融资风险席：审查资本开支、现金流、债务与利息覆盖相关信息；说明产业链需求、融资循环及现金流风险，缺失数据不能视为安全。
+5. 风控席：识别高波动、深回撤、拥挤/相关性、事件风险；明确空头排雷理由，以及保留、观察、剔除的条件。
 
-最终必须包含：
-A. 盘前总判断：偏多 / 中性 / 偏空，以及主要依据。
-B. 红色排雷清单：Ticker、风险、证据、是否剔除。
-C. 通过初筛的观察名单：最多10只，按优先级排序；每只写入选理由、最大未知项。
-D. 委员会分歧：哪些判断存在证据冲突。
-E. 今日执行纪律：哪些情况下不应追高或开仓；不要给出虚构的精确入场价、止损价或胜率。
-F. 数据完整性：明确列出缺失文件、缺失字段和数据局限。
+最终必须包含以下模块，每个模块至少50-100个中文字符，理由必须对应数据包：
+A. 盘前总判断：偏多 / 中性 / 偏空；分别列出多头逻辑、空头逻辑和最终权衡。
+B. 红色排雷清单：Ticker、风险、证据、是否剔除；解释每项风险为何足以排雷。
+C. 通过初筛的观察名单：最多10只，按优先级排序；每只写入选理由、主要多头逻辑和最大未知项。
+D. 委员会分歧：哪些判断存在证据冲突，以及冲突如何影响结论。
+E. 点位与执行纪律：仅在数据包提供明确价格/区间时讨论支撑、压力及其来源理由；没有点位数据就写“未提供”，禁止虚构精确入场价、止损价或胜率。
+F. 数据完整性：明确列出缺失文件、缺失字段、样本局限及其对结论的影响。
 
 注意：
 - 模型的 prob_up 是历史训练模型输出，不是经校准的真实胜率。
@@ -107,7 +107,7 @@ def call_gemini(prompt: str) -> str:
         url,
         json={
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"maxOutputTokens": 7000},
+            "generationConfig": {"maxOutputTokens": 8192},
         },
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         timeout=120,
@@ -122,22 +122,31 @@ def call_gemini(prompt: str) -> str:
         .get("content", {})
         .get("parts", [])
     )
-    text = "\n".join(p.get("text", "") for p in parts if p.get("text"))
-    if not text.strip():
+    text = "\n".join(p.get("text", "") for p in parts if p.get("text")).strip()
+    finish_reason = payload.get("candidates", [{}])[0].get("finishReason", "unknown")
+    usage = payload.get("usageMetadata", {})
+    # Log the actual completion state and the complete generated body for diagnosis.
+    print(f"[Gemini] finish_reason={finish_reason}")
+    print(f"[Gemini] usage_metadata={json.dumps(usage, ensure_ascii=False)}")
+    print("[Gemini] complete_raw_text_begin")
+    print(text if text else "[EMPTY RESPONSE]")
+    print("[Gemini] complete_raw_text_end")
+    if not text:
         feedback = payload.get("promptFeedback", {})
-        raise RuntimeError(f"Gemini returned no text content. promptFeedback={feedback}")
-    return text.strip()
+        raise RuntimeError(f"Gemini returned no text content. finishReason={finish_reason}; promptFeedback={feedback}")
+    return text, finish_reason
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     packet = build_packet()
     validate_packet(packet)
-    result = call_gemini(make_prompt(packet))
+    result, finish_reason = call_gemini(make_prompt(packet))
     report = (
         "# 美股盘前量化初筛 · Gemini 迷你委员会排雷\n\n"
         f"- 生成时间（UTC）：{datetime.now(timezone.utc).isoformat()}\n"
         f"- Gemini 模型：{MODEL}\n"
+        f"- Gemini finish_reason：{finish_reason}\n"
         "- 说明：单个 Gemini 模型按五个审查视角进行结构化审查，不是五个独立模型投票。\n\n"
         + result + "\n"
     )
